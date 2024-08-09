@@ -1,0 +1,43 @@
+# Python
+.env
+*.pyc
+**/.ipynb_checkpoints/
+.pytype/
+**/__pycache__/**
+
+# Pyenv files
+.python-version
+*.venv
+.venv
+
+# Python deployment artifacts
+*.whl
+*.egg-info
+
+# Visual Studio files
+.vs/
+.vscode/
+*.sdf
+*.opensdf
+*.VC.opendb
+*.suo
+*.user
+*.code-workspace
+
+# macOS files
+.DS_Store
+
+# CMake artifacts
+build/
+build-*/
+Testing/
+
+# Executables
+*.exe
+*.out
+
+# Model artifacts
+*.pt
+*.safetensors
+*.gguf
+*.vmfb
