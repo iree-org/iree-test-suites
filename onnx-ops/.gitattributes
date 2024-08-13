@@ -1,0 +1,3 @@
+# Ignore diffs and treat as binary in Git and on GitHub.
+*.bin -diff
+*.bin binary linguist-generated

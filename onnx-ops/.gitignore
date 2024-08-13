@@ -1,0 +1,4 @@
+# Model artifacts
+# TODO(scotttodd): convert into a build/temp dir instead of the source dir
+*.onnx
+*.vmfb
