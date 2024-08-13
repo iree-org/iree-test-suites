@@ -1,0 +1,4 @@
+--input=3xi64=@input_0.bin
+--input=f32=@input_1.bin
+--input=2xi32=@input_2.bin
+--expected_output=3x12xi32=@output_0.bin

@@ -1,0 +1,3 @@
+--input==@input_0.bin
+--input==@input_1.bin
+--expected_output==@output_0.bin

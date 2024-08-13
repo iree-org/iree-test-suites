@@ -1,0 +1,6 @@
+--input=20x10x5xf32=@input_0.bin
+--input=1xi64=@input_1.bin
+--input=1xi64=@input_2.bin
+--input=1xi64=@input_3.bin
+--input=1xi64=@input_4.bin
+--expected_output=20x9x5xf32=@output_0.bin

@@ -1,0 +1,5 @@
+--input=2x3x3xf32=@input_0.bin
+--input=1x15x3xf32=@input_1.bin
+--input=1x15x5xf32=@input_2.bin
+--input=1x30xf32=@input_3.bin
+--expected_output=1x3x5xf32=@output_0.bin

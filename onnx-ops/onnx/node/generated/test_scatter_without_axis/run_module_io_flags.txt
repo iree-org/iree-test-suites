@@ -1,0 +1,4 @@
+--input=3x3xf32=@input_0.bin
+--input=2x3xi64=@input_1.bin
+--input=2x3xf32=@input_2.bin
+--expected_output=3x3xf32=@output_0.bin

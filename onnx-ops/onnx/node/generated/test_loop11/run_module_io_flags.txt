@@ -1,0 +1,5 @@
+--input=i64=@input_0.bin
+--input=i1=@input_1.bin
+--input=1xf32=@input_2.bin
+--expected_output=1xf32=@output_0.bin
+--expected_output=5x1xf32=@output_1.bin

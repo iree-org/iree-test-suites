@@ -1,0 +1,9 @@
+--input=1x1x7x7xi8=@input_0.bin
+--input=f32=@input_1.bin
+--input=i8=@input_2.bin
+--input=1x1x1x1xi8=@input_3.bin
+--input=1xf32=@input_4.bin
+--input=1xi8=@input_5.bin
+--input=f32=@input_6.bin
+--input=i8=@input_7.bin
+--expected_output=1x1x7x7xi8=@output_0.bin
