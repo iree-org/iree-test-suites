@@ -1,3 +1,0 @@
---input=2x=@input_0.bin
---input=2x=@input_1.bin
---expected_output=2xi1=@output_0.bin

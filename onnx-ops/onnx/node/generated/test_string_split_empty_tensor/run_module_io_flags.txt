@@ -1,3 +1,0 @@
---input=0x=@input_0.bin
---expected_output=0x0x=@output_0.bin
---expected_output=0xi64=@output_1.bin
