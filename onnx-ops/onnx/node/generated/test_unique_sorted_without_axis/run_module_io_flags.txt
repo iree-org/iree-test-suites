@@ -1,0 +1,5 @@
+--input=6xf32=@input_0.bin
+--expected_output=4xf32=@output_0.bin
+--expected_output=4xi64=@output_1.bin
+--expected_output=6xi64=@output_2.bin
+--expected_output=4xi64=@output_3.bin

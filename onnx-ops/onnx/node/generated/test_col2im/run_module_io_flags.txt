@@ -1,0 +1,4 @@
+--input=1x5x5xf32=@input_0.bin
+--input=2xi64=@input_1.bin
+--input=2xi64=@input_2.bin
+--expected_output=1x1x5x5xf32=@output_0.bin

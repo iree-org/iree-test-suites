@@ -1,0 +1,2 @@
+--input=3x1x5xi64=@input_0.bin
+--expected_output=3x1x5xi64=@output_0.bin

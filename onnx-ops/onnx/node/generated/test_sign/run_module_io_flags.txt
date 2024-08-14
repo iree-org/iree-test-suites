@@ -1,0 +1,2 @@
+--input=11xf32=@input_0.bin
+--expected_output=11xf32=@output_0.bin

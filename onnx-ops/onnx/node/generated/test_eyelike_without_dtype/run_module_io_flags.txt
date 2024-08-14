@@ -1,0 +1,2 @@
+--input=4x4xi32=@input_0.bin
+--expected_output=4x4xi32=@output_0.bin

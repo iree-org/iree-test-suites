@@ -1,0 +1,8 @@
+module {
+  func.func @test_resize_upsample_scales_nearest_axes_3_2(%arg0: !torch.vtensor<[1,1,2,2],f32>, %arg1: !torch.vtensor<[2],f32>) -> !torch.vtensor<[1,1,4,6],f32> attributes {torch.onnx_meta.ir_version = 9 : si64, torch.onnx_meta.opset_version = 19 : si64, torch.onnx_meta.producer_name = "backend-test", torch.onnx_meta.producer_version = ""} {
+    %none = torch.constant.none
+    %0 = torch.operator "onnx.Resize"(%arg0, %none, %arg1) {torch.onnx.axes = [3 : si64, 2 : si64], torch.onnx.mode = "nearest"} : (!torch.vtensor<[1,1,2,2],f32>, !torch.none, !torch.vtensor<[2],f32>) -> !torch.vtensor<[1,1,4,6],f32> 
+    return %0 : !torch.vtensor<[1,1,4,6],f32>
+  }
+}
+

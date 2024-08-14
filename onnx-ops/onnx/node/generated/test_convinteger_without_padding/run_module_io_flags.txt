@@ -1,0 +1,4 @@
+--input=1x1x3x3xi8=@input_0.bin
+--input=1x1x2x2xi8=@input_1.bin
+--input=i8=@input_2.bin
+--expected_output=1x1x2x2xi32=@output_0.bin

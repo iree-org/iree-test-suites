@@ -1,0 +1,4 @@
+--input=i32=@input_0.bin
+--input=i32=@input_1.bin
+--input=i32=@input_2.bin
+--expected_output=2xi32=@output_0.bin

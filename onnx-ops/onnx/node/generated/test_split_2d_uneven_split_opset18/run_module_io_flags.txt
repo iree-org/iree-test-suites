@@ -1,0 +1,4 @@
+--input=2x8xf32=@input_0.bin
+--expected_output=2x3xf32=@output_0.bin
+--expected_output=2x3xf32=@output_1.bin
+--expected_output=2x2xf32=@output_2.bin

@@ -1,0 +1,5 @@
+--input=7xf32=@input_0.bin
+--expected_output=2xf32=@output_0.bin
+--expected_output=2xf32=@output_1.bin
+--expected_output=2xf32=@output_2.bin
+--expected_output=1xf32=@output_3.bin

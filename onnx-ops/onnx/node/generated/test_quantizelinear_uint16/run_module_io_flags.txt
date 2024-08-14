@@ -1,0 +1,4 @@
+--input=12xf32=@input_0.bin
+--input=f32=@input_1.bin
+--input=i16=@input_2.bin
+--expected_output=12xi16=@output_0.bin
