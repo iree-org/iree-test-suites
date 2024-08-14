@@ -58,6 +58,7 @@ jobs:
             --report-log=/tmp/onnx_ops_cpu_logs.json \
             --config-files=${CONFIG_FILE_PATH}
       - name: "Updating config file with latest XFAIL lists"
+        if: failure()
         run: |
           source ${VENV_DIR}/bin/activate
           python onnx-ops/update_config_xfails.py \
@@ -65,6 +66,7 @@ jobs:
             --config-file=${CONFIG_FILE_PATH}
           cat ${CONFIG_FILE_PATH}
       - name: "Uploading new config file"
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: onnx_ops_cpu_llvm_sync.json
