@@ -1,8 +1,0 @@
-module {
-  func.func @test_regex_full_match_basic(%arg0: !torch.vtensor<[3],!torch.str>) -> !torch.vtensor<[3],i1> attributes {torch.onnx_meta.ir_version = 9 : si64, torch.onnx_meta.opset_version = 20 : si64, torch.onnx_meta.producer_name = "backend-test", torch.onnx_meta.producer_version = ""} {
-    %none = torch.constant.none
-    %0 = torch.operator "onnx.RegexFullMatch"(%arg0) {torch.onnx.pattern = "www\\.[\\w.-]+\\.\\bcom\\b"} : (!torch.vtensor<[3],!torch.str>) -> !torch.vtensor<[3],i1> 
-    return %0 : !torch.vtensor<[3],i1>
-  }
-}
-

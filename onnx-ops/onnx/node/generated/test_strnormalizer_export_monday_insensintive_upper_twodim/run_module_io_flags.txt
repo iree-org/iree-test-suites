@@ -1,2 +1,0 @@
---input=1x6x=@input_0.bin
---expected_output=1x4x=@output_0.bin

@@ -5,15 +5,17 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import argparse
+import logging
 import onnx
-from multiprocessing import Pool
-from pathlib import Path
-from onnx import version_converter
 import shutil
 import subprocess
 import sys
 from import_onnx_tests_utils import *
+from multiprocessing import Pool
+from onnx import version_converter
+from pathlib import Path
 
+logger = logging.getLogger(__name__)
 
 ONNX_PACKAGE_DIR = Path(onnx.__file__).parent
 ONNX_NODE_TESTS_ROOT = ONNX_PACKAGE_DIR / "backend/test/data/node"
@@ -37,11 +39,14 @@ def find_onnx_tests(root_dir_path: Path):
 def import_onnx_files_with_cleanup(test_dir_path: Path):
     test_name = test_dir_path.name
     imported_dir_path = Path(GENERATED_FILES_OUTPUT_ROOT) / test_name
-    result = import_onnx_files(test_dir_path, imported_dir_path)
-    if not result:
+    try:
+        import_onnx_files(test_dir_path, imported_dir_path)
+    except Exception as e:
+        logger.error(f"Error importing {test_name}: {e}")
         # Note: could comment this out to keep partially imported directories.
         shutil.rmtree(imported_dir_path)
-    return (test_name, result)
+        return (test_name, False)
+    return (test_name, True)
 
 
 def import_onnx_files(test_dir_path: Path, imported_dir_path: Path):
@@ -97,14 +102,19 @@ def import_onnx_files(test_dir_path: Path, imported_dir_path: Path):
     ]
     ret = subprocess.run(exec_args, capture_output=True)
     if ret.returncode != 0:
-        # TODO(scotttodd): log ret.stdout and ret.stderr to a file/folder?
-        print(f"  {imported_dir_path.name[5:]} import failed", file=sys.stderr)
-        return False
+        logger.error(
+            f"Import of {imported_dir_path.name} failed!\niree-import-onnx stdout:"
+        )
+        logger.error(ret.stdout.decode("utf-8"))
+        logger.error("iree-import-onnx stderr:")
+        logger.error(ret.stderr.decode("utf-8"))
+        raise RuntimeError(f"  {imported_dir_path.name} import failed")
 
     test_data_dirs = sorted(test_dir_path.glob("test_data_set*"))
     if len(test_data_dirs) != 1:
-        print("WARNING: unhandled 'len(test_data_dirs) != 1'")
-        return False
+        raise NotImplementedError(
+            f"Unhandled 'len(test_data_dirs) != 1' for {imported_dir_path.name}"
+        )
 
     # Convert from:
     #   * input/output_*.pb
@@ -122,9 +132,6 @@ def import_onnx_files(test_dir_path: Path, imported_dir_path: Path):
         type_proto = model.graph.input[i].type
         converted_data = convert_onnx_proto_to_numpy_array(test_input, type_proto)
         converted_type = convert_onnx_type_proto_to_iree_type_string(type_proto)
-        # TODO(scotttodd): raise exception instead of None as flow control?
-        if converted_data is None or converted_type is None:
-            return False
 
         input_path_bin = (imported_dir_path / test_input.stem).with_suffix(".bin")
         write_binary_to_file(converted_data, input_path_bin)
@@ -137,9 +144,6 @@ def import_onnx_files(test_dir_path: Path, imported_dir_path: Path):
         type_proto = model.graph.output[i].type
         converted_data = convert_onnx_proto_to_numpy_array(test_output, type_proto)
         converted_type = convert_onnx_type_proto_to_iree_type_string(type_proto)
-        # TODO(scotttodd): raise exception instead of None as flow control?
-        if converted_data is None or converted_type is None:
-            return False
 
         output_path_bin = (imported_dir_path / test_output.stem).with_suffix(".bin")
         write_binary_to_file(converted_data, output_path_bin)
@@ -149,8 +153,6 @@ def import_onnx_files(test_dir_path: Path, imported_dir_path: Path):
 
     with open(test_data_flagfile_path, "wt") as f:
         f.writelines(test_data_flagfile_lines)
-
-    return True
 
 
 if __name__ == "__main__":

@@ -1,2 +1,0 @@
---input=3x=@input_0.bin
---expected_output=3xi1=@output_0.bin

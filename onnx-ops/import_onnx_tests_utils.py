@@ -4,11 +4,11 @@
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-import struct
 import numpy as np
 import onnx
-from pathlib import Path
+import struct
 from onnx import numpy_helper
+from pathlib import Path
 
 
 def convert_onnx_proto_to_numpy_array(
@@ -21,9 +21,7 @@ def convert_onnx_proto_to_numpy_array(
             tensor.ParseFromString(protobuf_content)
             return numpy_helper.to_array(tensor)
         else:
-            # TODO(scotttodd): raise exception / log to file
-            print(f"Unsupported proto type: {type_proto}")
-            return None
+            raise NotImplementedError(f"Unsupported proto type: {type_proto}")
 
 
 def convert_proto_elem_type_to_iree_dtype(etype):
@@ -84,9 +82,7 @@ def convert_onnx_type_proto_to_iree_type_string(
             return dtype
         return f"{shape}x{dtype}"
     else:
-        # TODO(scotttodd): raise exception / log to file
-        print(f"Unsupported proto type: {type_proto}")
-        return None
+        raise NotImplementedError(f"Unsupported proto type: {type_proto}")
 
 
 # map numpy dtype -> (iree dtype, struct.pack format str)
@@ -114,8 +110,9 @@ def pack_ndarray_to_binary(ndarr: np.ndarray):
         iree_dtype = numpy_to_iree_dtype_map[dtype][1]
         bytearr = struct.pack(f"{len(mylist)}{iree_dtype}", *mylist)
     else:
-        print(f"WARNING: unsupported data type in pack_ndarray_to_binary() : '{dtype}'")
-        # TODO(scotttodd): raise exception / log to file
+        raise NotImplementedError(
+            f"Unsupported data type in pack_ndarray_to_binary(): '{dtype}'"
+        )
     return bytearr
 
 
