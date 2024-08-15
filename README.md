@@ -8,7 +8,7 @@ See https://groups.google.com/g/iree-discuss/c/GIWyj8hmP0k/ for context.
 
 ## Test suites
 
-### ONNX Ops ([onnx-ops/](onnx-ops/))
+### ONNX Ops ([onnx_ops/](onnx_ops/))
 
 [![Test ONNX Ops](https://github.com/iree-org/iree-test-suites/actions/workflows/test_onnx_ops.yml/badge.svg?branch=main)](https://github.com/iree-org/iree-test-suites/actions/workflows/test_onnx_ops.yml?query=branch%3Amain)
 
