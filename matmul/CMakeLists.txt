@@ -15,6 +15,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Baseline requirements.
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
 #-------------------------------------------------------------------------------
 # Core project dependency
 #-------------------------------------------------------------------------------
