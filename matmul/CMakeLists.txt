@@ -55,3 +55,75 @@ list(POP_BACK CMAKE_MESSAGE_INDENT)
 #-------------------------------------------------------------------------------
 # Test code
 #-------------------------------------------------------------------------------
+
+if(NOT IREE_ENABLE_THREADING)
+  return()
+endif()
+
+iree_cc_library(
+  NAME
+    e2e_test_util
+  HDRS
+    "test_utils.h"
+  SRCS
+    "test_utils.c"
+  DEPS
+    iree::base
+    iree::base::internal
+    iree::base::internal::cpu
+    iree::base::internal::flags
+    iree::base::internal::path
+    iree::hal
+    iree::modules::hal
+    iree::tooling::context_util
+    iree::tooling::device_util
+    iree::vm
+    iree::vm::cc
+  PUBLIC
+)
+
+iree_cc_binary(
+  NAME
+    iree-e2e-matmul-test
+  SRCS
+    "iree-e2e-matmul-test.cc"
+  DEPS
+    ::e2e_test_util
+    iree::base
+    iree::base::internal
+    iree::base::internal::cpu
+    iree::base::internal::flags
+    iree::base::internal::path
+    iree::hal
+    iree::modules::hal
+    iree::tooling::context_util
+    iree::tooling::device_util
+    iree::vm
+    iree::vm::cc
+)
+
+iree_cc_binary(
+  NAME
+    iree-e2e-conv2d-test
+  SRCS
+    "iree-e2e-conv2d-test.cc"
+  DEPS
+    ::e2e_test_util
+    iree::base
+    iree::base::internal
+    iree::base::internal::cpu
+    iree::base::internal::flags
+    iree::base::internal::path
+    iree::hal
+    iree::modules::hal
+    iree::tooling::context_util
+    iree::tooling::device_util
+    iree::vm
+    iree::vm::cc
+)
+
+#-------------------------------------------------------------------------------
+# Tests
+#-------------------------------------------------------------------------------
+
+add_subdirectory(tests)
