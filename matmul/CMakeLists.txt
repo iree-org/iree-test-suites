@@ -109,4 +109,7 @@ iree_cc_binary(
 # Tests
 #-------------------------------------------------------------------------------
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+include(iree_e2e_generated_runner_test)
+
 add_subdirectory(tests)
