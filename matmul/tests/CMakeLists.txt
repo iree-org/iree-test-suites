@@ -12,7 +12,7 @@ iree_add_all_subdirs()
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_arm_sme_nondt_f32_small_transpose_lhs_peel
+    matmul_cpu_arm_sme_nondt_f32_small_transpose_lhs_peel
   TEST_TYPE
     matmul
   GENERATOR
@@ -41,7 +41,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_arm_sme_nondt_f32_small_transpose_lhs
+    matmul_cpu_arm_sme_nondt_f32_small_transpose_lhs
   TEST_TYPE
     matmul
   GENERATOR
@@ -69,7 +69,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_arm_sme_nondt_f32_small_peel
+    matmul_cpu_arm_sme_nondt_f32_small_peel
   TEST_TYPE
     matmul
   GENERATOR
@@ -97,7 +97,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_arm_sme_nondt_f32_small
+    matmul_cpu_arm_sme_nondt_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -124,7 +124,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_arm_sme_nondt_f32_large_transpose_lhs_peel
+    matmul_cpu_arm_sme_nondt_f32_large_transpose_lhs_peel
   TEST_TYPE
     matmul
   GENERATOR
@@ -153,7 +153,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_arm_sme_nondt_f32_large_transpose_lhs
+    matmul_cpu_arm_sme_nondt_f32_large_transpose_lhs
   TEST_TYPE
     matmul
   GENERATOR
@@ -181,7 +181,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_arm_sme_nondt_f32_large_peel
+    matmul_cpu_arm_sme_nondt_f32_large_peel
   TEST_TYPE
     matmul
   GENERATOR
@@ -209,7 +209,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_arm_sme_nondt_f32_large
+    matmul_cpu_arm_sme_nondt_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -236,7 +236,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_i8_i32_small
+    matmul_cpu_dt_i8_i32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -265,7 +265,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_i8_i32_large
+    matmul_cpu_dt_i8_i32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -295,7 +295,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_f32_f32_small
+    matmul_cpu_dt_f32_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -323,7 +323,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_f32_f32_large
+    matmul_cpu_dt_f32_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -352,7 +352,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_f16_f16_small
+    matmul_cpu_dt_f16_f16_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -382,7 +382,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_f16_f16_large
+    matmul_cpu_dt_f16_f16_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -414,7 +414,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_f16_f32_small
+    matmul_cpu_dt_f16_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -444,7 +444,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_f16_f32_large
+    matmul_cpu_dt_f16_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -476,7 +476,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_bf16_bf16_small
+    matmul_cpu_dt_bf16_bf16_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -507,7 +507,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_bf16_bf16_large
+    matmul_cpu_dt_bf16_bf16_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -540,7 +540,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_bf16_f32_small
+    matmul_cpu_dt_bf16_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -571,7 +571,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_bf16_f32_large
+    matmul_cpu_dt_bf16_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -604,7 +604,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_i8_i32_small
+    matmul_cpu_dt_uk_i8_i32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -633,7 +633,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_i8_i32_large
+    matmul_cpu_dt_uk_i8_i32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -663,7 +663,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_f32_f32_small
+    matmul_cpu_dt_uk_f32_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -691,7 +691,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_f32_f32_large
+    matmul_cpu_dt_uk_f32_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -720,7 +720,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_f16_f16_small
+    matmul_cpu_dt_uk_f16_f16_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -750,7 +750,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_f16_f16_large
+    matmul_cpu_dt_uk_f16_f16_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -782,7 +782,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_f16_f32_small
+    matmul_cpu_dt_uk_f16_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -812,7 +812,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_f16_f32_large
+    matmul_cpu_dt_uk_f16_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -844,7 +844,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_bf16_bf16_small
+    matmul_cpu_dt_uk_bf16_bf16_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -875,7 +875,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_bf16_bf16_large
+    matmul_cpu_dt_uk_bf16_bf16_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -908,7 +908,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_bf16_f32_small
+    matmul_cpu_dt_uk_bf16_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -939,7 +939,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_dt_uk_bf16_f32_large
+    matmul_cpu_dt_uk_bf16_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -972,7 +972,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_i8_i32_small
+    matmul_cpu_experimental_dt_i8_i32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1002,7 +1002,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_i8_i32_large
+    matmul_cpu_experimental_dt_i8_i32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1033,7 +1033,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_f32_f32_small
+    matmul_cpu_experimental_dt_f32_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1062,7 +1062,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_f32_f32_large
+    matmul_cpu_experimental_dt_f32_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1092,7 +1092,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_f16_f16_small
+    matmul_cpu_experimental_dt_f16_f16_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1123,7 +1123,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_f16_f16_large
+    matmul_cpu_experimental_dt_f16_f16_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1156,7 +1156,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_f16_f32_small
+    matmul_cpu_experimental_dt_f16_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1187,7 +1187,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_f16_f32_large
+    matmul_cpu_experimental_dt_f16_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1220,7 +1220,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_bf16_bf16_small
+    matmul_cpu_experimental_dt_bf16_bf16_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1252,7 +1252,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_bf16_bf16_large
+    matmul_cpu_experimental_dt_bf16_bf16_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1286,7 +1286,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_bf16_f32_small
+    matmul_cpu_experimental_dt_bf16_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1318,7 +1318,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_bf16_f32_large
+    matmul_cpu_experimental_dt_bf16_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1352,7 +1352,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_i8_i32_small
+    matmul_cpu_experimental_dt_uk_i8_i32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1382,7 +1382,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_i8_i32_large
+    matmul_cpu_experimental_dt_uk_i8_i32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1413,7 +1413,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_f32_f32_small
+    matmul_cpu_experimental_dt_uk_f32_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1442,7 +1442,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_f32_f32_large
+    matmul_cpu_experimental_dt_uk_f32_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1472,7 +1472,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_f16_f16_small
+    matmul_cpu_experimental_dt_uk_f16_f16_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1503,7 +1503,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_f16_f16_large
+    matmul_cpu_experimental_dt_uk_f16_f16_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1536,7 +1536,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_f16_f32_small
+    matmul_cpu_experimental_dt_uk_f16_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1567,7 +1567,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_f16_f32_large
+    matmul_cpu_experimental_dt_uk_f16_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1600,7 +1600,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_bf16_bf16_small
+    matmul_cpu_experimental_dt_uk_bf16_bf16_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1632,7 +1632,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_bf16_bf16_large
+    matmul_cpu_experimental_dt_uk_bf16_bf16_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1666,7 +1666,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_bf16_f32_small
+    matmul_cpu_experimental_dt_uk_bf16_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1698,7 +1698,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cpu_experimental_dt_uk_bf16_f32_large
+    matmul_cpu_experimental_dt_uk_bf16_f32_large
   TEST_TYPE
     matmul
   GENERATOR
@@ -1732,7 +1732,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vmvx_experimental_dt_f32_f32
+    matmul_vmvx_experimental_dt_f32_f32
   TEST_TYPE
     matmul
   GENERATOR
@@ -1756,7 +1756,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vmvx_experimental_dt_uk_f32_f32
+    matmul_vmvx_experimental_dt_uk_f32_f32
   TEST_TYPE
     matmul
   GENERATOR
@@ -1780,7 +1780,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cuda_experimental_dt_f32_f32
+    matmul_cuda_experimental_dt_f32_f32
   TEST_TYPE
     matmul
   GENERATOR
@@ -1804,7 +1804,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_spirv_experimental_dt_f32_f32
+    matmul_spirv_experimental_dt_f32_f32
   TEST_TYPE
     matmul
   GENERATOR
@@ -1828,7 +1828,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vmvx_dt_uk_i8_small
+    matmul_vmvx_dt_uk_i8_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1849,7 +1849,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vmvx_dt_uk_f32_small
+    matmul_vmvx_dt_uk_f32_small
   TEST_TYPE
     matmul
   GENERATOR
@@ -1870,7 +1870,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cuda_f32_large_simt
+    matmul_cuda_f32_large_simt
   TEST_TYPE
     matmul
   GENERATOR
@@ -1895,7 +1895,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cuda_f32_large_tensorcore
+    matmul_cuda_f32_large_tensorcore
   TEST_TYPE
     matmul
   GENERATOR
@@ -1922,7 +1922,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cuda_f32_large_unaligned
+    matmul_cuda_f32_large_unaligned
   TEST_TYPE
     matmul
   GENERATOR
@@ -1948,7 +1948,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cuda_f16_large_unaligned
+    matmul_cuda_f16_large_unaligned
   TEST_TYPE
     matmul
   GENERATOR
@@ -1974,7 +1974,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cuda_f32_large_mma_sync
+    matmul_cuda_f32_large_mma_sync
   TEST_TYPE
     matmul
   GENERATOR
@@ -2001,7 +2001,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cuda_f16_large_tensorcore
+    matmul_cuda_f16_large_tensorcore
   TEST_TYPE
     matmul
   GENERATOR
@@ -2028,7 +2028,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cuda_f16_large_mma_sync
+    matmul_cuda_f16_large_mma_sync
   TEST_TYPE
     matmul
   GENERATOR
@@ -2055,7 +2055,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cuda_f32_large_splitk
+    matmul_cuda_f32_large_splitk
   TEST_TYPE
     matmul
   GENERATOR
@@ -2082,7 +2082,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vulkan_i8_large_valhall
+    matmul_vulkan_i8_large_valhall
   TEST_TYPE
     matmul
   GENERATOR
@@ -2106,7 +2106,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vulkan_f16_large_valhall
+    matmul_vulkan_f16_large_valhall
   TEST_TYPE
     matmul
   GENERATOR
@@ -2130,7 +2130,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vulkan_f32_large_valhall
+    matmul_vulkan_f32_large_valhall
   TEST_TYPE
     matmul
   GENERATOR
@@ -2154,7 +2154,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vulkan_i8_large_ampere
+    matmul_vulkan_i8_large_ampere
   TEST_TYPE
     matmul
   GENERATOR
@@ -2178,7 +2178,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vulkan_f16_large_ampere
+    matmul_vulkan_f16_large_ampere
   TEST_TYPE
     matmul
   GENERATOR
@@ -2202,7 +2202,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vulkan_f32_large_ampere
+    matmul_vulkan_f32_large_ampere
   TEST_TYPE
     matmul
   GENERATOR
@@ -2226,7 +2226,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_vulkan_f16_large_rdna3
+    matmul_vulkan_f16_large_rdna3
   TEST_TYPE
     matmul
   GENERATOR
@@ -2263,7 +2263,7 @@ list(APPEND IREE_HIP_TEST_COMPILER_FLAGS
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_rocm_f16_large_cdna3_mfma
+    matmul_rocm_f16_large_cdna3_mfma
   TEST_TYPE
     matmul
   GENERATOR
@@ -2291,7 +2291,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_rocm_f32_large_cdna3_mfma
+    matmul_rocm_f32_large_cdna3_mfma
   TEST_TYPE
     matmul
   GENERATOR
@@ -2319,7 +2319,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_rocm_f16_large_cdna3_mfma_tb
+    matmul_rocm_f16_large_cdna3_mfma_tb
   TEST_TYPE
     matmul
   GENERATOR
@@ -2353,7 +2353,7 @@ if(IREE_HIP_TEST_TARGET_CHIP MATCHES "^gfx94")
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_rocm_f8_large_cdna3_mfma
+    matmul_rocm_f8_large_cdna3_mfma
   TEST_TYPE
     matmul
   GENERATOR
@@ -2381,7 +2381,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_rocm_i8_large_cdna3_mfma_tb
+    matmul_rocm_i8_large_cdna3_mfma_tb
   TEST_TYPE
     matmul
   GENERATOR
@@ -2410,7 +2410,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_cdna_experimental_dt_f32_f32
+    matmul_cdna_experimental_dt_f32_f32
   TEST_TYPE
     matmul
   GENERATOR
@@ -2447,7 +2447,7 @@ list(APPEND IREE_HIP_TEST_COMPILER_FLAGS
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_rocm_f16_large_rdna3_wmma
+    matmul_rocm_f16_large_rdna3_wmma
   TEST_TYPE
     matmul
   GENERATOR
@@ -2478,7 +2478,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_rocm_f16_large_rdna3_wmma_tb
+    matmul_rocm_f16_large_rdna3_wmma_tb
   TEST_TYPE
     matmul
   GENERATOR
@@ -2510,7 +2510,7 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    e2e_matmul_rdna3_experimental_dt_f32_f32
+    matmul_rdna3_experimental_dt_f32_f32
   TEST_TYPE
     matmul
   GENERATOR

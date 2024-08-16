@@ -48,6 +48,10 @@ FetchContent_Declare(
 # Set core project feature as needed or not for these tests.
 set(IREE_BUILD_COMPILER OFF)
 set(IREE_BUILD_SAMPLES OFF)
+
+# We should also be able to set -DIREE_BUILD_TESTS=OFF, but this currently
+# depends on the core project's CMake functions like iree_native_test and
+# iree_bytecode_module.
 set(IREE_BUILD_TESTS ON)
 
 FetchContent_MakeAvailable(iree)
@@ -61,6 +65,8 @@ list(POP_BACK CMAKE_MESSAGE_INDENT)
 #-------------------------------------------------------------------------------
 # Test code
 #-------------------------------------------------------------------------------
+
+enable_testing(iree-test-suites-matmul)
 
 add_custom_target(iree-test-suites-matmul-deps
   COMMENT

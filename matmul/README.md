@@ -8,7 +8,8 @@ https://github.com/iree-org/iree/tree/main/tests/e2e/matmul.
 ## Quickstart
 
 First ensure you have the prerequisites from
-https://iree.dev/building-from-source/getting-started/.
+https://iree.dev/building-from-source/getting-started/, including CMake, a
+compiler like clang, and Python.
 
 1. Get the IREE compiler tools, either from release packages or a source build:
 
@@ -30,6 +31,10 @@ https://iree.dev/building-from-source/getting-started/.
 2. Configure:
 
     ```bash
+    # For now this is where you would set other options like
+    #   -DIREE_HIP_TEST_TARGET_CHIP=gfx90a
+    # Tests should be decoupled from the core CMake project as much as possible.
+
     cmake -G Ninja -B build/ . \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DIREE_HOST_BIN_DIR=${IREE_HOST_BIN_DIR}
@@ -39,5 +44,11 @@ https://iree.dev/building-from-source/getting-started/.
 
     ```bash
     cmake --build build/
-    cmake --build build/ --target iree-test-deps
+    cmake --build build/ --target iree-matmul-test-suite-deps
+    ```
+
+4. Run tests:
+
+    ```bash
+    ctest --test-dir build/ -R iree-test-suites
     ```
