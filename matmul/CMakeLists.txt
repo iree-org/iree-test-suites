@@ -23,7 +23,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 #   - point at local source dir (for testing in iree-org/iree or local dev)
 #   - fallback to fetching
 
-message(STATUS "Fetching core IREE repo (this may take a few minutes)...")
+message(STATUS "Fetching the core IREE repo (this may take a few minutes)...")
 list(APPEND CMAKE_MESSAGE_INDENT "  ")
 
 # Note: for log output, set -DFETCHCONTENT_QUIET=OFF,
@@ -38,17 +38,20 @@ FetchContent_Declare(
   GIT_SUBMODULES_RECURSE OFF
   GIT_SHALLOW OFF
   GIT_PROGRESS ON
-  EXCLUDE_FROM_ALL
   USES_TERMINAL_DOWNLOAD ON
+  EXCLUDE_FROM_ALL
 )
 
-# Disable core project feature not needed for these tests.
+# Set core project feature as needed or not for these tests.
 set(IREE_BUILD_COMPILER OFF)
-set(IREE_BUILD_TESTS OFF)
 set(IREE_BUILD_SAMPLES OFF)
+set(IREE_BUILD_TESTS ON)
 
 FetchContent_MakeAvailable(iree)
 FetchContent_GetProperties(iree SOURCE_DIR IREE_SOURCE_DIR)
+
+set(IREE_PACKAGE_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}")
+set(IREE_PACKAGE_ROOT_PREFIX "iree-test-suites")
 
 list(POP_BACK CMAKE_MESSAGE_INDENT)
 
@@ -87,26 +90,6 @@ iree_cc_binary(
     iree-e2e-matmul-test
   SRCS
     "iree-e2e-matmul-test.cc"
-  DEPS
-    ::e2e_test_util
-    iree::base
-    iree::base::internal
-    iree::base::internal::cpu
-    iree::base::internal::flags
-    iree::base::internal::path
-    iree::hal
-    iree::modules::hal
-    iree::tooling::context_util
-    iree::tooling::device_util
-    iree::vm
-    iree::vm::cc
-)
-
-iree_cc_binary(
-  NAME
-    iree-e2e-conv2d-test
-  SRCS
-    "iree-e2e-conv2d-test.cc"
   DEPS
     ::e2e_test_util
     iree::base

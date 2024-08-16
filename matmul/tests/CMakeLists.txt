@@ -22,7 +22,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -51,7 +51,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -79,7 +79,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -107,7 +107,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -134,7 +134,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -163,7 +163,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -191,7 +191,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -219,7 +219,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -246,7 +246,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=i32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -275,7 +275,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=i32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -305,7 +305,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -333,7 +333,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -362,7 +362,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f16"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -392,7 +392,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f16"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -424,7 +424,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -454,7 +454,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -486,7 +486,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=bf16"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -517,7 +517,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=bf16"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -550,7 +550,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -581,7 +581,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -614,7 +614,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=i32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -643,7 +643,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=i32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -673,7 +673,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -701,7 +701,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -730,7 +730,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f16"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -760,7 +760,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f16"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -792,7 +792,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -822,7 +822,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -854,7 +854,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=bf16"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -885,7 +885,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=bf16"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -918,7 +918,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -949,7 +949,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -982,7 +982,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=i32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1012,7 +1012,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=i32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1043,7 +1043,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1072,7 +1072,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1102,7 +1102,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f16"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1133,7 +1133,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f16"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1166,7 +1166,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1197,7 +1197,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1230,7 +1230,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=bf16"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1262,7 +1262,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=bf16"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1296,7 +1296,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1328,7 +1328,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1362,7 +1362,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=i32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1392,7 +1392,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=i32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1423,7 +1423,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1452,7 +1452,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1482,7 +1482,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f16"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1513,7 +1513,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f16"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1546,7 +1546,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1577,7 +1577,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1610,7 +1610,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=bf16"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1642,7 +1642,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=bf16"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1676,7 +1676,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1708,7 +1708,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "llvm-cpu"
   DRIVERS
@@ -1742,7 +1742,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vmvx"
   DRIVERS
@@ -1766,7 +1766,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vmvx"
   DRIVERS
@@ -1790,7 +1790,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "cuda"
   DRIVERS
@@ -1814,7 +1814,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vulkan-spirv"
   DRIVERS
@@ -1837,7 +1837,7 @@ iree_generated_e2e_runner_test(
     "--lhs_rhs_type=i8"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vmvx"
   DRIVERS
@@ -1858,7 +1858,7 @@ iree_generated_e2e_runner_test(
     "--lhs_rhs_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vmvx"
   DRIVERS
@@ -1880,7 +1880,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUMatmulSimt"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "cuda"
   DRIVERS
@@ -1905,7 +1905,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUMatmulTensorCore"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "cuda"
   DRIVERS
@@ -1931,7 +1931,7 @@ iree_generated_e2e_runner_test(
     "--lhs_rhs_type=f32"
     "--shapes=gpu_large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "cuda"
   DRIVERS
@@ -1957,7 +1957,7 @@ iree_generated_e2e_runner_test(
     "--lhs_rhs_type=f16"
     "--shapes=gpu_large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "cuda"
   DRIVERS
@@ -1984,7 +1984,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUMatmulTensorCoreMmaSync"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "cuda"
   DRIVERS
@@ -2011,7 +2011,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUMatmulTensorCore"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "cuda"
   DRIVERS
@@ -2038,7 +2038,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUMatmulTensorCoreMmaSync"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "cuda"
   DRIVERS
@@ -2064,7 +2064,7 @@ iree_generated_e2e_runner_test(
     "--lhs_rhs_type=f32"
     "--shapes=large"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "cuda"
   DRIVERS
@@ -2092,7 +2092,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=SPIRVVectorizeMali"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vulkan-spirv"
   DRIVERS
@@ -2116,7 +2116,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=SPIRVVectorizeMali"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vulkan-spirv"
   DRIVERS
@@ -2140,7 +2140,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=SPIRVVectorizeMali"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vulkan-spirv"
   DRIVERS
@@ -2164,7 +2164,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=SPIRVVectorizeNVIDIA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vulkan-spirv"
   DRIVERS
@@ -2188,7 +2188,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=SPIRVVectorizeNVIDIA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vulkan-spirv"
   DRIVERS
@@ -2212,7 +2212,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=SPIRVVectorizeNVIDIA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vulkan-spirv"
   DRIVERS
@@ -2236,7 +2236,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=SPIRVCooperativeMatrixVectorize"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "vulkan-spirv"
   DRIVERS
@@ -2274,7 +2274,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUVectorDistributeMFMA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "rocm"
   DRIVERS
@@ -2302,7 +2302,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUVectorDistributeMFMA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "rocm"
   DRIVERS
@@ -2331,7 +2331,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUVectorDistributeMFMA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "rocm"
   DRIVERS
@@ -2364,7 +2364,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUVectorDistributeMFMA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "rocm"
   DRIVERS
@@ -2393,7 +2393,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUVectorDistributeMFMA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "rocm"
   DRIVERS
@@ -2420,7 +2420,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "rocm"
   DRIVERS
@@ -2458,7 +2458,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUVectorDistributeWMMA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "rocm"
   DRIVERS
@@ -2490,7 +2490,7 @@ iree_generated_e2e_runner_test(
     "--shapes=gpu_large_aligned"
     "--compilation_info=LLVMGPUVectorDistributeWMMA"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "rocm"
   DRIVERS
@@ -2520,7 +2520,7 @@ iree_generated_e2e_runner_test(
     "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
-    iree_tools_testing_e2e_iree-e2e-matmul-test
+    iree-test-suites_iree-e2e-matmul-test
   TARGET_BACKENDS
     "rocm"
   DRIVERS
