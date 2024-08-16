@@ -59,6 +59,11 @@ list(POP_BACK CMAKE_MESSAGE_INDENT)
 # Test code
 #-------------------------------------------------------------------------------
 
+add_custom_target(iree-test-suites-matmul-deps
+  COMMENT
+    "Building matmul test suite deps"
+)
+
 if(NOT IREE_ENABLE_THREADING)
   return()
 endif()
