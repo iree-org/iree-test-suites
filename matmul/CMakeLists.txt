@@ -76,13 +76,9 @@ add_custom_target(iree-test-suites-matmul-deps
     "Building matmul test suite deps"
 )
 
-if(NOT IREE_ENABLE_THREADING)
-  return()
-endif()
-
 iree_cc_library(
   NAME
-    e2e_test_util
+    test_utils
   HDRS
     "test_utils.h"
   SRCS
@@ -108,7 +104,7 @@ iree_cc_binary(
   SRCS
     "iree-e2e-matmul-test.cc"
   DEPS
-    ::e2e_test_util
+    ::test_utils
     iree::base
     iree::base::internal
     iree::base::internal::cpu
