@@ -30,15 +30,31 @@ compiler like clang, and Python.
 
 2. Configure:
 
-    ```bash
-    # For now this is where you would set other options like
-    #   -DIREE_HIP_TEST_TARGET_CHIP=gfx90a
-    # Tests should be decoupled from the core CMake project as much as possible.
+    * To let CMake `FetchContent` download its own copy of the IREE repository:
 
-    cmake -G Ninja -B build/ . \
-      -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-      -DIREE_HOST_BIN_DIR=${IREE_HOST_BIN_DIR}
-    ```
+        ```bash
+        # For now this is where you would set other options like
+        #   -DIREE_HIP_TEST_TARGET_CHIP=gfx90a
+        # Tests should be decoupled from the core CMake project as much as possible.
+
+        cmake -G Ninja -B build/ . \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DIREE_HOST_BIN_DIR=${IREE_HOST_BIN_DIR}
+        ```
+
+    * To use a local IREE repository:
+
+        ```bash
+        # For now this is where you would set other options like
+        #   -DIREE_HIP_TEST_TARGET_CHIP=gfx90a
+        # Tests should be decoupled from the core CMake project as much as possible.
+
+        cmake -G Ninja -B build/ . \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DIREE_USE_LOCAL_REPO=ON \
+          -DIREE_LOCAL_REPO_PATH=/path/to/iree \
+          -DIREE_HOST_BIN_DIR=${IREE_HOST_BIN_DIR}
+        ```
 
 3. Build:
 
