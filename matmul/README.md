@@ -60,7 +60,7 @@ compiler like clang, and Python.
 
     ```bash
     cmake --build build/
-    cmake --build build/ --target iree-matmul-test-suite-deps
+    cmake --build build/ --target iree-test-suites-matmul-deps
     ```
 
 4. Run tests:
