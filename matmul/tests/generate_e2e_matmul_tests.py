@@ -85,24 +85,6 @@ class MMASchedule:
         )
 
 
-# Describes how to construct compilation info for the testcase.
-@dataclasses.dataclass
-class CompilationInfo:
-    # Lowering Config
-    tile_sizes: typing.List[typing.List[int]]
-    # Translation Info
-    dispatch_lowering_pass_pipeline: str
-    software_pipeline_depth: int
-    mma_schedule: typing.Optional[MMASchedule]
-    # Compilation info
-    workgroup_size: typing.List[int]
-    subgroup_size: Optional[int] = None
-
-    # Prints the workgroup size
-    def workgroup_size_str(self):
-        return "workgroup_size = [" + ", ".join(map(str, self.workgroup_size)) + "]"
-
-
 # Returns the list of TestShape's to use for the collection of shapes
 # identified by shapes_id.
 def get_test_shapes(shapes_id: ShapesId):
@@ -381,7 +363,6 @@ def generate_function(
     else:
         op_name = "linalg.matmul"
 
-    # Compilation info is optional; prints empty string by default.
     func_definition = ""
     compute = f"  %result = {op_name} ins(%lhs, %rhs: {lhs_tensor_type}, {rhs_tensor_type}) outs(%acc: {acc_tensor_type}) -> {acc_tensor_type}\n"
     if casted_lhs_rhs_type != lhs_rhs_type:
@@ -438,10 +419,6 @@ def generate_function(
         import_declaration=import_declaration,
         definition=func_definition,
     )
-
-
-# Counter for producing unique compilation info attrs
-generate_function.compilation_index = 0
 
 
 # Represents a call to a generated test function.
