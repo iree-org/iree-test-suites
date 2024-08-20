@@ -7,7 +7,6 @@
 """iree_generated_e2e_matmul_test generator for e2e matmul tests.
 """
 
-from typing import Optional
 import argparse
 import enum
 import dataclasses
@@ -64,25 +63,6 @@ class TestShape:
     k: int
     n: int
     accumulate: bool
-
-
-# Describes a workgroup and tiling schedule to target a specific MMA intrinsic.
-@dataclasses.dataclass
-class MMASchedule:
-    intrinsic: str
-    m_count: int  # Number of subgroups per workgroup along M
-    n_count: int  # Number of subgroups per workgroup along N
-    m_tile_count: int
-    n_tile_count: int
-    k_tile_count: int
-
-    def __str__(self):
-        return (
-            "mma_schedule = #iree_gpu.mma_schedule<"
-            + f"intrinsic = #iree_gpu.mma_layout<{self.intrinsic}>, "
-            + f"subgroup_m_count = {self.m_count}, "
-            + f"subgroup_n_count = {self.n_count}>"
-        )
 
 
 # Returns the list of TestShape's to use for the collection of shapes
@@ -176,46 +156,6 @@ def get_dynamicities(shapes_id: ShapesId):
             Dynamicity.STATIC,
         ]
     raise ValueError(shapes_id)
-
-
-@dataclasses.dataclass
-class TileWorkgroupSizePair:
-    tile_size: typing.List[typing.List[int]]
-    workgroup_size: typing.List[int]
-
-
-# Constructs a TileWorkgroupSizePair for SPIR-V targets enforcing the
-# constraints between the workgroup_size and tile size
-def get_spirv_tile_workgroup_size_pair(
-    workgroup_size, t_tile_k, t_tile_m=4, t_tile_n=4
-):
-    x, y, z = workgroup_size
-    wg_tile_m = y * t_tile_m
-    wg_tile_n = x * t_tile_n
-    return TileWorkgroupSizePair(
-        [[wg_tile_m, wg_tile_n], [t_tile_m, t_tile_n], [0, 0, t_tile_k]], workgroup_size
-    )
-
-
-# Returns all the TileWorkgroupSizePairs for a given SPIRV Target
-def get_all_spirv_tile_workgroup_size_pairs(t_tile_k):
-    tile_workgroup_size_pairs = [
-        get_spirv_tile_workgroup_size_pair([32, 8, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([16, 8, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([64, 2, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([8, 8, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([32, 1, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([16, 2, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([32, 1, 1], t_tile_k),
-    ]
-    return tile_workgroup_size_pairs
-
-
-# Intentionally fixed seed! We want full reproducibility here, both across runs
-# and across machines.
-# Intentionally not shared with pseudorandom_generator_seed to limit the ways
-# in which shuffling testcases changes which random values are generated.
-local_pseudorandom_state = 1
 
 
 # A shape dimension value, i.e. a size value that could appear in a MLIR type
