@@ -5,11 +5,11 @@ https://github.com/iree-org/iree/tree/main/tests/e2e/matmul.
 
 ## Prerequisites
 
-## Quickstart
-
 First ensure you have the prerequisites from
 https://iree.dev/building-from-source/getting-started/, including CMake, a
 compiler like clang, and Python.
+
+## Quickstart
 
 1. Get the IREE compiler tools, either from release packages or a source build:
 
@@ -68,3 +68,9 @@ compiler like clang, and Python.
     ```bash
     ctest --test-dir build/ -R iree-test-suites
     ```
+
+## Generating test cases
+
+```bash
+bash generate_tests.sh
+```
