@@ -1835,6 +1835,7 @@ iree_generated_e2e_runner_test(
     "generate_e2e_matmul_tests.py"
   GENERATOR_ARGS
     "--lhs_rhs_type=i8"
+    "--acc_type=i32"
     "--shapes=small"
   TEST_RUNNER
     iree-test-suites_iree-e2e-matmul-test
@@ -1856,6 +1857,7 @@ iree_generated_e2e_runner_test(
     "generate_e2e_matmul_tests.py"
   GENERATOR_ARGS
     "--lhs_rhs_type=f32"
+    "--acc_type=f32"
     "--shapes=small"
   TEST_RUNNER
     iree-test-suites_iree-e2e-matmul-test
@@ -1929,6 +1931,7 @@ iree_generated_e2e_runner_test(
     "generate_e2e_matmul_tests.py"
   GENERATOR_ARGS
     "--lhs_rhs_type=f32"
+    "--acc_type=f32"
     "--shapes=gpu_large"
   TEST_RUNNER
     iree-test-suites_iree-e2e-matmul-test
@@ -1955,6 +1958,7 @@ iree_generated_e2e_runner_test(
     "generate_e2e_matmul_tests.py"
   GENERATOR_ARGS
     "--lhs_rhs_type=f16"
+    "--acc_type=f32"
     "--shapes=gpu_large"
   TEST_RUNNER
     iree-test-suites_iree-e2e-matmul-test
@@ -2062,6 +2066,7 @@ iree_generated_e2e_runner_test(
     "generate_e2e_matmul_tests.py"
   GENERATOR_ARGS
     "--lhs_rhs_type=f32"
+    "--acc_type=f32"
     "--shapes=large"
   TEST_RUNNER
     iree-test-suites_iree-e2e-matmul-test

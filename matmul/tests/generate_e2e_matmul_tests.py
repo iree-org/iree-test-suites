@@ -876,9 +876,9 @@ def parse_arguments():
         "--acc_type",
         type=str,
         choices=["i32", "f32", "f16", "bf16"],
-        help="Numeric type of input matrices",
+        help="Numeric type of accumulator",
         default="",
-        required=False,
+        required=True,
     )
     parser.add_argument(
         "--shapes",
@@ -954,24 +954,9 @@ def write_calls_file(functions, calls, filename, requirements):
         file.write(module_definition)
 
 
-# For now, the accumulator type can always be inferred from the input LHS/RHS
-# type, so we do that. That is temporary: eventually there will be cases
-# where the same input types are used with different accumulator types, e.g.
-# f16 inputs with both f16 and f32 accumulator.
-def infer_acc_type(lhs_rhs_type: MatrixElemTypeId, acc_type: MatrixElemTypeId):
-    if acc_type != MatrixElemTypeId.NONE:
-        return acc_type
-    if lhs_rhs_type == MatrixElemTypeId.F8E4M3FNUZ:
-        return MatrixElemTypeId.F32
-    if lhs_rhs_type == MatrixElemTypeId.I8:
-        return MatrixElemTypeId.I32
-    return lhs_rhs_type
-
-
 def main(args):
     lhs_rhs_type = MatrixElemTypeId(args.lhs_rhs_type)
     acc_type = MatrixElemTypeId(args.acc_type)
-    acc_type = infer_acc_type(lhs_rhs_type, acc_type)
     shapes_id = ShapesId(args.shapes)
     compilation_info_id = CompilationInfoId(args.compilation_info)
 
