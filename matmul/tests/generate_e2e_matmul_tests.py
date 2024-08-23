@@ -7,14 +7,10 @@
 """iree_generated_e2e_matmul_test generator for e2e matmul tests.
 """
 
-from typing import Optional
 import argparse
-import os
-import re
 import enum
 import dataclasses
 import typing
-import itertools
 
 
 # Data type of matrix entries. The string values must match MLIR data types.
@@ -39,21 +35,6 @@ class ShapesId(enum.Enum):
     LARGE = "large"
     GPU_LARGE = "gpu_large"
     GPU_LARGE_ALIGNED = "gpu_large_aligned"
-
-
-# Enumerates of the collections of compilation info that we can generate tests
-# for. The values are the accepted values for the --compilation_info= flag.
-@enum.unique
-class CompilationInfoId(enum.Enum):
-    NONE = ""
-    LLVMGPUMatmulSimt = "LLVMGPUMatmulSimt"
-    LLVMGPUMatmulTensorCore = "LLVMGPUMatmulTensorCore"
-    LLVMGPUMatmulTensorCoreMmaSync = "LLVMGPUMatmulTensorCoreMmaSync"
-    LLVMGPUVectorDistributeMFMA = "LLVMGPUVectorDistributeMFMA"
-    LLVMGPUVectorDistributeWMMA = "LLVMGPUVectorDistributeWMMA"
-    SPIRVCooperativeMatrixVectorize = "SPIRVCooperativeMatrixVectorize"
-    SPIRVVectorizeMali = "SPIRVVectorizeMali"
-    SPIRVVectorizeNVIDIA = "SPIRVVectorizeNVIDIA"
 
 
 # Enumerates ways to construct MLIR tensor types.
@@ -82,43 +63,6 @@ class TestShape:
     k: int
     n: int
     accumulate: bool
-
-
-# Describes a workgroup and tiling schedule to target a specific MMA intrinsic.
-@dataclasses.dataclass
-class MMASchedule:
-    intrinsic: str
-    m_count: int  # Number of subgroups per workgroup along M
-    n_count: int  # Number of subgroups per workgroup along N
-    m_tile_count: int
-    n_tile_count: int
-    k_tile_count: int
-
-    def __str__(self):
-        return (
-            "mma_schedule = #iree_gpu.mma_schedule<"
-            + f"intrinsic = #iree_gpu.mma_layout<{self.intrinsic}>, "
-            + f"subgroup_m_count = {self.m_count}, "
-            + f"subgroup_n_count = {self.n_count}>"
-        )
-
-
-# Describes how to construct compilation info for the testcase.
-@dataclasses.dataclass
-class CompilationInfo:
-    # Lowering Config
-    tile_sizes: typing.List[typing.List[int]]
-    # Translation Info
-    dispatch_lowering_pass_pipeline: str
-    software_pipeline_depth: int
-    mma_schedule: typing.Optional[MMASchedule]
-    # Compilation info
-    workgroup_size: typing.List[int]
-    subgroup_size: Optional[int] = None
-
-    # Prints the workgroup size
-    def workgroup_size_str(self):
-        return "workgroup_size = [" + ", ".join(map(str, self.workgroup_size)) + "]"
 
 
 # Returns the list of TestShape's to use for the collection of shapes
@@ -214,237 +158,6 @@ def get_dynamicities(shapes_id: ShapesId):
     raise ValueError(shapes_id)
 
 
-@dataclasses.dataclass
-class TileWorkgroupSizePair:
-    tile_size: typing.List[typing.List[int]]
-    workgroup_size: typing.List[int]
-
-
-# Constructs a TileWorkgroupSizePair for SPIR-V targets enforcing the
-# constraints between the workgroup_size and tile size
-def get_spirv_tile_workgroup_size_pair(
-    workgroup_size, t_tile_k, t_tile_m=4, t_tile_n=4
-):
-    x, y, z = workgroup_size
-    wg_tile_m = y * t_tile_m
-    wg_tile_n = x * t_tile_n
-    return TileWorkgroupSizePair(
-        [[wg_tile_m, wg_tile_n], [t_tile_m, t_tile_n], [0, 0, t_tile_k]], workgroup_size
-    )
-
-
-# Returns all the TileWorkgroupSizePairs for a given SPIRV Target
-def get_all_spirv_tile_workgroup_size_pairs(t_tile_k):
-    tile_workgroup_size_pairs = [
-        get_spirv_tile_workgroup_size_pair([32, 8, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([16, 8, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([64, 2, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([8, 8, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([32, 1, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([16, 2, 1], t_tile_k),
-        get_spirv_tile_workgroup_size_pair([32, 1, 1], t_tile_k),
-    ]
-    return tile_workgroup_size_pairs
-
-
-def get_rocm_test_compilation_infos(
-    compilation_info_id: CompilationInfoId, lhs_rhs_type: MatrixElemTypeId
-):
-    intrinsic = ""
-    if compilation_info_id == CompilationInfoId.LLVMGPUVectorDistributeMFMA:
-        intrinsic = "MFMA"
-    elif compilation_info_id == CompilationInfoId.LLVMGPUVectorDistributeWMMA:
-        intrinsic = "WMMA"
-    else:
-        raise ValueError("Unknown pipeline for rocm")
-
-    schedules = []
-    if intrinsic == "MFMA":
-        schedules = [
-            MMASchedule("MFMA_F32_16x16x4_F32", 1, 1, 1, 1, 1),
-            MMASchedule("MFMA_F32_16x16x4_F32", 1, 1, 1, 1, 2),
-            MMASchedule("MFMA_F32_16x16x4_F32", 1, 1, 1, 2, 1),
-            MMASchedule("MFMA_F32_16x16x4_F32", 1, 1, 2, 1, 1),
-            MMASchedule("MFMA_F32_16x16x4_F32", 2, 2, 1, 1, 2),
-            MMASchedule("MFMA_F32_16x16x16_F16", 1, 1, 1, 1, 1),
-            MMASchedule("MFMA_F32_16x16x16_F16", 1, 1, 1, 1, 2),
-            MMASchedule("MFMA_F32_16x16x16_F16", 1, 1, 1, 2, 1),
-            MMASchedule("MFMA_F32_16x16x16_F16", 1, 1, 2, 1, 1),
-            MMASchedule("MFMA_F32_16x16x16_F16", 2, 2, 1, 1, 1),
-            MMASchedule("MFMA_F32_16x16x16_F16", 2, 4, 2, 1, 2),
-            MMASchedule("MFMA_F32_16x16x16_F16", 4, 2, 4, 2, 2),
-            MMASchedule("MFMA_F32_32x32x8_F16", 1, 1, 1, 2, 2),
-            MMASchedule("MFMA_F32_32x32x8_F16", 2, 2, 1, 1, 1),
-            MMASchedule("MFMA_F32_32x32x8_F16", 1, 4, 2, 1, 2),
-            MMASchedule("MFMA_F32_32x32x8_F16", 4, 2, 1, 2, 4),
-            MMASchedule("MFMA_F32_16x16x32_F8E4M3FNUZ", 1, 1, 1, 1, 1),
-            MMASchedule("MFMA_F32_16x16x32_F8E4M3FNUZ", 2, 2, 1, 1, 2),
-            MMASchedule("MFMA_F32_16x16x32_F8E4M3FNUZ", 4, 1, 4, 1, 1),
-            MMASchedule("MFMA_F32_16x16x32_F8E4M3FNUZ", 4, 2, 4, 2, 1),
-            MMASchedule("MFMA_I32_16x16x32_I8", 1, 1, 1, 1, 1),
-            MMASchedule("MFMA_I32_16x16x32_I8", 2, 2, 1, 1, 2),
-            MMASchedule("MFMA_I32_16x16x32_I8", 4, 1, 4, 1, 1),
-            MMASchedule("MFMA_I32_16x16x32_I8", 4, 2, 4, 2, 1),
-            MMASchedule("MFMA_I32_32x32x16_I8", 1, 1, 1, 1, 1),
-            MMASchedule("MFMA_I32_32x32x16_I8", 2, 2, 1, 1, 2),
-            MMASchedule("MFMA_I32_32x32x16_I8", 4, 1, 1, 2, 2),
-            MMASchedule("MFMA_I32_32x32x16_I8", 4, 2, 2, 2, 2),
-        ]
-    elif intrinsic == "WMMA":
-        schedules = [
-            MMASchedule("WMMA_F32_16x16x16_F16", 1, 1, 1, 1, 1),
-            MMASchedule("WMMA_F32_16x16x16_F16", 1, 1, 1, 1, 2),
-            MMASchedule("WMMA_F32_16x16x16_F16", 1, 1, 1, 2, 1),
-            MMASchedule("WMMA_F32_16x16x16_F16", 1, 1, 2, 1, 1),
-            MMASchedule("WMMA_F32_16x16x16_F16", 2, 2, 1, 1, 1),
-            MMASchedule("WMMA_F32_16x16x16_F16", 2, 4, 2, 1, 2),
-            MMASchedule("WMMA_F32_16x16x16_F16", 4, 2, 4, 2, 2),
-        ]
-    else:
-        raise NotImplementedError("unhandled intrinsic case")
-
-    subgroup_size = 64 if intrinsic == "MFMA" else 32
-
-    infos = []
-    for schedule in schedules:
-        # Skip schedules with an intrinsic which element type does not
-        # match the requested one.
-        # Extracts the input type from strings. The naming convention is
-        # [output_type]_MxNxK_[input_type].
-        input_type = schedule.intrinsic.split("_")[-1]
-        if lhs_rhs_type.value.upper() != input_type:
-            continue
-
-        if schedule.intrinsic == "MFMA_F32_16x16x4_F32":
-            wg_tile_m = schedule.m_count * schedule.m_tile_count * 16
-            wg_tile_n = schedule.n_count * schedule.n_tile_count * 16
-            wg_tile_k = schedule.k_tile_count * 4
-        elif schedule.intrinsic == "MFMA_F32_16x16x16_F16":
-            wg_tile_m = schedule.m_count * schedule.m_tile_count * 16
-            wg_tile_n = schedule.n_count * schedule.n_tile_count * 16
-            wg_tile_k = schedule.k_tile_count * 16
-        elif schedule.intrinsic == "MFMA_F32_32x32x8_F16":
-            wg_tile_m = schedule.m_count * schedule.m_tile_count * 32
-            wg_tile_n = schedule.n_count * schedule.n_tile_count * 32
-            wg_tile_k = schedule.k_tile_count * 8
-        elif (
-            schedule.intrinsic == "MFMA_I32_16x16x32_I8"
-            or schedule.intrinsic == "MFMA_F32_16x16x32_F8E4M3FNUZ"
-        ):
-            wg_tile_m = schedule.m_count * schedule.m_tile_count * 16
-            wg_tile_n = schedule.n_count * schedule.n_tile_count * 16
-            wg_tile_k = schedule.k_tile_count * 32
-        elif schedule.intrinsic == "MFMA_I32_32x32x16_I8":
-            wg_tile_m = schedule.m_count * schedule.m_tile_count * 32
-            wg_tile_n = schedule.n_count * schedule.n_tile_count * 32
-            wg_tile_k = schedule.k_tile_count * 16
-        elif schedule.intrinsic == "WMMA_F32_16x16x16_F16":
-            wg_tile_m = schedule.m_count * schedule.m_tile_count * 16
-            wg_tile_n = schedule.n_count * schedule.n_tile_count * 16
-            wg_tile_k = schedule.k_tile_count * 16
-        else:
-            raise NotImplementedError("unhandled intrinsic case")
-
-        workgroup_tile = [[wg_tile_m, wg_tile_n, wg_tile_k]]
-        workgroup_size = [schedule.n_count * subgroup_size, schedule.m_count, 1]
-        infos.append(
-            CompilationInfo(
-                tile_sizes=workgroup_tile,
-                dispatch_lowering_pass_pipeline="LLVMGPUVectorDistribute",
-                workgroup_size=workgroup_size,
-                software_pipeline_depth=0,
-                mma_schedule=schedule,
-                subgroup_size=subgroup_size,
-            )
-        )
-    return infos
-
-
-# Returns the list of CompilationInfo's to use for the CompilationInfoId.
-def get_test_compilation_infos(
-    compilation_info_id: CompilationInfoId, lhs_rhs_type: MatrixElemTypeId
-) -> typing.List[typing.Optional[CompilationInfo]]:
-    if compilation_info_id == CompilationInfoId.NONE:
-        return [None]
-
-    if compilation_info_id in [
-        CompilationInfoId.LLVMGPUVectorDistributeMFMA,
-        CompilationInfoId.LLVMGPUVectorDistributeWMMA,
-    ]:
-        return get_rocm_test_compilation_infos(compilation_info_id, lhs_rhs_type)
-
-    software_pipeline_depth = 0
-    if compilation_info_id == CompilationInfoId.LLVMGPUMatmulSimt:
-        tile_workgroup_size_pairs = [
-            TileWorkgroupSizePair([[32, 128, 32]], [32, 8, 1]),
-            TileWorkgroupSizePair([[128, 64, 8]], [16, 8, 1]),
-            TileWorkgroupSizePair([[16, 256, 32]], [64, 2, 1]),
-            TileWorkgroupSizePair([[8, 32, 32]], [8, 8, 1]),
-            TileWorkgroupSizePair([[8, 128, 4]], [32, 1, 1]),
-            TileWorkgroupSizePair([[16, 64, 4]], [16, 2, 1]),
-            TileWorkgroupSizePair([[1, 128, 8]], [32, 1, 1]),
-        ]
-        software_pipeline_depth = 3
-    elif compilation_info_id == CompilationInfoId.SPIRVCooperativeMatrixVectorize:
-        tile_workgroup_size_pairs = [
-            TileWorkgroupSizePair(
-                [[64, 128], [32, 64], [0, 0, 32], [16, 16, 16]], [64, 2, 1]
-            )
-        ]
-    elif compilation_info_id == CompilationInfoId.SPIRVVectorizeNVIDIA:
-        tile_workgroup_size_pairs = get_all_spirv_tile_workgroup_size_pairs(32)
-    elif compilation_info_id == CompilationInfoId.SPIRVVectorizeMali:
-        tile_workgroup_size_pairs = get_all_spirv_tile_workgroup_size_pairs(4)
-    elif (
-        compilation_info_id == CompilationInfoId.LLVMGPUMatmulTensorCore
-        or compilation_info_id == CompilationInfoId.LLVMGPUMatmulTensorCoreMmaSync
-    ):
-        tile_workgroup_size_pairs = []
-        ## WarpShape = 2x2
-        tile_workgroup_size_pairs.append(
-            TileWorkgroupSizePair([[32, 32, 16]], [64, 2, 1])
-        )
-        tile_workgroup_size_pairs.append(
-            TileWorkgroupSizePair([[64, 64, 64]], [64, 2, 1])
-        )
-
-        ## WarpShape = 4x1
-        tile_workgroup_size_pairs.append(
-            TileWorkgroupSizePair([[32, 32, 32]], [64, 1, 1])
-        )
-
-        ## WarpShape = 2x2 with large tiles using larger Shared Memory capacity.
-        if lhs_rhs_type == MatrixElemTypeId.F16:
-            tile_workgroup_size_pairs.append(
-                TileWorkgroupSizePair([[128, 128, 64]], [64, 2, 1])
-            )
-        elif lhs_rhs_type == MatrixElemTypeId.F32:
-            tile_workgroup_size_pairs.append(
-                TileWorkgroupSizePair([[128, 128, 16]], [64, 2, 1])
-            )
-        software_pipeline_depth = 3
-
-    compilation_infos = []
-    for tile_workgroup_size_pair in tile_workgroup_size_pairs:
-        compilation_infos.append(
-            CompilationInfo(
-                tile_sizes=tile_workgroup_size_pair.tile_size,
-                dispatch_lowering_pass_pipeline=compilation_info_id.value,
-                workgroup_size=tile_workgroup_size_pair.workgroup_size,
-                software_pipeline_depth=software_pipeline_depth,
-                mma_schedule=None,
-            )
-        )
-    return compilation_infos
-
-
-# Intentionally fixed seed! We want full reproducibility here, both across runs
-# and across machines.
-# Intentionally not shared with pseudorandom_generator_seed to limit the ways
-# in which shuffling testcases changes which random values are generated.
-local_pseudorandom_state = 1
-
-
 # A shape dimension value, i.e. a size value that could appear in a MLIR type
 # such as 'tensor<?x4xf32>'. None means a dynamic size, similar to '?' in MLIR.
 @dataclasses.dataclass
@@ -535,7 +248,6 @@ def generate_function_name(
     acc_type: MatrixElemTypeId,
     shapes: TestInputMatricesShapes,
     accumulate: bool,
-    compilation_info: typing.Optional[CompilationInfo] = None,
 ):
     input_t = lhs_rhs_type.value
     acc_t = acc_type.value
@@ -546,20 +258,10 @@ def generate_function_name(
     acc_r = int_or_DYN(shapes.acc_rows)
     acc_c = int_or_DYN(shapes.acc_cols)
 
-    info = ""
-    if compilation_info:
-        tile_sizes = list(itertools.chain(*compilation_info.tile_sizes))
-        tile_workgroup_key = (
-            "_".join([str(a) for a in tile_sizes])
-            + "_"
-            + "_".join([str(a) for a in compilation_info.workgroup_size])
-        )
-        info = f"_for_{compilation_info.dispatch_lowering_pass_pipeline}_{tile_workgroup_key}"
-
     matmul_kind = "matmul_accumulate" if accumulate else "matmul"
     return (
         f"{matmul_kind}_{lhs_r}x{lhs_c}x{input_t}_times_"
-        + f"{rhs_r}x{rhs_c}x{input_t}_into_{acc_r}x{acc_c}x{acc_t}{info}"
+        + f"{rhs_r}x{rhs_c}x{input_t}_into_{acc_r}x{acc_c}x{acc_t}"
     )
 
 
@@ -581,12 +283,9 @@ def generate_function(
     shape: TestShape,
     transpose_rhs: bool,
     dynamicity: Dynamicity,
-    compilation_info: typing.Optional[CompilationInfo] = None,
 ):
     shapes = generate_shapes(shape, transpose_rhs, dynamicity)
-    func_name = generate_function_name(
-        lhs_rhs_type, acc_type, shapes, shape.accumulate, compilation_info
-    )
+    func_name = generate_function_name(lhs_rhs_type, acc_type, shapes, shape.accumulate)
     lhs_r = int_or_question_mark(shapes.lhs_rows)
     lhs_c = int_or_question_mark(shapes.lhs_cols)
     rhs_r = int_or_question_mark(shapes.rhs_rows)
@@ -604,42 +303,8 @@ def generate_function(
     else:
         op_name = "linalg.matmul"
 
-    # Compilation info is optional; prints empty string by default.
     func_definition = ""
-    compilation_info_attr = ""
-    if compilation_info:
-        requested_pipeline = compilation_info.dispatch_lowering_pass_pipeline
-        compiler_pipeline = requested_pipeline
-        if requested_pipeline == "SPIRVVectorizeMali":
-            compiler_pipeline = "SPIRVBaseVectorize"
-        elif requested_pipeline == "SPIRVCooperativeMatrixVectorize":
-            compiler_pipeline = "SPIRVCooperativeMatrixVectorize"
-        elif requested_pipeline == "SPIRVVectorizeNVIDIA":
-            # TODO: change to test SPIRVMatmulPromoteVectorize too
-            compiler_pipeline = "SPIRVBaseVectorize"
-
-        mma_schedule = ""
-        if compilation_info.mma_schedule is not None:
-            mma_schedule = ", {}".format(compilation_info.mma_schedule)
-        subgroup_size_str = ""
-        if compilation_info.subgroup_size is not None:
-            subgroup_size_str = f"subgroup_size = {compilation_info.subgroup_size}"
-
-        compilation_info_string = (
-            f"#compilation{generate_function.compilation_index} = "
-            "#iree_codegen.compilation_info<\n"
-            f"  lowering_config = #iree_codegen.lowering_config<tile_sizes = {compilation_info.tile_sizes}>,\n"
-            f"  translation_info = <{compiler_pipeline} {compilation_info.workgroup_size_str()}\n"
-            f"  {subgroup_size_str},\n"
-            f"  {{ pipeline_depth = {compilation_info.software_pipeline_depth}, "
-            f"  store_stage = 1{mma_schedule} }}>>\n"
-        )
-        compilation_info_attr = (
-            f"{{compilation_info = #compilation{generate_function.compilation_index}}} "
-        )
-        func_definition = func_definition + compilation_info_string
-        generate_function.compilation_index += 1
-    compute = f"  %result = {op_name} {compilation_info_attr}ins(%lhs, %rhs: {lhs_tensor_type}, {rhs_tensor_type}) outs(%acc: {acc_tensor_type}) -> {acc_tensor_type}\n"
+    compute = f"  %result = {op_name} ins(%lhs, %rhs: {lhs_tensor_type}, {rhs_tensor_type}) outs(%acc: {acc_tensor_type}) -> {acc_tensor_type}\n"
     if casted_lhs_rhs_type != lhs_rhs_type:
         castback_op = get_castback_from_arg_op(lhs_rhs_type)
         compute_lhs_tensor_type = f"tensor<{lhs_r}x{lhs_c}x{lhs_rhs_type.value}>"
@@ -647,7 +312,7 @@ def generate_function(
         compute = (
             f"  %lhs_casted = {castback_op} %lhs: {lhs_tensor_type} to {compute_lhs_tensor_type}\n"
             f"  %rhs_casted = {castback_op} %rhs: {rhs_tensor_type} to {compute_rhs_tensor_type}\n"
-            f"  %result = {op_name} {compilation_info_attr}ins(%lhs_casted, %rhs_casted: {compute_lhs_tensor_type}, {compute_rhs_tensor_type}) outs(%acc: {acc_tensor_type}) -> {acc_tensor_type}"
+            f"  %result = {op_name} ins(%lhs_casted, %rhs_casted: {compute_lhs_tensor_type}, {compute_rhs_tensor_type}) outs(%acc: {acc_tensor_type}) -> {acc_tensor_type}"
         )
     if shape.accumulate:
         signature = f"({lhs_tensor_type}, {rhs_tensor_type}, {acc_tensor_type}) -> {acc_tensor_type}"
@@ -694,10 +359,6 @@ def generate_function(
         import_declaration=import_declaration,
         definition=func_definition,
     )
-
-
-# Counter for producing unique compilation info attrs
-generate_function.compilation_index = 0
 
 
 # Represents a call to a generated test function.
@@ -817,36 +478,29 @@ def generate(
     acc_type: MatrixElemTypeId,
     shapes_id: ShapesId,
     transpose_rhs: bool,
-    compilation_info_id: CompilationInfoId,
 ):
     functions = {}
     calls = []
 
-    for compilation_info in get_test_compilation_infos(
-        compilation_info_id, lhs_rhs_type
-    ):
-        for shape in get_test_shapes(shapes_id):
-            for dynamicity in get_dynamicities(shapes_id):
-                function = generate_function(
-                    lhs_rhs_type,
-                    acc_type,
-                    shape,
-                    transpose_rhs,
-                    dynamicity,
-                    compilation_info,
-                )
-                # Different testcases may differ only by runtime parameters but
-                # share the same code. For example, dynamic-shapes testcases
-                # share the same code involing tensor<?x?xf32> even though the runtime
-                # value in the trace are different. That's why we append conditionally
-                # to calls, but unconditionally to function_definitions.
-                if function.name not in functions:
-                    functions[function.name] = function
-                calls.append(
-                    generate_call(
-                        function, lhs_rhs_type, acc_type, shape, transpose_rhs
-                    )
-                )
+    for shape in get_test_shapes(shapes_id):
+        for dynamicity in get_dynamicities(shapes_id):
+            function = generate_function(
+                lhs_rhs_type,
+                acc_type,
+                shape,
+                transpose_rhs,
+                dynamicity,
+            )
+            # Different testcases may differ only by runtime parameters but
+            # share the same code. For example, dynamic-shapes testcases
+            # share the same code involing tensor<?x?xf32> even though the runtime
+            # value in the trace are different. That's why we append conditionally
+            # to calls, but unconditionally to function_definitions.
+            if function.name not in functions:
+                functions[function.name] = function
+            calls.append(
+                generate_call(function, lhs_rhs_type, acc_type, shape, transpose_rhs)
+            )
 
     return (functions, calls)
 
@@ -892,14 +546,6 @@ def parse_arguments():
         action="store_true",
         help="Whether to transpose RHS",
         default=False,
-        required=False,
-    )
-    parser.add_argument(
-        "--compilation_info",
-        type=str,
-        choices=[i.value for i in CompilationInfoId],
-        help="Collection of compilation info setups to test",
-        default="",
         required=False,
     )
     parser.add_argument(
@@ -958,11 +604,8 @@ def main(args):
     lhs_rhs_type = MatrixElemTypeId(args.lhs_rhs_type)
     acc_type = MatrixElemTypeId(args.acc_type)
     shapes_id = ShapesId(args.shapes)
-    compilation_info_id = CompilationInfoId(args.compilation_info)
 
-    (functions, calls) = generate(
-        lhs_rhs_type, acc_type, shapes_id, args.transpose_rhs, compilation_info_id
-    )
+    (functions, calls) = generate(lhs_rhs_type, acc_type, shapes_id, args.transpose_rhs)
 
     write_code_file(functions, args.output_matmul_mlir)
     write_calls_file(
