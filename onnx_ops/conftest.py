@@ -336,7 +336,12 @@ class IreeCompileRunItem(pytest.Item):
             self.compile_cmd, shell=True, capture_output=True, cwd=cwd
         )
         if proc.returncode != 0:
-            raise IreeCompileException(proc, cwd, self.compile_cmd)
+            raise IreeCompileException(
+                process=proc,
+                cwd=cwd,
+                input_mlir_name=self.spec.input_mlir_name,
+                compile_cmd=self.compile_cmd,
+            )
 
     def test_run(self):
         cwd = self.test_cwd
@@ -346,7 +351,13 @@ class IreeCompileRunItem(pytest.Item):
         )
         proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
         if proc.returncode != 0:
-            raise IreeRunException(proc, cwd, self.compile_cmd, self.run_cmd)
+            raise IreeRunException(
+                process=proc,
+                cwd=cwd,
+                input_mlir_name=self.spec.input_mlir_name,
+                compile_cmd=self.compile_cmd,
+                run_cmd=self.run_cmd,
+            )
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
@@ -374,7 +385,11 @@ class IreeCompileException(Exception):
     """Compiler exception that preserves the command line and output."""
 
     def __init__(
-        self, process: subprocess.CompletedProcess, cwd: str, compile_cmd: str
+        self,
+        process: subprocess.CompletedProcess,
+        cwd: Path,
+        input_mlir_name: Path,
+        compile_cmd: str,
     ):
         try:
             errs = process.stderr.decode("utf-8")
@@ -385,14 +400,27 @@ class IreeCompileException(Exception):
         except:
             outs = str(process.stdout)
 
-        super().__init__(
-            f"Error invoking iree-compile\n"
-            f"Error code: {process.returncode}\n"
-            f"Stderr diagnostics:\n{errs}\n\n"
-            f"Stdout diagnostics:\n{outs}\n\n"
-            f"Compiled with:\n"
-            f"  cd {cwd} && {compile_cmd}\n\n"
+        test_github_url = (
+            "https://github.com/iree-org/iree-test-suites/blob/main/onnx_ops/"
+            + cwd.relative_to(THIS_DIR).as_posix()
         )
+
+        # TODO(scotttodd): handle large sources somehow (truncate, skip, link to source, etc.)
+        with open(cwd / input_mlir_name) as f:
+            input_mlir = f.read()
+
+            super().__init__(
+                f"Error invoking iree-compile\n"
+                f"Error code: {process.returncode}\n"
+                f"Stderr diagnostics:\n{errs}\n\n"
+                f"Stdout diagnostics:\n{outs}\n\n"
+                f"Test case source:\n"
+                f"  {test_github_url}\n\n"
+                f"Input program:\n"
+                f"```\n{input_mlir}```\n\n"
+                f"Compiled with:\n"
+                f"  cd {cwd} && {compile_cmd}\n\n"
+            )
 
 
 class IreeRunException(Exception):
@@ -401,7 +429,8 @@ class IreeRunException(Exception):
     def __init__(
         self,
         process: subprocess.CompletedProcess,
-        cwd: str,
+        cwd: Path,
+        input_mlir_name: Path,
         compile_cmd: str,
         run_cmd: str,
     ):
@@ -414,16 +443,29 @@ class IreeRunException(Exception):
         except:
             outs = str(process.stdout)
 
-        super().__init__(
-            f"Error invoking iree-run-module\n"
-            f"Error code: {process.returncode}\n"
-            f"Stderr diagnostics:\n{errs}\n"
-            f"Stdout diagnostics:\n{outs}\n"
-            f"Compiled with:\n"
-            f"  cd {cwd} && {compile_cmd}\n\n"
-            f"Run with:\n"
-            f"  cd {cwd} && {run_cmd}\n\n"
+        test_github_url = (
+            "https://github.com/iree-org/iree-test-suites/blob/main/onnx_ops/"
+            + cwd.relative_to(THIS_DIR).as_posix()
         )
+
+        # TODO(scotttodd): handle large sources somehow (truncate, skip, link to source, etc.)
+        with open(cwd / input_mlir_name) as f:
+            input_mlir = f.read()
+
+            super().__init__(
+                f"Error invoking iree-run-module\n"
+                f"Error code: {process.returncode}\n"
+                f"Stderr diagnostics:\n{errs}\n"
+                f"Stdout diagnostics:\n{outs}\n"
+                f"Test case source:\n"
+                f"  {test_github_url}\n\n"
+                f"Input program:\n"
+                f"```\n{input_mlir}```\n\n"
+                f"Compiled with:\n"
+                f"  cd {cwd} && {compile_cmd}\n\n"
+                f"Run with:\n"
+                f"  cd {cwd} && {run_cmd}\n\n"
+            )
 
 
 class IreeXFailCompileRunException(Exception):
