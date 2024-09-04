@@ -4,8 +4,8 @@
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#ifndef IREE_TEST_SUITES_MATMUL_TEST_UTILS_H_
-#define IREE_TEST_SUITES_MATMUL_TEST_UTILS_H_
+#ifndef IREE_TEST_SUITES_LINALG_OPS_TEST_UTILS_H_
+#define IREE_TEST_SUITES_LINALG_OPS_TEST_UTILS_H_
 
 #include <stdio.h>
 
@@ -146,4 +146,4 @@ iree_status_t iree_test_utils_load_and_run_e2e_tests(
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif  // IREE_TEST_SUITES_MATMUL_TEST_UTILS_H_
+#endif  // IREE_TEST_SUITES_LINALG_OPS_TEST_UTILS_H_

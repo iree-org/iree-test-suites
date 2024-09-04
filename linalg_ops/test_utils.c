@@ -130,8 +130,8 @@ iree_test_utils_e2e_value_t iree_test_utils_read_buffer_element(
   } else if (result_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32) {
     return iree_test_utils_value_make_f32(((float*)data)[index]);
   }
-  iree_status_abort(iree_make_status(IREE_STATUS_INVALID_ARGUMENT,
-                                     "unhandled matmul result type"));
+  iree_status_abort(
+      iree_make_status(IREE_STATUS_INVALID_ARGUMENT, "unhandled result type"));
   return iree_test_utils_value_make_none();
 }
 

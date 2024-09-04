@@ -105,7 +105,7 @@ function(iree_e2e_runner_test)
     "${_RULE_TEST_RUNNER}"
   )
 
-  add_dependencies(iree-test-suites-matmul-deps "${_NAME}${_RULE_VARIANT_NAME}")
+  add_dependencies(iree-test-suites-linalg-ops-deps "${_NAME}${_RULE_VARIANT_NAME}")
 
   if(_RULE_TEST_DEFINED)
     iree_native_test(
