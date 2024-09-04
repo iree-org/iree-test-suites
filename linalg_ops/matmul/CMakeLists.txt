@@ -1888,7 +1888,7 @@ iree_generated_e2e_runner_test(
   DRIVERS
     "cuda"
   COMPILER_FLAGS
-    "--iree-hal-cuda-llvm-target-arch=sm_80"
+    "--iree-cuda-target=sm_80"
   LABELS
     "noasan"
     "nomsan"
@@ -1915,7 +1915,7 @@ iree_generated_e2e_runner_test(
   DRIVERS
     "cuda"
   COMPILER_FLAGS
-    "--iree-hal-cuda-llvm-target-arch=sm_80"
+    "--iree-cuda-target=sm_80"
   LABELS
     "noasan"
     "nomsan"
@@ -1942,7 +1942,7 @@ iree_generated_e2e_runner_test(
   DRIVERS
     "cuda"
   COMPILER_FLAGS
-    "--iree-flow-split-matmul-reduction=4"
+    "--iree-dispatch-creation-split-matmul-reduction=4"
   LABELS
     "noasan"
     "nomsan"

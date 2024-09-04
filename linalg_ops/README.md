@@ -1,15 +1,18 @@
-# Matrix Multiplication (Matmul) Tests
+# Linalg Operator Tests
 
 These are being migrated from
-https://github.com/iree-org/iree/tree/main/tests/e2e/matmul.
+
+* https://github.com/iree-org/iree/tree/main/tests/e2e/attention
+* https://github.com/iree-org/iree/tree/main/tests/e2e/convolution
+* https://github.com/iree-org/iree/tree/main/tests/e2e/matmul
 
 ## Prerequisites
-
-## Quickstart
 
 First ensure you have the prerequisites from
 https://iree.dev/building-from-source/getting-started/, including CMake, a
 compiler like clang, and Python.
+
+## Quickstart
 
 1. Get the IREE compiler tools, either from release packages or a source build:
 
@@ -60,7 +63,7 @@ compiler like clang, and Python.
 
     ```bash
     cmake --build build/
-    cmake --build build/ --target iree-test-suites-matmul-deps
+    cmake --build build/ --target iree-test-suites-linalg-ops-deps
     ```
 
 4. Run tests:

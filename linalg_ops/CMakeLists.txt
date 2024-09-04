@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.21...3.24)
 # Project configuration
 #-------------------------------------------------------------------------------
 
-project(iree-test-suites-matmul C CXX)
+project(iree-test-suites-linalg C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -47,11 +47,10 @@ else()
   # see https://gitlab.kitware.com/cmake/cmake/-/issues/18238#note_440475
   include(FetchContent)
 
-  # TODO(scotttodd): pin to a version from a stable release?
   FetchContent_Declare(
     iree
     GIT_REPOSITORY https://github.com/iree-org/iree.git
-    GIT_TAG f1319fc3404a2c97bfc76c6ee2268a96954a1b2c # 2024-08-16
+    GIT_TAG candidate-20240828.999
     GIT_SUBMODULES_RECURSE OFF
     GIT_SHALLOW OFF
     GIT_PROGRESS ON
@@ -69,11 +68,11 @@ endif()
 # Test code
 #-------------------------------------------------------------------------------
 
-enable_testing(iree-test-suites-matmul)
+enable_testing(iree-test-suites-linalg-ops)
 
-add_custom_target(iree-test-suites-matmul-deps
+add_custom_target(iree-test-suites-linalg-ops-deps
   COMMENT
-    "Building matmul test suite deps"
+    "Building linalg operator test suite deps"
 )
 
 iree_cc_library(
@@ -125,4 +124,4 @@ iree_cc_binary(
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 include(iree_e2e_generated_runner_test)
 
-add_subdirectory(tests)
+add_subdirectory(matmul)
