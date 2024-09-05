@@ -1,0 +1,52 @@
+func.func @matmul_accumulate_DYNxDYNxf16_times_DYNxDYNxf16_into_DYNxDYNxf16(%lhs: tensor<?x?xf16>, %rhs: tensor<?x?xf16>, %acc: tensor<?x?xf16>) -> tensor<?x?xf16> {
+  %result = linalg.matmul ins(%lhs, %rhs: tensor<?x?xf16>, tensor<?x?xf16>) outs(%acc: tensor<?x?xf16>) -> tensor<?x?xf16>
+
+  return %result: tensor<?x?xf16>
+}
+
+func.func @matmul_accumulate_123x456xf16_times_456x789xf16_into_123x789xf16(%lhs: tensor<123x456xf16>, %rhs: tensor<456x789xf16>, %acc: tensor<123x789xf16>) -> tensor<123x789xf16> {
+  %result = linalg.matmul ins(%lhs, %rhs: tensor<123x456xf16>, tensor<456x789xf16>) outs(%acc: tensor<123x789xf16>) -> tensor<123x789xf16>
+
+  return %result: tensor<123x789xf16>
+}
+
+func.func @matmul_DYNxDYNxf16_times_DYNxDYNxf16_into_DYNxDYNxf16(%lhs: tensor<?x?xf16>, %rhs: tensor<?x?xf16>) -> tensor<?x?xf16> {
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %acc_dim0 = tensor.dim %lhs, %c0 : tensor<?x?xf16>
+  %acc_dim1 = tensor.dim %rhs, %c1 : tensor<?x?xf16>
+  %init_acc = tensor.empty(%acc_dim0, %acc_dim1) : tensor<?x?xf16>
+  %c0_acc_type = arith.constant 0.0: f16
+  %acc = linalg.fill ins(%c0_acc_type : f16) outs(%init_acc : tensor<?x?xf16>) -> tensor<?x?xf16>
+  %result = linalg.matmul ins(%lhs, %rhs: tensor<?x?xf16>, tensor<?x?xf16>) outs(%acc: tensor<?x?xf16>) -> tensor<?x?xf16>
+  return %result: tensor<?x?xf16>
+}
+
+func.func @matmul_654x321xf16_times_321x234xf16_into_654x234xf16(%lhs: tensor<654x321xf16>, %rhs: tensor<321x234xf16>) -> tensor<654x234xf16> {
+  %init_acc = tensor.empty() : tensor<654x234xf16>
+  %c0_acc_type = arith.constant 0.0: f16
+  %acc = linalg.fill ins(%c0_acc_type : f16) outs(%init_acc : tensor<654x234xf16>) -> tensor<654x234xf16>
+  %result = linalg.matmul ins(%lhs, %rhs: tensor<654x321xf16>, tensor<321x234xf16>) outs(%acc: tensor<654x234xf16>) -> tensor<654x234xf16>
+  return %result: tensor<654x234xf16>
+}
+
+func.func @matmul_accumulate_1x1000xf16_times_1000x1000xf16_into_1x1000xf16(%lhs: tensor<1x1000xf16>, %rhs: tensor<1000x1000xf16>, %acc: tensor<1x1000xf16>) -> tensor<1x1000xf16> {
+  %result = linalg.matmul ins(%lhs, %rhs: tensor<1x1000xf16>, tensor<1000x1000xf16>) outs(%acc: tensor<1x1000xf16>) -> tensor<1x1000xf16>
+
+  return %result: tensor<1x1000xf16>
+}
+
+func.func @matmul_accumulate_1000x1000xf16_times_1000x1xf16_into_1000x1xf16(%lhs: tensor<1000x1000xf16>, %rhs: tensor<1000x1xf16>, %acc: tensor<1000x1xf16>) -> tensor<1000x1xf16> {
+  %result = linalg.matmul ins(%lhs, %rhs: tensor<1000x1000xf16>, tensor<1000x1xf16>) outs(%acc: tensor<1000x1xf16>) -> tensor<1000x1xf16>
+
+  return %result: tensor<1000x1xf16>
+}
+
+func.func @matmul_1000x1000xf16_times_1000x1xf16_into_1000x1xf16(%lhs: tensor<1000x1000xf16>, %rhs: tensor<1000x1xf16>) -> tensor<1000x1xf16> {
+  %init_acc = tensor.empty() : tensor<1000x1xf16>
+  %c0_acc_type = arith.constant 0.0: f16
+  %acc = linalg.fill ins(%c0_acc_type : f16) outs(%init_acc : tensor<1000x1xf16>) -> tensor<1000x1xf16>
+  %result = linalg.matmul ins(%lhs, %rhs: tensor<1000x1000xf16>, tensor<1000x1xf16>) outs(%acc: tensor<1000x1xf16>) -> tensor<1000x1xf16>
+  return %result: tensor<1000x1xf16>
+}
+
