@@ -44,8 +44,6 @@ mkdir -p ${generated_dir_root?}
 shapes=(
   "small"
   "large"
-  "gpu_large"
-  "gpu_large_aligned"
 )
 
 # lhs_rhs_type;accumulator_type

@@ -1872,60 +1872,6 @@ iree_generated_e2e_runner_test(
 
 iree_generated_e2e_runner_test(
   NAME
-    matmul_cuda_f32_large_unaligned
-  TEST_TYPE
-    matmul
-  GENERATOR
-    "generate_e2e_matmul_tests.py"
-  GENERATOR_ARGS
-    "--lhs_rhs_type=f32"
-    "--acc_type=f32"
-    "--shapes=gpu_large"
-  TEST_RUNNER
-    iree-test-suites_iree-e2e-matmul-test
-  TARGET_BACKENDS
-    "cuda"
-  DRIVERS
-    "cuda"
-  COMPILER_FLAGS
-    "--iree-cuda-target=sm_80"
-  LABELS
-    "noasan"
-    "nomsan"
-    "notsan"
-    "noubsan"
-    "requires-gpu-sm80"
-)
-
-iree_generated_e2e_runner_test(
-  NAME
-    matmul_cuda_f16_large_unaligned
-  TEST_TYPE
-    matmul
-  GENERATOR
-    "generate_e2e_matmul_tests.py"
-  GENERATOR_ARGS
-    "--lhs_rhs_type=f16"
-    "--acc_type=f32"
-    "--shapes=gpu_large"
-  TEST_RUNNER
-    iree-test-suites_iree-e2e-matmul-test
-  TARGET_BACKENDS
-    "cuda"
-  DRIVERS
-    "cuda"
-  COMPILER_FLAGS
-    "--iree-cuda-target=sm_80"
-  LABELS
-    "noasan"
-    "nomsan"
-    "notsan"
-    "noubsan"
-    "requires-gpu-sm80"
-)
-
-iree_generated_e2e_runner_test(
-  NAME
     matmul_cuda_f32_large_splitk
   TEST_TYPE
     matmul

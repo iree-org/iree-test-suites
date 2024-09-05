@@ -33,8 +33,6 @@ class MatrixElemTypeId(enum.Enum):
 class ShapesId(enum.Enum):
     SMALL = "small"
     LARGE = "large"
-    GPU_LARGE = "gpu_large"
-    GPU_LARGE_ALIGNED = "gpu_large_aligned"
 
 
 # Enumerates ways to construct MLIR tensor types.
@@ -66,9 +64,8 @@ def get_test_shapes(shapes_id: ShapesId):
     #    build and execution latency of tests. The build latency is nearly the
     #    same for all shapes, while execution latency grows cubicly i.e.
     #    linearly with m*k*n.
-    # 2. Some shapes are commented out: they used to be tested but have been
-    #    disabled to improve the trade-off between test coverage and build
-    #    latency.
+    # 2. Some shapes may be commented out to improve the trade-off between test
+    #    coverage and build latency.
     if shapes_id == ShapesId.SMALL:
         return [
             # square matrices. Start by the simplest case of 1x1x1.
@@ -100,54 +97,32 @@ def get_test_shapes(shapes_id: ShapesId):
         ]
     if shapes_id == ShapesId.LARGE:
         return [
-            # some random large sizes
+            # Large aligned sizes.
+            TestShape(m=512, k=128, n=512, accumulate=True),
+            TestShape(m=512, k=128, n=512, accumulate=False),
+            TestShape(m=1000, k=4, n=512, accumulate=False),
+            TestShape(m=4, k=1000, n=512, accumulate=False),
+            TestShape(m=512, k=1000, n=4, accumulate=False),
+            TestShape(m=512, k=128, n=500, accumulate=False),
+            # Large unaligned sizes.
             TestShape(m=123, k=456, n=789, accumulate=True),
+            TestShape(m=457, k=330, n=512, accumulate=False),
+            TestShape(m=457, k=330, n=514, accumulate=False),
+            TestShape(m=438, k=330, n=514, accumulate=False),
+            TestShape(m=540, k=332, n=516, accumulate=False),
             TestShape(m=654, k=321, n=234, accumulate=False),
-            # shapes involving vectors (i.e. most rectangular cases)
+            TestShape(m=457, k=160, n=512, accumulate=False),
+            TestShape(m=512, k=330, n=512, accumulate=False),
+            # Shapes involving vectors (i.e. most rectangular cases).
             TestShape(m=1, k=1000, n=1000, accumulate=True),  # large vector*matrix
             TestShape(m=1000, k=1000, n=1, accumulate=True),  # large matrix*vector
             TestShape(m=1000, k=1000, n=1, accumulate=False),  # large matrix*vector
             # Be conservative in adding larger shapes. They can result in
             # high latency tests. If you have to, consider splitting them
             # out in a way that constrains the latency impact, e.g. by
-            # running on fewer backends/drivers or with fewer generators
-            # (see get_test_generators).
-        ]
-    if shapes_id == ShapesId.GPU_LARGE_ALIGNED:
-        return [
-            TestShape(m=512, k=128, n=512, accumulate=True),
-            TestShape(m=512, k=128, n=512, accumulate=False),
-        ]
-    if shapes_id == ShapesId.GPU_LARGE:
-        return [
-            # unaligned cases.
-            TestShape(m=457, k=330, n=512, accumulate=False),
-            TestShape(m=457, k=330, n=514, accumulate=False),
-            TestShape(m=438, k=330, n=514, accumulate=False),
-            TestShape(m=540, k=332, n=516, accumulate=False),
-            TestShape(m=1000, k=4, n=512, accumulate=False),
-            TestShape(m=4, k=1000, n=512, accumulate=False),
-            TestShape(m=512, k=1000, n=4, accumulate=False),
-            TestShape(m=512, k=128, n=500, accumulate=False),
-            TestShape(m=457, k=160, n=512, accumulate=False),
-            TestShape(m=512, k=330, n=512, accumulate=False),
+            # running on fewer backends/drivers.
         ]
 
-    raise ValueError(shapes_id)
-
-
-# Returns the list of Dynamicity's to use for the collection of shapes
-# identified by shapes_id.
-def get_dynamicities(shapes_id: ShapesId):
-    if shapes_id == ShapesId.GPU_LARGE or shapes_id == ShapesId.GPU_LARGE_ALIGNED:
-        return [
-            Dynamicity.STATIC,
-        ]
-    else:
-        return [
-            Dynamicity.DYNAMIC,
-            Dynamicity.STATIC,
-        ]
     raise ValueError(shapes_id)
 
 
@@ -465,7 +440,7 @@ def generate(
     calls = []
 
     for shape in get_test_shapes(shapes_id):
-        for dynamicity in get_dynamicities(shapes_id):
+        for dynamicity in [Dynamicity.DYNAMIC, Dynamicity.STATIC]:
             function = generate_function(
                 lhs_rhs_type,
                 acc_type,
