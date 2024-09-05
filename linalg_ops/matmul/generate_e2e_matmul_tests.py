@@ -45,13 +45,6 @@ class Dynamicity(enum.Enum):
     MIXED = "mixed"  # Randomly mix '?' and values. Example: tensor<?x4xf32>.
 
 
-# Enumerates ways to initialize matrix buffer contents.
-@enum.unique
-class MatrixGenerator(enum.Enum):
-    ZERO = "zero"  # Fill with zeros
-    RANDOM = "random"  # Fill with (deterministic) pseudorandom values.
-
-
 # Describes the shape of a matrix multiplication in the usual convention:
 # the LHS is {m}x{k}, the RHS is {k}x{n}, the accumulator/result is {m}x{n}.
 # The extra `accumulate` boolean tells whether the matmul is accumulating into
@@ -373,17 +366,6 @@ class TestCall:
 # Intentionally not shared with local_pseudorandom_state to limit the ways
 # in which shuffling testcases changes which random values are generated.
 pseudorandom_generator_seed = 1
-
-
-def contents_generator_tag(generator: MatrixGenerator):
-    if generator == MatrixGenerator.ZERO:
-        return ""
-    elif generator == MatrixGenerator.RANDOM:
-        global pseudorandom_generator_seed
-        pseudorandom_generator_seed = pseudorandom_generator_seed + 1
-        return f"!tag:iree:fully_specified_pseudorandom {pseudorandom_generator_seed}"
-    else:
-        raise ValueError(generator)
 
 
 # Generate a matrix function argument of the given size as `%name`.
