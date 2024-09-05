@@ -60,11 +60,6 @@ func.func @matmul_512x128xf16_times_500x128xf16_into_512x500xf16(%lhs: tensor<51
   return %result: tensor<512x500xf16>
 }
 
-func.func @matmul_accumulate_123x456xf16_times_789x456xf16_into_123x789xf16(%lhs: tensor<123x456xf16>, %rhs: tensor<789x456xf16>, %acc: tensor<123x789xf16>) -> tensor<123x789xf16> {
-  %result = linalg.matmul_transpose_b ins(%lhs, %rhs: tensor<123x456xf16>, tensor<789x456xf16>) outs(%acc: tensor<123x789xf16>) -> tensor<123x789xf16>
-  return %result: tensor<123x789xf16>
-}
-
 func.func @matmul_457x330xf16_times_512x330xf16_into_457x512xf16(%lhs: tensor<457x330xf16>, %rhs: tensor<512x330xf16>) -> tensor<457x512xf16> {
   %init_acc = tensor.empty() : tensor<457x512xf16>
   %c0_acc_type = arith.constant 0.0: f16

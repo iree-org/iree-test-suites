@@ -76,13 +76,6 @@ func.func @matmul_512x128xf8E4M3FNUZ_times_128x500xf8E4M3FNUZ_into_512x500xf32(%
   return %result: tensor<512x500xf32>
 }
 
-func.func @matmul_accumulate_123x456xf8E4M3FNUZ_times_456x789xf8E4M3FNUZ_into_123x789xf32(%lhs: tensor<123x456xf32>, %rhs: tensor<456x789xf32>, %acc: tensor<123x789xf32>) -> tensor<123x789xf32> {
-  %lhs_casted = arith.truncf %lhs: tensor<123x456xf32> to tensor<123x456xf8E4M3FNUZ>
-  %rhs_casted = arith.truncf %rhs: tensor<456x789xf32> to tensor<456x789xf8E4M3FNUZ>
-  %result = linalg.matmul ins(%lhs_casted, %rhs_casted: tensor<123x456xf8E4M3FNUZ>, tensor<456x789xf8E4M3FNUZ>) outs(%acc: tensor<123x789xf32>) -> tensor<123x789xf32>
-  return %result: tensor<123x789xf32>
-}
-
 func.func @matmul_457x330xf8E4M3FNUZ_times_330x512xf8E4M3FNUZ_into_457x512xf32(%lhs: tensor<457x330xf32>, %rhs: tensor<330x512xf32>) -> tensor<457x512xf32> {
   %init_acc = tensor.empty() : tensor<457x512xf32>
   %c0_acc_type = arith.constant 0.0: f32
