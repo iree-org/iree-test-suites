@@ -1,12 +1,10 @@
 func.func @matmul_accumulate_DYNxDYNxbf16_times_DYNxDYNxbf16_into_DYNxDYNxf32(%lhs: tensor<?x?xbf16>, %rhs: tensor<?x?xbf16>, %acc: tensor<?x?xf32>) -> tensor<?x?xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<?x?xbf16>, tensor<?x?xbf16>) outs(%acc: tensor<?x?xf32>) -> tensor<?x?xf32>
-
   return %result: tensor<?x?xf32>
 }
 
 func.func @matmul_accumulate_512x128xbf16_times_128x512xbf16_into_512x512xf32(%lhs: tensor<512x128xbf16>, %rhs: tensor<128x512xbf16>, %acc: tensor<512x512xf32>) -> tensor<512x512xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<512x128xbf16>, tensor<128x512xbf16>) outs(%acc: tensor<512x512xf32>) -> tensor<512x512xf32>
-
   return %result: tensor<512x512xf32>
 }
 
@@ -64,7 +62,6 @@ func.func @matmul_512x128xbf16_times_128x500xbf16_into_512x500xf32(%lhs: tensor<
 
 func.func @matmul_accumulate_123x456xbf16_times_456x789xbf16_into_123x789xf32(%lhs: tensor<123x456xbf16>, %rhs: tensor<456x789xbf16>, %acc: tensor<123x789xf32>) -> tensor<123x789xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<123x456xbf16>, tensor<456x789xbf16>) outs(%acc: tensor<123x789xf32>) -> tensor<123x789xf32>
-
   return %result: tensor<123x789xf32>
 }
 
@@ -126,13 +123,11 @@ func.func @matmul_512x330xbf16_times_330x512xbf16_into_512x512xf32(%lhs: tensor<
 
 func.func @matmul_accumulate_1x1000xbf16_times_1000x1000xbf16_into_1x1000xf32(%lhs: tensor<1x1000xbf16>, %rhs: tensor<1000x1000xbf16>, %acc: tensor<1x1000xf32>) -> tensor<1x1000xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<1x1000xbf16>, tensor<1000x1000xbf16>) outs(%acc: tensor<1x1000xf32>) -> tensor<1x1000xf32>
-
   return %result: tensor<1x1000xf32>
 }
 
 func.func @matmul_accumulate_1000x1000xbf16_times_1000x1xbf16_into_1000x1xf32(%lhs: tensor<1000x1000xbf16>, %rhs: tensor<1000x1xbf16>, %acc: tensor<1000x1xf32>) -> tensor<1000x1xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<1000x1000xbf16>, tensor<1000x1xbf16>) outs(%acc: tensor<1000x1xf32>) -> tensor<1000x1xf32>
-
   return %result: tensor<1000x1xf32>
 }
 

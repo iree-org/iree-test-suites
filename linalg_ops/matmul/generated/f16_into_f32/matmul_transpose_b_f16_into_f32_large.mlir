@@ -1,12 +1,10 @@
 func.func @matmul_accumulate_DYNxDYNxf16_times_DYNxDYNxf16_into_DYNxDYNxf32(%lhs: tensor<?x?xf16>, %rhs: tensor<?x?xf16>, %acc: tensor<?x?xf32>) -> tensor<?x?xf32> {
   %result = linalg.matmul_transpose_b ins(%lhs, %rhs: tensor<?x?xf16>, tensor<?x?xf16>) outs(%acc: tensor<?x?xf32>) -> tensor<?x?xf32>
-
   return %result: tensor<?x?xf32>
 }
 
 func.func @matmul_accumulate_512x128xf16_times_512x128xf16_into_512x512xf32(%lhs: tensor<512x128xf16>, %rhs: tensor<512x128xf16>, %acc: tensor<512x512xf32>) -> tensor<512x512xf32> {
   %result = linalg.matmul_transpose_b ins(%lhs, %rhs: tensor<512x128xf16>, tensor<512x128xf16>) outs(%acc: tensor<512x512xf32>) -> tensor<512x512xf32>
-
   return %result: tensor<512x512xf32>
 }
 
@@ -64,7 +62,6 @@ func.func @matmul_512x128xf16_times_500x128xf16_into_512x500xf32(%lhs: tensor<51
 
 func.func @matmul_accumulate_123x456xf16_times_789x456xf16_into_123x789xf32(%lhs: tensor<123x456xf16>, %rhs: tensor<789x456xf16>, %acc: tensor<123x789xf32>) -> tensor<123x789xf32> {
   %result = linalg.matmul_transpose_b ins(%lhs, %rhs: tensor<123x456xf16>, tensor<789x456xf16>) outs(%acc: tensor<123x789xf32>) -> tensor<123x789xf32>
-
   return %result: tensor<123x789xf32>
 }
 
@@ -126,13 +123,11 @@ func.func @matmul_512x330xf16_times_512x330xf16_into_512x512xf32(%lhs: tensor<51
 
 func.func @matmul_accumulate_1x1000xf16_times_1000x1000xf16_into_1x1000xf32(%lhs: tensor<1x1000xf16>, %rhs: tensor<1000x1000xf16>, %acc: tensor<1x1000xf32>) -> tensor<1x1000xf32> {
   %result = linalg.matmul_transpose_b ins(%lhs, %rhs: tensor<1x1000xf16>, tensor<1000x1000xf16>) outs(%acc: tensor<1x1000xf32>) -> tensor<1x1000xf32>
-
   return %result: tensor<1x1000xf32>
 }
 
 func.func @matmul_accumulate_1000x1000xf16_times_1x1000xf16_into_1000x1xf32(%lhs: tensor<1000x1000xf16>, %rhs: tensor<1x1000xf16>, %acc: tensor<1000x1xf32>) -> tensor<1000x1xf32> {
   %result = linalg.matmul_transpose_b ins(%lhs, %rhs: tensor<1000x1000xf16>, tensor<1x1000xf16>) outs(%acc: tensor<1000x1xf32>) -> tensor<1000x1xf32>
-
   return %result: tensor<1000x1xf32>
 }
 

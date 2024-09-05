@@ -1,12 +1,10 @@
 func.func @matmul_accumulate_DYNxDYNxf32_times_DYNxDYNxf32_into_DYNxDYNxf32(%lhs: tensor<?x?xf32>, %rhs: tensor<?x?xf32>, %acc: tensor<?x?xf32>) -> tensor<?x?xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<?x?xf32>, tensor<?x?xf32>) outs(%acc: tensor<?x?xf32>) -> tensor<?x?xf32>
-
   return %result: tensor<?x?xf32>
 }
 
 func.func @matmul_accumulate_512x128xf32_times_128x512xf32_into_512x512xf32(%lhs: tensor<512x128xf32>, %rhs: tensor<128x512xf32>, %acc: tensor<512x512xf32>) -> tensor<512x512xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<512x128xf32>, tensor<128x512xf32>) outs(%acc: tensor<512x512xf32>) -> tensor<512x512xf32>
-
   return %result: tensor<512x512xf32>
 }
 
@@ -64,7 +62,6 @@ func.func @matmul_512x128xf32_times_128x500xf32_into_512x500xf32(%lhs: tensor<51
 
 func.func @matmul_accumulate_123x456xf32_times_456x789xf32_into_123x789xf32(%lhs: tensor<123x456xf32>, %rhs: tensor<456x789xf32>, %acc: tensor<123x789xf32>) -> tensor<123x789xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<123x456xf32>, tensor<456x789xf32>) outs(%acc: tensor<123x789xf32>) -> tensor<123x789xf32>
-
   return %result: tensor<123x789xf32>
 }
 
@@ -126,13 +123,11 @@ func.func @matmul_512x330xf32_times_330x512xf32_into_512x512xf32(%lhs: tensor<51
 
 func.func @matmul_accumulate_1x1000xf32_times_1000x1000xf32_into_1x1000xf32(%lhs: tensor<1x1000xf32>, %rhs: tensor<1000x1000xf32>, %acc: tensor<1x1000xf32>) -> tensor<1x1000xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<1x1000xf32>, tensor<1000x1000xf32>) outs(%acc: tensor<1x1000xf32>) -> tensor<1x1000xf32>
-
   return %result: tensor<1x1000xf32>
 }
 
 func.func @matmul_accumulate_1000x1000xf32_times_1000x1xf32_into_1000x1xf32(%lhs: tensor<1000x1000xf32>, %rhs: tensor<1000x1xf32>, %acc: tensor<1000x1xf32>) -> tensor<1000x1xf32> {
   %result = linalg.matmul ins(%lhs, %rhs: tensor<1000x1000xf32>, tensor<1000x1xf32>) outs(%acc: tensor<1000x1xf32>) -> tensor<1000x1xf32>
-
   return %result: tensor<1000x1xf32>
 }
 

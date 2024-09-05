@@ -22,7 +22,8 @@ func.func @matmul_DYNxDYNxf8E4M3FNUZ_times_DYNxDYNxf8E4M3FNUZ_into_DYNxDYNxf32(%
   %acc = linalg.fill ins(%c0_acc_type : f32) outs(%init_acc : tensor<?x?xf32>) -> tensor<?x?xf32>
   %lhs_casted = arith.truncf %lhs: tensor<?x?xf32> to tensor<?x?xf8E4M3FNUZ>
   %rhs_casted = arith.truncf %rhs: tensor<?x?xf32> to tensor<?x?xf8E4M3FNUZ>
-  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<?x?xf8E4M3FNUZ>, tensor<?x?xf8E4M3FNUZ>) outs(%acc: tensor<?x?xf32>) -> tensor<?x?xf32>  return %result: tensor<?x?xf32>
+  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<?x?xf8E4M3FNUZ>, tensor<?x?xf8E4M3FNUZ>) outs(%acc: tensor<?x?xf32>) -> tensor<?x?xf32>
+  return %result: tensor<?x?xf32>
 }
 
 func.func @matmul_1x1xf8E4M3FNUZ_times_1x1xf8E4M3FNUZ_into_1x1xf32(%lhs: tensor<1x1xf32>, %rhs: tensor<1x1xf32>) -> tensor<1x1xf32> {
@@ -31,7 +32,8 @@ func.func @matmul_1x1xf8E4M3FNUZ_times_1x1xf8E4M3FNUZ_into_1x1xf32(%lhs: tensor<
   %acc = linalg.fill ins(%c0_acc_type : f32) outs(%init_acc : tensor<1x1xf32>) -> tensor<1x1xf32>
   %lhs_casted = arith.truncf %lhs: tensor<1x1xf32> to tensor<1x1xf8E4M3FNUZ>
   %rhs_casted = arith.truncf %rhs: tensor<1x1xf32> to tensor<1x1xf8E4M3FNUZ>
-  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<1x1xf8E4M3FNUZ>, tensor<1x1xf8E4M3FNUZ>) outs(%acc: tensor<1x1xf32>) -> tensor<1x1xf32>  return %result: tensor<1x1xf32>
+  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<1x1xf8E4M3FNUZ>, tensor<1x1xf8E4M3FNUZ>) outs(%acc: tensor<1x1xf32>) -> tensor<1x1xf32>
+  return %result: tensor<1x1xf32>
 }
 
 func.func @matmul_accumulate_2x2xf8E4M3FNUZ_times_2x2xf8E4M3FNUZ_into_2x2xf32(%lhs: tensor<2x2xf32>, %rhs: tensor<2x2xf32>, %acc: tensor<2x2xf32>) -> tensor<2x2xf32> {
@@ -75,7 +77,8 @@ func.func @matmul_15x37xf8E4M3FNUZ_times_7x37xf8E4M3FNUZ_into_15x7xf32(%lhs: ten
   %acc = linalg.fill ins(%c0_acc_type : f32) outs(%init_acc : tensor<15x7xf32>) -> tensor<15x7xf32>
   %lhs_casted = arith.truncf %lhs: tensor<15x37xf32> to tensor<15x37xf8E4M3FNUZ>
   %rhs_casted = arith.truncf %rhs: tensor<7x37xf32> to tensor<7x37xf8E4M3FNUZ>
-  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<15x37xf8E4M3FNUZ>, tensor<7x37xf8E4M3FNUZ>) outs(%acc: tensor<15x7xf32>) -> tensor<15x7xf32>  return %result: tensor<15x7xf32>
+  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<15x37xf8E4M3FNUZ>, tensor<7x37xf8E4M3FNUZ>) outs(%acc: tensor<15x7xf32>) -> tensor<15x7xf32>
+  return %result: tensor<15x7xf32>
 }
 
 func.func @matmul_accumulate_81x19xf8E4M3FNUZ_times_41x19xf8E4M3FNUZ_into_81x41xf32(%lhs: tensor<81x19xf32>, %rhs: tensor<41x19xf32>, %acc: tensor<81x41xf32>) -> tensor<81x41xf32> {
@@ -98,7 +101,8 @@ func.func @matmul_1x10xf8E4M3FNUZ_times_10x10xf8E4M3FNUZ_into_1x10xf32(%lhs: ten
   %acc = linalg.fill ins(%c0_acc_type : f32) outs(%init_acc : tensor<1x10xf32>) -> tensor<1x10xf32>
   %lhs_casted = arith.truncf %lhs: tensor<1x10xf32> to tensor<1x10xf8E4M3FNUZ>
   %rhs_casted = arith.truncf %rhs: tensor<10x10xf32> to tensor<10x10xf8E4M3FNUZ>
-  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<1x10xf8E4M3FNUZ>, tensor<10x10xf8E4M3FNUZ>) outs(%acc: tensor<1x10xf32>) -> tensor<1x10xf32>  return %result: tensor<1x10xf32>
+  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<1x10xf8E4M3FNUZ>, tensor<10x10xf8E4M3FNUZ>) outs(%acc: tensor<1x10xf32>) -> tensor<1x10xf32>
+  return %result: tensor<1x10xf32>
 }
 
 func.func @matmul_accumulate_10x1xf8E4M3FNUZ_times_10x1xf8E4M3FNUZ_into_10x10xf32(%lhs: tensor<10x1xf32>, %rhs: tensor<10x1xf32>, %acc: tensor<10x10xf32>) -> tensor<10x10xf32> {
@@ -121,6 +125,7 @@ func.func @matmul_10x10xf8E4M3FNUZ_times_1x10xf8E4M3FNUZ_into_10x1xf32(%lhs: ten
   %acc = linalg.fill ins(%c0_acc_type : f32) outs(%init_acc : tensor<10x1xf32>) -> tensor<10x1xf32>
   %lhs_casted = arith.truncf %lhs: tensor<10x10xf32> to tensor<10x10xf8E4M3FNUZ>
   %rhs_casted = arith.truncf %rhs: tensor<1x10xf32> to tensor<1x10xf8E4M3FNUZ>
-  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<10x10xf8E4M3FNUZ>, tensor<1x10xf8E4M3FNUZ>) outs(%acc: tensor<10x1xf32>) -> tensor<10x1xf32>  return %result: tensor<10x1xf32>
+  %result = linalg.matmul_transpose_b ins(%lhs_casted, %rhs_casted: tensor<10x10xf8E4M3FNUZ>, tensor<1x10xf8E4M3FNUZ>) outs(%acc: tensor<10x1xf32>) -> tensor<10x1xf32>
+  return %result: tensor<10x1xf32>
 }
 
