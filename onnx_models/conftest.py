@@ -81,7 +81,7 @@ def upgrade_onnx_model_version(original_onnx_path: Path):
     upgraded_onnx_path = original_onnx_path.with_name(
         original_onnx_path.stem + f"_version{ONNX_CONVERTER_OUTPUT_MIN_VERSION}.onnx"
     )
-    logging.info(
+    logger.info(
         f"Upgrading '{original_onnx_path.relative_to(THIS_DIR)}' to '{upgraded_onnx_path.relative_to(THIS_DIR)}'"
     )
     onnx.save(converted_model, upgraded_onnx_path)
@@ -91,7 +91,7 @@ def upgrade_onnx_model_version(original_onnx_path: Path):
 # TODO(#18289): use real frontend API, import model in-memory?
 def import_onnx_model_to_mlir(onnx_path: Path):
     imported_mlir_path = onnx_path.with_suffix(".mlir")
-    logging.info(
+    logger.info(
         f"Importing '{onnx_path.relative_to(THIS_DIR)}' to '{imported_mlir_path.relative_to(THIS_DIR)}'"
     )
     exec_args = [
