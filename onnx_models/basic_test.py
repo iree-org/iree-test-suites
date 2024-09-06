@@ -152,8 +152,10 @@ def test_basic():
         ARTIFACTS_DIR.mkdir(parents=True)
 
     # TODO(scotttodd): move to fixture with cache / download on demand
-    onnx_url = "https://github.com/onnx/models/raw/main/validated/vision/classification/mobilenet/model/mobilenetv2-12.onnx"
-    original_onnx_path = ARTIFACTS_DIR / "mobilenetv2-12.onnx"
+    # onnx_url = "https://github.com/onnx/models/raw/main/validated/vision/classification/mobilenet/model/mobilenetv2-12.onnx"
+    # original_onnx_path = ARTIFACTS_DIR / "mobilenetv2-12.onnx"
+    onnx_url = "https://github.com/onnx/models/raw/main/validated/vision/classification/resnet/model/resnet50-v1-12.onnx"
+    original_onnx_path = ARTIFACTS_DIR / "resnet50-v1-12.onnx"
     # urllib.request.urlretrieve(onnx_url, original_onnx_path)
 
     upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
@@ -176,7 +178,20 @@ def test_basic():
     )
 
     onnx_session = InferenceSession(upgraded_onnx_path)
-    onnx_results = onnx_session.run(["output"], {"input": random_data})
-    # logger.info(onnx_results)
+    # onnx_results = onnx_session.run(["output"], {"input": random_data})
+    onnx_results = onnx_session.run(["resnetv17_dense0_fwd"], {"data": random_data})
+    logger.info(onnx_results)
 
     # TODO(scotttodd): Compare results
+
+
+# What varies between each test:
+#   Model URL
+#   Model name
+#   Function signature
+#     Number of inputs
+#     Names of inputs
+#     Shapes of inputs
+#     Number of outputs
+#     Names of outputs
+#     Shapes of outputs
