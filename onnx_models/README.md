@@ -46,8 +46,8 @@ graph LR
 
     ```bash
     pytest \
-      -n auto \
       -rA \
+      --log-cli-level=info
       --durations=0 \
     ```
 
