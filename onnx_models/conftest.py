@@ -16,6 +16,8 @@ from onnxruntime import InferenceSession
 from pathlib import Path
 from typing import List
 
+from .utils import *
+
 logger = logging.getLogger(__name__)
 rng = np.random.default_rng(0)
 
@@ -105,7 +107,7 @@ def import_onnx_model_to_mlir(onnx_path: Path):
         logger.error(ret.stdout.decode("utf-8"))
         logger.error("iree-import-onnx stderr:")
         logger.error(ret.stderr.decode("utf-8"))
-        raise RuntimeError(f"  '{onnx_path.name}' import failed")
+        raise IreeImportOnnxException(f"  '{onnx_path.name}' import failed")
     return imported_mlir_path
 
 
@@ -200,7 +202,12 @@ def get_onnx_model_metadata(onnx_path: Path):
         # Create a numpy tensor with some random data for the input.
         numpy_dimensions = convert_onnx_tensor_proto_to_numpy_dimensions(tensor_type)
         numpy_dtype = TENSOR_TYPE_MAP[tensor_type.elem_type].np_dtype
-        input_data = rng.random(numpy_dimensions, dtype=numpy_dtype)
+        if numpy_dtype == np.float32 or numpy_dtype == np.float64:
+            input_data = rng.random(numpy_dimensions, dtype=numpy_dtype)
+        elif numpy_dtype == np.int32 or numpy_dtype == np.int64:
+            input_data = rng.integers(numpy_dimensions, dtype=numpy_dtype)
+        else:
+            raise NotImplementedError(f"Unsupported numpy type: {numpy_dtype}")
         logger.debug(input_data)
         input_data_path = onnx_path.with_name(onnx_path.stem + f"_input_{idx}.bin")
         write_binary_to_file(input_data, input_data_path)
@@ -259,7 +266,7 @@ def compile_mlir_with_iree(mlir_path: Path, config_name: str, compile_flags: Lis
         logger.error(ret.stdout.decode("utf-8"))
         logger.error("iree-compile stderr:")
         logger.error(ret.stderr.decode("utf-8"))
-        raise RuntimeError(f"  '{iree_module_path.name}' compile failed")
+        raise IreeCompileException(f"  '{iree_module_path.name}' compile failed")
     return iree_module_path
 
 
@@ -279,7 +286,7 @@ def run_iree_module(iree_module_path: Path, run_flags: List[str]):
         logger.error(ret.stdout.decode("utf-8"))
         logger.error("iree-run-module stderr:")
         logger.error(ret.stderr.decode("utf-8"))
-        raise RuntimeError(f"  '{iree_module_path.name}' run failed")
+        raise IreeRunException(f"  '{iree_module_path.name}' run failed")
 
 
 @pytest.fixture
