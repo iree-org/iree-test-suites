@@ -11,6 +11,7 @@ import struct
 import pytest
 import subprocess
 import urllib.request
+from onnxruntime import InferenceSession
 from pathlib import Path
 from typing import List
 
@@ -24,19 +25,19 @@ ONNX_CONVERTER_OUTPUT_MIN_VERSION = 17
 
 
 # TODO(#18289): use real frontend API, import model in-memory?
-def upgrade_onnx_model_version(original_path: Path):
-    original_model = onnx.load_model(original_path)
+def upgrade_onnx_model_version(original_onnx_path: Path):
+    original_model = onnx.load_model(original_onnx_path)
     converted_model = onnx.version_converter.convert_version(
         original_model, ONNX_CONVERTER_OUTPUT_MIN_VERSION
     )
-    upgraded_path = original_path.with_name(
-        original_path.stem + f"_version{ONNX_CONVERTER_OUTPUT_MIN_VERSION}.onnx"
+    upgraded_onnx_path = original_onnx_path.with_name(
+        original_onnx_path.stem + f"_version{ONNX_CONVERTER_OUTPUT_MIN_VERSION}.onnx"
     )
     logging.info(
-        f"Upgrading '{original_path.relative_to(THIS_DIR)}' to '{upgraded_path.relative_to(THIS_DIR)}'"
+        f"Upgrading '{original_onnx_path.relative_to(THIS_DIR)}' to '{upgraded_onnx_path.relative_to(THIS_DIR)}'"
     )
-    onnx.save(converted_model, upgraded_path)
-    return upgraded_path
+    onnx.save(converted_model, upgraded_onnx_path)
+    return upgraded_onnx_path
 
 
 # TODO(#18289): use real frontend API, import model in-memory?
@@ -101,6 +102,7 @@ def run_iree_module(iree_module_path: Path, run_flags: List[str]):
         logger.error("iree-run-module stderr:")
         logger.error(ret.stderr.decode("utf-8"))
         raise RuntimeError(f"  '{iree_module_path.name}' run failed")
+    # TODO(scotttodd): write outputs to files, or use --expected_output
     logger.info(f"Run of '{iree_module_path}' succeeded")
     logger.info("iree-run-module stdout:")
     logger.info(ret.stdout.decode("utf-8"))
@@ -151,26 +153,30 @@ def test_basic():
 
     # TODO(scotttodd): move to fixture with cache / download on demand
     onnx_url = "https://github.com/onnx/models/raw/main/validated/vision/classification/mobilenet/model/mobilenetv2-12.onnx"
-    original_path = ARTIFACTS_DIR / "mobilenetv2-12.onnx"
-    # urllib.request.urlretrieve(onnx_url, original_path)
+    original_onnx_path = ARTIFACTS_DIR / "mobilenetv2-12.onnx"
+    # urllib.request.urlretrieve(onnx_url, original_onnx_path)
 
-    upgraded_path = upgrade_onnx_model_version(original_path)
-    imported_mlir_path = import_onnx_model_to_mlir(upgraded_path)
+    upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
+    imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)
     iree_module_path = compile_mlir_with_iree(
         imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
     )
 
-    # TODO(scotttodd): prepare_input helper function
+    # # TODO(scotttodd): prepare_input helper function
     random_data = rng.random((1, 3, 224, 224), dtype=np.float32)
-    random_data_path = original_path.with_name(original_path.stem + "_input_0.bin")
+    random_data_path = original_onnx_path.with_name(
+        original_onnx_path.stem + "_input_0.bin"
+    )
     write_binary_to_file(random_data, random_data_path)
-    # logger.info(dummy_data)
+    # logger.info(random_data)
 
     run_iree_module(
         iree_module_path,
         ["--device=local-task", f"--input=1x3x224x224xf32=@{random_data_path}"],
     )
 
-    # TODO(scotttodd): Load into ONNX Runtime
-    # TODO(scotttodd): Run with ONNX Runtime
+    onnx_session = InferenceSession(upgraded_onnx_path)
+    onnx_results = onnx_session.run(["output"], {"input": random_data})
+    # logger.info(onnx_results)
+
     # TODO(scotttodd): Compare results

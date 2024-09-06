@@ -2,6 +2,7 @@
 #   * See requirements-iree.txt for using IREE packages.
 
 onnx
+onnxruntime
 pyjson5
 pytest
 pytest-reportlog
