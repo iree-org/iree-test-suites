@@ -11,6 +11,7 @@ import struct
 import pytest
 import subprocess
 import urllib.request
+from onnx.mapping import TENSOR_TYPE_MAP
 from onnxruntime import InferenceSession
 from pathlib import Path
 from typing import List
@@ -154,81 +155,80 @@ def convert_proto_elem_type_to_iree_dtype(etype):
     return ""
 
 
-def convert_onnx_type_proto_to_numpy_dimensions(
-    type_proto: onnx.onnx_ml_pb2.TypeProto,
+def convert_onnx_tensor_proto_to_numpy_dimensions(
+    tensor_proto: onnx.onnx_ml_pb2.TensorProto,
 ) -> str:
-    if type_proto.HasField("tensor_type"):
-        # Note: turning dynamic dimensions into just 1 here, since we need
-        # a concrete (static) shape buffer of input data in the tests.
-        return tuple(
-            d.dim_value if d.HasField("dim_value") else 1
-            for d in type_proto.tensor_type.shape.dim
-        )
-    else:
-        raise NotImplementedError(f"Unsupported proto type: {type_proto}")
+    # Note: turning dynamic dimensions into just 1 here, since we need
+    # a concrete (static) shape buffer of input data in the tests.
+    return tuple(
+        d.dim_value if d.HasField("dim_value") else 1 for d in tensor_proto.shape.dim
+    )
 
 
-def convert_onnx_type_proto_to_iree_type_string(
-    type_proto: onnx.onnx_ml_pb2.TypeProto,
+def convert_onnx_tensor_proto_to_iree_type_string(
+    tensor_proto: onnx.onnx_ml_pb2.TensorProto,
 ) -> str:
-    if type_proto.HasField("tensor_type"):
-        tensor_type = type_proto.tensor_type
-        shape = tensor_type.shape
-        # Note: turning dynamic dimensions into just "1" here, since we need
-        # a concrete (static) shape buffer of input data in the tests.
-        shape = "x".join(
-            [str(d.dim_value) if d.HasField("dim_value") else "1" for d in shape.dim]
-        )
-        dtype = convert_proto_elem_type_to_iree_dtype(tensor_type.elem_type)
-        if shape == "":
-            return dtype
-        return f"{shape}x{dtype}"
-    else:
-        raise NotImplementedError(f"Unsupported proto type: {type_proto}")
+    shape = tensor_proto.shape
+    # Note: turning dynamic dimensions into just "1" here, since we need
+    # a concrete (static) shape buffer of input data in the tests.
+    shape = "x".join(
+        [str(d.dim_value) if d.HasField("dim_value") else "1" for d in shape.dim]
+    )
+    dtype = convert_proto_elem_type_to_iree_dtype(tensor_proto.elem_type)
+    if shape == "":
+        return dtype
+    return f"{shape}x{dtype}"
 
 
 def get_onnx_model_metadata(onnx_path: Path):
+    # We can either
+    #   A) List all metadata explicitly
+    #   B) Get metadata on demand from the .onnx protobuf using 'onnx'
+    #   C) Get metadata on demand from the InferenceSession using 'onnxruntime'
+    # This is option B.
+
     logger.info(f"Getting model metadata for '{onnx_path.relative_to(THIS_DIR)}'")
     model = onnx.load(onnx_path)
 
     inputs = []
-    outputs = []
+    for idx, graph_input in enumerate(model.graph.input):
+        type_proto = graph_input.type
+        if not type_proto.HasField("tensor_type"):
+            raise NotImplementedError(f"Unsupported proto type: {type_proto}")
+        tensor_type = type_proto.tensor_type
 
-    # input_data = rng.random(input_shape, dtype=np.float32)
-    # input_data_path = original_onnx_path.with_name(
-    #     original_onnx_path.stem + "_input_0.bin"
-    # )
-    # write_binary_to_file(input_data, input_data_path)
-    # logger.debug(input_data)
+        # Create a numpy tensor with some random data for the input.
+        numpy_dimensions = convert_onnx_tensor_proto_to_numpy_dimensions(tensor_type)
+        numpy_dtype = TENSOR_TYPE_MAP[tensor_type.elem_type].np_dtype
+        input_data = rng.random(numpy_dimensions, dtype=numpy_dtype)
+        logger.debug(input_data)
+        input_data_path = onnx_path.with_name(onnx_path.stem + f"_input_{idx}.bin")
+        write_binary_to_file(input_data, input_data_path)
 
-    # help(model.graph.input)
-    # print(model.graph.input)
-    for graph_input in model.graph.input:
-        numpy_dimensions = convert_onnx_type_proto_to_numpy_dimensions(graph_input.type)
-        iree_type = convert_onnx_type_proto_to_iree_type_string(graph_input.type)
+        iree_type = convert_onnx_tensor_proto_to_iree_type_string(tensor_type)
         inputs.append(
             {
                 "name": graph_input.name,
-                "numpy_dimensions": numpy_dimensions,
                 "iree_type": iree_type,
-            }
-        )
-    for graph_output in model.graph.output:
-        numpy_dimensions = convert_onnx_type_proto_to_numpy_dimensions(
-            graph_output.type
-        )
-        iree_type = convert_onnx_type_proto_to_iree_type_string(graph_output.type)
-        outputs.append(
-            {
-                "name": graph_output.name,
-                "numpy_dimensions": numpy_dimensions,
-                "iree_type": iree_type,
+                "input_data": input_data,
+                "input_data_path": input_data_path,
             }
         )
 
-    # Concrete shape to generate test data with
-    # (N, 3, 224, 224), with dynamic dim "N" should turn into
-    # (1, 3, 224, 224)
+    outputs = []
+    for graph_output in model.graph.output:
+        type_proto = graph_output.type
+        if not type_proto.HasField("tensor_type"):
+            raise NotImplementedError(f"Unsupported proto type: {type_proto}")
+        tensor_type = type_proto.tensor_type
+
+        iree_type = convert_onnx_tensor_proto_to_iree_type_string(tensor_type)
+        outputs.append(
+            {
+                "name": graph_output.name,
+                "iree_type": iree_type,
+            }
+        )
 
     return {
         "inputs": inputs,
@@ -280,25 +280,6 @@ def run_iree_module(iree_module_path: Path, run_flags: List[str]):
         logger.error("iree-run-module stderr:")
         logger.error(ret.stderr.decode("utf-8"))
         raise RuntimeError(f"  '{iree_module_path.name}' run failed")
-    # TODO(scotttodd): write outputs to files, or use --expected_output
-    # logger.info(f"Run of '{iree_module_path}' succeeded")
-    # logger.info("iree-run-module stdout:")
-    # logger.info(ret.stdout.decode("utf-8"))
-    # logger.info("iree-run-module stderr:")
-    # logger.info(ret.stderr.decode("utf-8"))
-
-
-# What varies between each test:
-#   Model URL
-#   Model name
-#   Function signature
-#     Number of inputs
-#     Names of inputs
-#     Shapes of inputs
-#     Number of outputs
-#     Names of outputs
-#     Shapes of outputs
-# Can get the function signature from the loaded ONNX model
 
 
 @pytest.fixture
@@ -306,12 +287,6 @@ def compare_between_iree_and_onnxruntime():
     def fn(
         model_name: str,
         model_url: str,
-        input_name: str,
-        input_shape: tuple[int, ...],
-        input_type: str,
-        output_name: str,
-        output_shape: tuple[int, ...],
-        output_type: str,
     ):
         if not ARTIFACTS_DIR.is_dir():
             ARTIFACTS_DIR.mkdir(parents=True)
@@ -324,48 +299,41 @@ def compare_between_iree_and_onnxruntime():
         if not original_onnx_path.exists():
             urllib.request.urlretrieve(model_url, original_onnx_path)
 
+        # TODO(scotttodd): cache ONNX metadata and runtime results
         upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
 
         onnx_model_metadata = get_onnx_model_metadata(upgraded_onnx_path)
-        logger.info(onnx_model_metadata)
-        return
-
-        # TODO(scotttodd): prepare_input helper function, multiple inputs
-        # TODO(scotttodd): dtype from input_shape (or ONNX model reflection)
-        input_data = rng.random(input_shape, dtype=np.float32)
-        input_data_path = original_onnx_path.with_name(
-            original_onnx_path.stem + "_input_0.bin"
-        )
-        write_binary_to_file(input_data, input_data_path)
-        logger.debug(input_data)
+        logger.debug("ONNX model metadata:")
+        logger.debug(onnx_model_metadata)
 
         # Run through ONNX Runtime.
         onnx_session = InferenceSession(upgraded_onnx_path)
+        output_names = [output["name"] for output in onnx_model_metadata["outputs"]]
+        inputs = {}
+        for input in onnx_model_metadata["inputs"]:
+            inputs[input["name"]] = input["input_data"]
+        onnx_results = onnx_session.run(output_names, inputs)
 
-        # We can either
-        #   A) List all metadata explicitly
-        #   B) Get metadata on demand from the .onnx protobuf using 'onnx'
-        #   C) Get metadata on demand from the InferenceSession using 'onnxruntime'
-        inputs = onnx_session.get_inputs()
-        logger.info("inputs")
-        for input in inputs:
-            logger.info(f"{input.name}, {input.shape}, {input.type}")
-            # if input.is_tensor():
-            #     logger.info(f"  input element type: {input.element_type}")
-        outputs = onnx_session.get_outputs()
-        logger.info("outputs")
-        for output in outputs:
-            logger.info(f"{output.name}, {output.shape}, {output.type}")
-        # input[0] : data,                 ['N', 3, 224, 224], tensor(float)
-        # output[0]: resnetv17_dense0_fwd, ['N', 1000],        tensor(float)
+        # Prepare inputs and expected outputs for running through IREE.
+        run_module_args = []
+        for input in onnx_model_metadata["inputs"]:
+            input_type = input["iree_type"]
+            input_data_path = input["input_data_path"]
+            run_module_args.append(f"--input={input_type}=@{input_data_path}")
 
-        # TODO(scotttodd): multiple inputs/outputs
-        onnx_results = onnx_session.run([output_name], {input_name: input_data})
-        logger.debug(np.array(onnx_results[0]))
-        reference_output_data_path = original_onnx_path.with_name(
-            original_onnx_path.stem + "_output_0.bin"
-        )
-        write_binary_to_file(onnx_results[0], reference_output_data_path)
+        assert len(onnx_model_metadata["outputs"]) == len(onnx_results)
+        for idx in range(len(onnx_results)):
+            output = onnx_model_metadata["outputs"][idx]
+            output_type = output["iree_type"]
+            onnx_result = onnx_results[idx]
+            logger.debug(np.array(onnx_result))
+            reference_output_data_path = original_onnx_path.with_name(
+                original_onnx_path.stem + f"_output_{idx}.bin"
+            )
+            write_binary_to_file(onnx_result, reference_output_data_path)
+            run_module_args.append(
+                f"--expected_output={output_type}=@{reference_output_data_path}"
+            )
 
         # Import, compile, then run with IREE.
         imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)
@@ -373,14 +341,8 @@ def compare_between_iree_and_onnxruntime():
             imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
         )
         # Note: could load the output into memory here and compare using numpy.
-        # TODO(scotttodd): signature conversions from onnx/numpy to IREE
-        run_iree_module(
-            iree_module_path,
-            [
-                "--device=local-task",
-                f"--input=1x3x224x224xf32=@{input_data_path}",
-                f"--expected_output=1x1000xf32=@{reference_output_data_path}",
-            ],
-        )
+        run_flags = ["--device=local-task"]
+        run_flags.extend(run_module_args)
+        run_iree_module(iree_module_path, run_flags)
 
     return fn

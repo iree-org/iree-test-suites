@@ -10,12 +10,6 @@ def test_mobilenetv2_12(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_name="mobilenetv2-12",
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/mobilenet/model/mobilenetv2-12.onnx",
-        input_name="input",
-        input_shape=(1, 3, 224, 224),
-        input_type="",
-        output_name="output",
-        output_shape=(),
-        output_type="",
     )
 
 
@@ -24,12 +18,6 @@ def test_resnet50_v1_12(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_name="resnet50-v1-12",
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/resnet/model/resnet50-v1-12.onnx",
-        input_name="data",
-        input_shape=(1, 3, 224, 224),
-        input_type="",
-        output_name="resnetv17_dense0_fwd",
-        output_shape=(),
-        output_type="",
     )
 
 
