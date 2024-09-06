@@ -147,55 +147,6 @@ def write_binary_to_file(ndarr: np.ndarray, filename: Path):
         f.write(bytearr)
 
 
-def test_basic():
-    if not ARTIFACTS_DIR.is_dir():
-        ARTIFACTS_DIR.mkdir(parents=True)
-
-    # TODO(scotttodd): group model artifacts into subfolders
-
-    # TODO(scotttodd): move to fixture with cache / download on demand
-    # onnx_url = "https://github.com/onnx/models/raw/main/validated/vision/classification/mobilenet/model/mobilenetv2-12.onnx"
-    # original_onnx_path = ARTIFACTS_DIR / "mobilenetv2-12.onnx"
-    onnx_url = "https://github.com/onnx/models/raw/main/validated/vision/classification/resnet/model/resnet50-v1-12.onnx"
-    original_onnx_path = ARTIFACTS_DIR / "resnet50-v1-12.onnx"
-    # urllib.request.urlretrieve(onnx_url, original_onnx_path)
-
-    upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
-
-    # # TODO(scotttodd): prepare_input helper function
-    input_data = rng.random((1, 3, 224, 224), dtype=np.float32)
-    input_data_path = original_onnx_path.with_name(
-        original_onnx_path.stem + "_input_0.bin"
-    )
-    write_binary_to_file(input_data, input_data_path)
-    # logger.info(input_data)
-
-    # Run through ONNX Runtime.
-    onnx_session = InferenceSession(upgraded_onnx_path)
-    # onnx_results = onnx_session.run(["output"], {"input": input_data})
-    onnx_results = onnx_session.run(["resnetv17_dense0_fwd"], {"data": input_data})
-    # logger.info(np.array(onnx_results[0]))
-    reference_output_data_path = original_onnx_path.with_name(
-        original_onnx_path.stem + "_output_0.bin"
-    )
-    write_binary_to_file(onnx_results[0], reference_output_data_path)
-
-    # Import, compile, then run with IREE.
-    imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)
-    iree_module_path = compile_mlir_with_iree(
-        imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
-    )
-    # Note: could load the output into memory here and compare using numpy.
-    run_iree_module(
-        iree_module_path,
-        [
-            "--device=local-task",
-            f"--input=1x3x224x224xf32=@{input_data_path}",
-            f"--expected_output=1x1000xf32=@{reference_output_data_path}",
-        ],
-    )
-
-
 # What varies between each test:
 #   Model URL
 #   Model name
@@ -207,3 +158,64 @@ def test_basic():
 #     Names of outputs
 #     Shapes of outputs
 # Can get the function signature from the loaded ONNX model
+
+
+@pytest.fixture
+def compare_between_iree_and_onnxruntime():
+    def fn(
+        model_name: str,
+        model_url: str,
+        input_name: str,
+        input_shape: tuple[int, ...],
+        input_type: str,
+        output_name: str,
+        output_shape: tuple[int, ...],
+        output_type: str,
+    ):
+        if not ARTIFACTS_DIR.is_dir():
+            ARTIFACTS_DIR.mkdir(parents=True)
+        # TODO(scotttodd): group model artifacts into subfolders
+
+        # TODO(scotttodd): move to fixture with cache / download on demand
+        # TODO(scotttodd): extract name from URL?
+        original_onnx_path = ARTIFACTS_DIR / f"{model_name}.onnx"
+        urllib.request.urlretrieve(model_url, original_onnx_path)
+
+        upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
+
+        # TODO(scotttodd): prepare_input helper function, multiple inputs
+        # TODO(scotttodd): dtype from input_shape (or ONNX model reflection)
+        input_data = rng.random(input_shape, dtype=np.float32)
+        input_data_path = original_onnx_path.with_name(
+            original_onnx_path.stem + "_input_0.bin"
+        )
+        write_binary_to_file(input_data, input_data_path)
+        # logger.info(input_data)
+
+        # Run through ONNX Runtime.
+        onnx_session = InferenceSession(upgraded_onnx_path)
+        # TODO(scotttodd): multiple inputs/outputs
+        onnx_results = onnx_session.run([output_name], {input_name: input_data})
+        # logger.info(np.array(onnx_results[0]))
+        reference_output_data_path = original_onnx_path.with_name(
+            original_onnx_path.stem + "_output_0.bin"
+        )
+        write_binary_to_file(onnx_results[0], reference_output_data_path)
+
+        # Import, compile, then run with IREE.
+        imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)
+        iree_module_path = compile_mlir_with_iree(
+            imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
+        )
+        # Note: could load the output into memory here and compare using numpy.
+        # TODO(scotttodd): signature conversions from onnx/numpy to IREE
+        run_iree_module(
+            iree_module_path,
+            [
+                "--device=local-task",
+                f"--input=1x3x224x224xf32=@{input_data_path}",
+                f"--expected_output=1x1000xf32=@{reference_output_data_path}",
+            ],
+        )
+
+    return fn
