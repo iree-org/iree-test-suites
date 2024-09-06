@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 
+# https://github.com/onnx/models/tree/main/validated/vision/classification/mobilenet
 def test_mobilenetv2_12(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_name="mobilenetv2-12",
@@ -18,6 +19,7 @@ def test_mobilenetv2_12(compare_between_iree_and_onnxruntime):
     )
 
 
+# https://github.com/onnx/models/tree/main/validated/vision/classification/resnet
 def test_resnet50_v1_12(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_name="resnet50-v1-12",
@@ -29,3 +31,8 @@ def test_resnet50_v1_12(compare_between_iree_and_onnxruntime):
         output_shape=(),
         output_type="",
     )
+
+
+# TODO(scotttodd): add annotations:
+#    xfail (with Exception subclass / reason)
+#    marks (size of test, hardware required, etc.)
