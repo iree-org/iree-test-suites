@@ -48,8 +48,7 @@ graph LR
     pytest \
       -n auto \
       -rA \
-      --timeout=30 \
-      --durations=20 \
+      --durations=0 \
     ```
 
     See https://docs.pytest.org/en/stable/how-to/usage.html for other options.

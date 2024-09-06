@@ -22,7 +22,9 @@ See https://groups.google.com/g/iree-discuss/c/GIWyj8hmP0k/ for context.
 
 [![Test ONNX Models](https://github.com/iree-org/iree-test-suites/actions/workflows/test_onnx_models.yml/badge.svg?branch=main)](https://github.com/iree-org/iree-test-suites/actions/workflows/test_onnx_models.yml?query=branch%3Amain)
 
-TODO: overview / details
+* Tests that import, compile, and run ONNX models through IREE then compare
+  the outputs against a reference (ONNX Runtime).
+* Runnable via [pytest](https://docs.pytest.org/).
 
 ### [onnx_ops/](onnx_ops/) : Open Neural Network Exchange operations
 
@@ -30,5 +32,5 @@ TODO: overview / details
 
 * 1250+ tests for [ONNX](https://onnx.ai/) framework
   [operators](https://onnx.ai/onnx/operators/).
-* Runnable via [pytest](https://docs.pytest.org/en/stable/) using a
+* Runnable via [pytest](https://docs.pytest.org/) using a
   configurable set of flags to `iree-compile` and `iree-run-module`.
