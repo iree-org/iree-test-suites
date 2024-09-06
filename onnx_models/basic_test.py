@@ -103,11 +103,11 @@ def run_iree_module(iree_module_path: Path, run_flags: List[str]):
         logger.error(ret.stderr.decode("utf-8"))
         raise RuntimeError(f"  '{iree_module_path.name}' run failed")
     # TODO(scotttodd): write outputs to files, or use --expected_output
-    logger.info(f"Run of '{iree_module_path}' succeeded")
-    logger.info("iree-run-module stdout:")
-    logger.info(ret.stdout.decode("utf-8"))
-    logger.info("iree-run-module stderr:")
-    logger.info(ret.stderr.decode("utf-8"))
+    # logger.info(f"Run of '{iree_module_path}' succeeded")
+    # logger.info("iree-run-module stdout:")
+    # logger.info(ret.stdout.decode("utf-8"))
+    # logger.info("iree-run-module stderr:")
+    # logger.info(ret.stderr.decode("utf-8"))
 
 
 # map numpy dtype -> (iree dtype, struct.pack format str)
@@ -159,30 +159,39 @@ def test_basic():
     # urllib.request.urlretrieve(onnx_url, original_onnx_path)
 
     upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
+
+    # # TODO(scotttodd): prepare_input helper function
+    input_data = rng.random((1, 3, 224, 224), dtype=np.float32)
+    input_data_path = original_onnx_path.with_name(
+        original_onnx_path.stem + "_input_0.bin"
+    )
+    write_binary_to_file(input_data, input_data_path)
+    # logger.info(input_data)
+
+    # Run through ONNX Runtime.
+    onnx_session = InferenceSession(upgraded_onnx_path)
+    # onnx_results = onnx_session.run(["output"], {"input": input_data})
+    onnx_results = onnx_session.run(["resnetv17_dense0_fwd"], {"data": input_data})
+    # logger.info(np.array(onnx_results[0]))
+    reference_output_data_path = original_onnx_path.with_name(
+        original_onnx_path.stem + "_output_0.bin"
+    )
+    write_binary_to_file(onnx_results[0], reference_output_data_path)
+
+    # Import, compile, then run with IREE.
     imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)
     iree_module_path = compile_mlir_with_iree(
         imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
     )
-
-    # # TODO(scotttodd): prepare_input helper function
-    random_data = rng.random((1, 3, 224, 224), dtype=np.float32)
-    random_data_path = original_onnx_path.with_name(
-        original_onnx_path.stem + "_input_0.bin"
-    )
-    write_binary_to_file(random_data, random_data_path)
-    # logger.info(random_data)
-
+    # Note: could load the output into memory here and compare using numpy.
     run_iree_module(
         iree_module_path,
-        ["--device=local-task", f"--input=1x3x224x224xf32=@{random_data_path}"],
+        [
+            "--device=local-task",
+            f"--input=1x3x224x224xf32=@{input_data_path}",
+            f"--expected_output=1x1000xf32=@{reference_output_data_path}",
+        ],
     )
-
-    onnx_session = InferenceSession(upgraded_onnx_path)
-    # onnx_results = onnx_session.run(["output"], {"input": random_data})
-    onnx_results = onnx_session.run(["resnetv17_dense0_fwd"], {"data": random_data})
-    logger.info(onnx_results)
-
-    # TODO(scotttodd): Compare results
 
 
 # What varies between each test:
@@ -195,3 +204,4 @@ def test_basic():
 #     Number of outputs
 #     Names of outputs
 #     Shapes of outputs
+# Can get the function signature from the loaded ONNX model
