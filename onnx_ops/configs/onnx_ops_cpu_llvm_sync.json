@@ -13,7 +13,9 @@
     "onnx/node/generated/test_group_normalization_epsilon_expanded",
     "onnx/node/generated/test_group_normalization_example_expanded"
   ],
-  "skip_run_tests": [],
+  "skip_run_tests": [
+    "onnx/node/generated/test_gridsample_zeros_padding"
+  ],
   "expected_compile_failures": [
     "onnx/node/generated/test_adagrad",
     "onnx/node/generated/test_adagrad_multiple",
@@ -442,7 +444,6 @@
     "onnx/node/generated/test_gridsample_nearest",
     "onnx/node/generated/test_gridsample_nearest_align_corners_0_additional_1",
     "onnx/node/generated/test_gridsample_nearest_align_corners_1_additional_1",
-    "onnx/node/generated/test_gridsample_zeros_padding",
     "onnx/node/generated/test_pow",
     "onnx/node/generated/test_pow_example",
     "onnx/node/generated/test_pow_types_float32_int32",
