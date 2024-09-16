@@ -9,6 +9,7 @@
   ],
   "skip_compile_tests": [
     "onnx/node/generated/test_dequantizelinear",
+    "onnx/node/generated/test_einsum_inner_prod",
     "onnx/node/generated/test_group_normalization_epsilon_expanded",
     "onnx/node/generated/test_group_normalization_example_expanded"
   ],
@@ -441,7 +442,6 @@
     "onnx/node/generated/test_gridsample_nearest",
     "onnx/node/generated/test_gridsample_nearest_align_corners_0_additional_1",
     "onnx/node/generated/test_gridsample_nearest_align_corners_1_additional_1",
-    "onnx/node/generated/test_gridsample_zeros_padding",
     "onnx/node/generated/test_pow",
     "onnx/node/generated/test_pow_example",
     "onnx/node/generated/test_pow_types_float32_int32",
