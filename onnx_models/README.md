@@ -88,6 +88,15 @@ graph LR
     pytest -n 4
     ```
 
+* Create an HTMl report using https://pytest-html.readthedocs.io/en/latest/index.html
+
+    ```bash
+    pytest --html=report.html --self-contained-html --log-cli-level=info
+    ```
+
+    See also
+    https://docs.pytest.org/en/latest/how-to/output.html#creating-junitxml-format-files
+
 ## Debugging tests outside of pytest
 
 Each test generates some files as it runs:

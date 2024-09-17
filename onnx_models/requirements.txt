@@ -4,6 +4,7 @@
 onnx
 onnxruntime
 pytest
+pytest-html
 pytest-reportlog
 pytest-timeout
 pytest-xdist
