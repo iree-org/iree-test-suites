@@ -10,12 +10,11 @@ from .utils import *
 
 
 # https://github.com/onnx/models/tree/main/validated/vision/classification/mnist
-# TODO(scotttodd): fix test runner (only use "Input3" input?)
-# @pytest.mark.xfail(raises=IreeCompileException)
-# def test_mnist_7(compare_between_iree_and_onnxruntime):
-#     compare_between_iree_and_onnxruntime(
-#         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/mnist/model/mnist-7.onnx",
-#     )
+@pytest.mark.xfail(raises=IreeCompileException)
+def test_mnist_7(compare_between_iree_and_onnxruntime):
+    compare_between_iree_and_onnxruntime(
+        model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/mnist/model/mnist-7.onnx",
+    )
 
 
 # https://github.com/onnx/models/tree/main/validated/vision/classification/mobilenet

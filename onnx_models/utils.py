@@ -60,6 +60,14 @@ numpy_to_iree_dtype_map = {
 }
 
 
+def convert_numpy_to_iree_type_string(ndarr: np.ndarray):
+    shape = "x".join(str(x) for x in ndarr.shape)
+    dtype = numpy_to_iree_dtype_map[ndarr.dtype]
+    if shape == "":
+        return dtype
+    return f"{shape}x{dtype}"
+
+
 def pack_ndarray_to_binary(ndarr: np.ndarray):
     mylist = ndarr.flatten().tolist()
     dtype = ndarr.dtype
@@ -112,7 +120,23 @@ def convert_proto_elem_type_to_iree_dtype(etype) -> str:
         return "f8e5m2"
     if etype == onnx.TensorProto.FLOAT8E5M2FNUZ:
         return "f8e5m2fnuz"
-    return ""
+    raise NotImplementedError(
+        f"type conversion for '{etype}' enum value not implemented"
+    )
+
+
+def convert_node_arg_type_to_numpy_dtype(type: str):
+    # TODO(scotttodd): use onnx.TensorProto instead? enums > strings
+    if type == "tensor(float)":
+        return np.float32
+    raise NotImplementedError(f"type conversion for '{type}' not implemented")
+
+
+def convert_node_arg_type_to_iree_dtype(type: str) -> str:
+    # TODO(scotttodd): use onnx.TensorProto instead? enums > strings
+    if type == "tensor(float)":
+        return "f32"
+    raise NotImplementedError(f"type conversion for '{type}' not implemented")
 
 
 # TODO(#18289): use real frontend API, import model in-memory?
