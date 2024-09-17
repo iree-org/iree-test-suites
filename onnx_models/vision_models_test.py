@@ -8,9 +8,12 @@ import pytest
 
 from .utils import *
 
+# Note: can mark tests as expected to fail at a specific stage with:
+# @pytest.mark.xfail(raises=IreeCompileException)
+# @pytest.mark.xfail(raises=IreeRunException)
+
 
 # https://github.com/onnx/models/tree/main/validated/vision/classification/mnist
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_mnist_7(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/mnist/model/mnist-7.onnx",
@@ -18,7 +21,6 @@ def test_mnist_7(compare_between_iree_and_onnxruntime):
 
 
 # https://github.com/onnx/models/tree/main/validated/vision/classification/mobilenet
-@pytest.mark.xfail(raises=IreeRunException)
 def test_mobilenetv2_12(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/mobilenet/model/mobilenetv2-12.onnx",
