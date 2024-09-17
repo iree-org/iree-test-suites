@@ -190,53 +190,50 @@ def run_iree_module(iree_module_path: Path, run_flags: list[str]):
         raise IreeRunException(f"  '{iree_module_path.name}' run failed")
 
 
+def compare_between_iree_and_onnxruntime_fn(model_url: str):
+    if not ARTIFACTS_DIR.is_dir():
+        ARTIFACTS_DIR.mkdir(parents=True)
+    # TODO(scotttodd): group model artifacts into subfolders
+
+    # Extract path and file components from the model URL.
+    # "https://github.com/.../mobilenetv2-12.onnx" --> "mobilenetv2-12.onnx"
+    model_file_name = model_url.rsplit("/", 1)[-1]
+    # "mobilenetv2-12.onnx" --> "mobilenetv2-12"
+    model_name = model_file_name.rsplit(".", 1)[0]
+
+    # Download the model as needed.
+    # TODO(scotttodd): move to fixture with cache / download on demand
+    # TODO(scotttodd): overwrite if already existing? check SHA?
+    original_onnx_path = ARTIFACTS_DIR / f"{model_name}.onnx"
+    if not original_onnx_path.exists():
+        urllib.request.urlretrieve(model_url, original_onnx_path)
+
+    # TODO(scotttodd): cache ONNX metadata and runtime results (pickle?)
+    upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
+
+    onnx_model_metadata = get_onnx_model_metadata(upgraded_onnx_path)
+    logger.debug("ONNX model metadata:")
+    logger.debug(onnx_model_metadata)
+
+    # Prepare inputs and expected outputs for running through IREE.
+    run_module_args = []
+    for input in onnx_model_metadata.inputs:
+        run_module_args.append(f"--input={input.type}=@{input.data_file}")
+    for output in onnx_model_metadata.outputs:
+        run_module_args.append(f"--expected_output={output.type}=@{output.data_file}")
+
+    # Import, compile, then run with IREE.
+    imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)
+    iree_module_path = compile_mlir_with_iree(
+        imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
+    )
+    # Note: could load the output into memory here and compare using numpy
+    # if the pass/fail criteria is difficult to model in the native tooling.
+    run_flags = ["--device=local-task"]
+    run_flags.extend(run_module_args)
+    run_iree_module(iree_module_path, run_flags)
+
+
 @pytest.fixture
 def compare_between_iree_and_onnxruntime():
-    def fn(
-        model_url: str,
-    ):
-        if not ARTIFACTS_DIR.is_dir():
-            ARTIFACTS_DIR.mkdir(parents=True)
-        # TODO(scotttodd): group model artifacts into subfolders
-
-        # Extract path and file components from the model URL.
-        # "https://github.com/.../mobilenetv2-12.onnx" --> "mobilenetv2-12.onnx"
-        model_file_name = model_url.rsplit("/", 1)[-1]
-        # "mobilenetv2-12.onnx" --> "mobilenetv2-12"
-        model_name = model_file_name.rsplit(".", 1)[0]
-
-        # Download the model as needed.
-        # TODO(scotttodd): move to fixture with cache / download on demand
-        # TODO(scotttodd): overwrite if already existing? check SHA?
-        original_onnx_path = ARTIFACTS_DIR / f"{model_name}.onnx"
-        if not original_onnx_path.exists():
-            urllib.request.urlretrieve(model_url, original_onnx_path)
-
-        # TODO(scotttodd): cache ONNX metadata and runtime results (pickle?)
-        upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
-
-        onnx_model_metadata = get_onnx_model_metadata(upgraded_onnx_path)
-        logger.debug("ONNX model metadata:")
-        logger.debug(onnx_model_metadata)
-
-        # Prepare inputs and expected outputs for running through IREE.
-        run_module_args = []
-        for input in onnx_model_metadata.inputs:
-            run_module_args.append(f"--input={input.type}=@{input.data_file}")
-        for output in onnx_model_metadata.outputs:
-            run_module_args.append(
-                f"--expected_output={output.type}=@{output.data_file}"
-            )
-
-        # Import, compile, then run with IREE.
-        imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)
-        iree_module_path = compile_mlir_with_iree(
-            imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
-        )
-        # Note: could load the output into memory here and compare using numpy
-        # if the pass/fail criteria is difficult to model in the native tooling.
-        run_flags = ["--device=local-task"]
-        run_flags.extend(run_module_args)
-        run_iree_module(iree_module_path, run_flags)
-
-    return fn
+    return compare_between_iree_and_onnxruntime_fn
