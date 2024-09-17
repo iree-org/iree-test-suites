@@ -30,3 +30,10 @@ def test_resnet50_v1_12(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/resnet/model/resnet50-v1-12.onnx",
     )
+
+
+# https://github.com/onnx/models/tree/main/validated/vision/classification/alexnet
+def test_alexnet_9(compare_between_iree_and_onnxruntime):
+    compare_between_iree_and_onnxruntime(
+        model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/alexnet/model/bvlcalexnet-9.onnx",
+    )
