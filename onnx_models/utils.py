@@ -19,6 +19,11 @@ THIS_DIR = Path(__file__).parent
 # Exception types
 ###############################################################################
 
+# Note: can mark tests as expected to fail at a specific stage with:
+# @pytest.mark.xfail(raises=IreeImportOnnxException)
+# @pytest.mark.xfail(raises=IreeCompileException)
+# @pytest.mark.xfail(raises=IreeRunException)
+
 
 class IreeImportOnnxException(RuntimeError):
     pass

@@ -52,3 +52,37 @@ graph LR
     ```
 
     See https://docs.pytest.org/en/stable/how-to/usage.html for other options.
+
+## Advanced pytest usage
+
+* The `log-cli-level` level can also be set to `debug`, `warning`, or `error`.
+  See https://docs.pytest.org/en/stable/how-to/logging.html.
+* Run only tests matching a name pattern:
+
+    ```bash
+    pytest -k resnet
+    ```
+
+* Skip "medium" sized tests using custom markers
+  (https://docs.pytest.org/en/stable/example/markers.html):
+
+    ```bash
+    pytest -m "not size_medium"
+    ```
+
+* Ignore xfail marks
+  (https://docs.pytest.org/en/stable/how-to/skipping.html#ignoring-xfail):
+
+    ```bash
+    pytest --runxfail
+    ```
+
+* Run tests in parallel using https://pytest-xdist.readthedocs.io/en/stable/:
+
+    ```bash
+    # Run with an automatic number of threads (usually one per CPU core).
+    pytest -n auto
+
+    # Run on an explicit number of threads.
+    pytest -n 4
+    ```

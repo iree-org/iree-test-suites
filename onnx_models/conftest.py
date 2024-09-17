@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 rng = np.random.default_rng(0)
 
 THIS_DIR = Path(__file__).parent
-ARTIFACTS_DIR = THIS_DIR / "artifacts"
+ARTIFACTS_ROOT = THIS_DIR / "artifacts"
 
 
 ###############################################################################
@@ -190,10 +190,10 @@ def run_iree_module(iree_module_path: Path, run_flags: list[str]):
         raise IreeRunException(f"  '{iree_module_path.name}' run failed")
 
 
-def compare_between_iree_and_onnxruntime_fn(model_url: str):
-    if not ARTIFACTS_DIR.is_dir():
-        ARTIFACTS_DIR.mkdir(parents=True)
-    # TODO(scotttodd): group model artifacts into subfolders
+def compare_between_iree_and_onnxruntime_fn(model_url: str, artifacts_subdir=""):
+    test_artifacts_dir = ARTIFACTS_ROOT / artifacts_subdir
+    if not test_artifacts_dir.is_dir():
+        test_artifacts_dir.mkdir(parents=True)
 
     # Extract path and file components from the model URL.
     # "https://github.com/.../mobilenetv2-12.onnx" --> "mobilenetv2-12.onnx"
@@ -204,7 +204,7 @@ def compare_between_iree_and_onnxruntime_fn(model_url: str):
     # Download the model as needed.
     # TODO(scotttodd): move to fixture with cache / download on demand
     # TODO(scotttodd): overwrite if already existing? check SHA?
-    original_onnx_path = ARTIFACTS_DIR / f"{model_name}.onnx"
+    original_onnx_path = test_artifacts_dir / f"{model_name}.onnx"
     if not original_onnx_path.exists():
         urllib.request.urlretrieve(model_url, original_onnx_path)
 
