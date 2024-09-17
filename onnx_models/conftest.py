@@ -7,7 +7,6 @@
 import logging
 import numpy as np
 import onnx
-import struct
 import pytest
 import subprocess
 import urllib.request
@@ -24,137 +23,10 @@ rng = np.random.default_rng(0)
 THIS_DIR = Path(__file__).parent
 ARTIFACTS_DIR = THIS_DIR / "artifacts"
 
-###############################################################################
-# General utilities
-###############################################################################
-
-# map numpy dtype -> (iree dtype, struct.pack format str)
-numpy_to_iree_dtype_map = {
-    np.dtype("int64"): ("si64", "q"),
-    np.dtype("uint64"): ("ui64", "Q"),
-    np.dtype("int32"): ("si32", "i"),
-    np.dtype("uint32"): ("ui32", "I"),
-    np.dtype("int16"): ("si16", "h"),
-    np.dtype("uint16"): ("ui16", "H"),
-    np.dtype("int8"): ("si8", "b"),
-    np.dtype("uint8"): ("ui8", "B"),
-    np.dtype("float64"): ("f64", "d"),
-    np.dtype("float32"): ("f32", "f"),
-    np.dtype("float16"): ("f16", "e"),
-    np.dtype("bool"): ("i1", "?"),
-}
-
-
-def pack_ndarray_to_binary(ndarr: np.ndarray):
-    mylist = ndarr.flatten().tolist()
-    dtype = ndarr.dtype
-    bytearr = b""
-    if dtype in numpy_to_iree_dtype_map:
-        iree_dtype = numpy_to_iree_dtype_map[dtype][1]
-        bytearr = struct.pack(f"{len(mylist)}{iree_dtype}", *mylist)
-    else:
-        raise NotImplementedError(
-            f"Unsupported data type in pack_ndarray_to_binary(): '{dtype}'"
-        )
-    return bytearr
-
-
-def write_binary_to_file(ndarr: np.ndarray, filename: Path):
-    with open(filename, "wb") as f:
-        bytearr = pack_ndarray_to_binary(ndarr)
-        f.write(bytearr)
-
 
 ###############################################################################
 # ONNX loading, running, import, etc.
 ###############################################################################
-
-ONNX_CONVERTER_OUTPUT_MIN_VERSION = 17
-
-
-# TODO(#18289): use real frontend API, import model in-memory?
-def upgrade_onnx_model_version(original_onnx_path: Path):
-    original_model = onnx.load_model(original_onnx_path)
-    converted_model = onnx.version_converter.convert_version(
-        original_model, ONNX_CONVERTER_OUTPUT_MIN_VERSION
-    )
-    upgraded_onnx_path = original_onnx_path.with_name(
-        original_onnx_path.stem + f"_version{ONNX_CONVERTER_OUTPUT_MIN_VERSION}.onnx"
-    )
-    logger.info(
-        f"Upgrading '{original_onnx_path.relative_to(THIS_DIR)}' to '{upgraded_onnx_path.relative_to(THIS_DIR)}'"
-    )
-    onnx.save(converted_model, upgraded_onnx_path)
-    return upgraded_onnx_path
-
-
-# TODO(#18289): use real frontend API, import model in-memory?
-def import_onnx_model_to_mlir(onnx_path: Path):
-    imported_mlir_path = onnx_path.with_suffix(".mlir")
-    logger.info(
-        f"Importing '{onnx_path.relative_to(THIS_DIR)}' to '{imported_mlir_path.relative_to(THIS_DIR)}'"
-    )
-    exec_args = [
-        "iree-import-onnx",
-        str(onnx_path),
-        "-o",
-        str(imported_mlir_path),
-    ]
-    ret = subprocess.run(exec_args, capture_output=True)
-    if ret.returncode != 0:
-        logger.error(f"Import of '{onnx_path.name}' failed!")
-        logger.error("iree-import-onnx stdout:")
-        logger.error(ret.stdout.decode("utf-8"))
-        logger.error("iree-import-onnx stderr:")
-        logger.error(ret.stderr.decode("utf-8"))
-        raise IreeImportOnnxException(f"  '{onnx_path.name}' import failed")
-    return imported_mlir_path
-
-
-def convert_proto_elem_type_to_iree_dtype(etype):
-    if etype == onnx.TensorProto.FLOAT:
-        return "f32"
-    if etype == onnx.TensorProto.UINT8:
-        return "i8"
-    if etype == onnx.TensorProto.INT8:
-        return "i8"
-    if etype == onnx.TensorProto.UINT16:
-        return "i16"
-    if etype == onnx.TensorProto.INT16:
-        return "i16"
-    if etype == onnx.TensorProto.INT32:
-        return "i32"
-    if etype == onnx.TensorProto.INT64:
-        return "i64"
-    if etype == onnx.TensorProto.BOOL:
-        return "i1"
-    if etype == onnx.TensorProto.FLOAT16:
-        return "f16"
-    if etype == onnx.TensorProto.DOUBLE:
-        return "f64"
-    if etype == onnx.TensorProto.UINT32:
-        return "i32"
-    if etype == onnx.TensorProto.UINT64:
-        return "i64"
-    if etype == onnx.TensorProto.COMPLEX64:
-        return "complex<f32>"
-    if etype == onnx.TensorProto.COMPLEX128:
-        return "complex<f64>"
-    if etype == onnx.TensorProto.BFLOAT16:
-        return "bf16"
-    if etype == onnx.TensorProto.FLOAT8E4M3FN:
-        return "f8e4m3fn"
-    if etype == onnx.TensorProto.FLOAT8E4M3FNUZ:
-        return "f8e4m3fnuz"
-    if etype == onnx.TensorProto.FLOAT8E5M2:
-        return "f8e5m2"
-    if etype == onnx.TensorProto.FLOAT8E5M2FNUZ:
-        return "f8e5m2fnuz"
-    if etype == onnx.TensorProto.UINT4:
-        return "i4"
-    if etype == onnx.TensorProto.INT4:
-        return "i4"
-    return ""
 
 
 def convert_onnx_tensor_proto_to_numpy_dimensions(
@@ -210,7 +82,7 @@ def get_onnx_model_metadata(onnx_path: Path):
             raise NotImplementedError(f"Unsupported numpy type: {numpy_dtype}")
         logger.debug(input_data)
         input_data_path = onnx_path.with_name(onnx_path.stem + f"_input_{idx}.bin")
-        write_binary_to_file(input_data, input_data_path)
+        write_ndarray_to_binary_file(input_data, input_data_path)
 
         iree_type = convert_onnx_tensor_proto_to_iree_type_string(tensor_type)
         inputs.append(
@@ -337,7 +209,7 @@ def compare_between_iree_and_onnxruntime():
             reference_output_data_path = original_onnx_path.with_name(
                 original_onnx_path.stem + f"_output_{idx}.bin"
             )
-            write_binary_to_file(onnx_result, reference_output_data_path)
+            write_ndarray_to_binary_file(onnx_result, reference_output_data_path)
             run_module_args.append(
                 f"--expected_output={output_type}=@{reference_output_data_path}"
             )
