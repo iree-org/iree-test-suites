@@ -164,15 +164,18 @@ def run_iree_module(iree_module_path: Path, run_flags: List[str]):
 @pytest.fixture
 def compare_between_iree_and_onnxruntime():
     def fn(
-        model_name: str,
         model_url: str,
     ):
+        # "https://github.com/.../mobilenetv2-12.onnx" --> "mobilenetv2-12.onnx"
+        model_file_name = model_url.rsplit("/", 1)[-1]
+        # "mobilenetv2-12.onnx" --> "mobilenetv2-12"
+        model_name = model_file_name.rsplit(".", 1)[0]
+
         if not ARTIFACTS_DIR.is_dir():
             ARTIFACTS_DIR.mkdir(parents=True)
         # TODO(scotttodd): group model artifacts into subfolders
 
         # TODO(scotttodd): move to fixture with cache / download on demand
-        # TODO(scotttodd): extract name from URL?
         # TODO(scotttodd): overwrite if already existing? check SHA?
         original_onnx_path = ARTIFACTS_DIR / f"{model_name}.onnx"
         if not original_onnx_path.exists():
