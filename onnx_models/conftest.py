@@ -125,11 +125,12 @@ def get_onnx_model_metadata(onnx_path: Path) -> OnnxModelMetadata:
     for i in range(len(onnx_results)):
         output = onnx_session.get_outputs()[i]
         result = onnx_results[i]
+        iree_type = convert_numpy_to_iree_type_string(result)
         logger.debug(f"Session output [{idx}]")
         logger.debug(f"  name: '{output.name}'")
         logger.debug(f"  shape (actual): {result.shape}")
         logger.debug(f"  type (numpy): '{result.dtype}'")
-        iree_type = convert_numpy_to_iree_type_string(result)
+        logger.debug(f"  iree parameter: {iree_type}")
         output_data_path = onnx_path.with_name(onnx_path.stem + f"_output_{idx}.bin")
         write_ndarray_to_binary_file(result, output_data_path)
 
@@ -212,15 +213,18 @@ def compare_between_iree_and_onnxruntime_fn(model_url: str, artifacts_subdir="")
     upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
 
     onnx_model_metadata = get_onnx_model_metadata(upgraded_onnx_path)
-    logger.debug("ONNX model metadata:")
     logger.debug(onnx_model_metadata)
 
     # Prepare inputs and expected outputs for running through IREE.
     run_module_args = []
     for input in onnx_model_metadata.inputs:
-        run_module_args.append(f"--input={input.type}=@{input.data_file}")
+        run_module_args.append(
+            f"--input={input.type}=@{input.data_file.relative_to(THIS_DIR)}"
+        )
     for output in onnx_model_metadata.outputs:
-        run_module_args.append(f"--expected_output={output.type}=@{output.data_file}")
+        run_module_args.append(
+            f"--expected_output={output.type}=@{output.data_file.relative_to(THIS_DIR)}"
+        )
 
     # Import, compile, then run with IREE.
     imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)

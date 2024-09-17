@@ -56,7 +56,6 @@ jobs:
           source ${VENV_DIR}/bin/activate
           pytest onnx_models/ \
             -rA \
-            -n 4 \
             --log-cli-level=info \
             --timeout=120 \
             --durations=0
