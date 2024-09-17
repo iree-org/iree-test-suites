@@ -6,11 +6,10 @@
 
 import logging
 import numpy as np
-import onnx
 import pytest
 import subprocess
 import urllib.request
-from onnx.mapping import TENSOR_TYPE_MAP
+from dataclasses import dataclass
 from onnxruntime import InferenceSession, NodeArg
 from pathlib import Path
 
@@ -28,14 +27,32 @@ ARTIFACTS_DIR = THIS_DIR / "artifacts"
 ###############################################################################
 
 
-def convert_onnx_tensor_proto_to_numpy_dimensions(
-    tensor_proto: onnx.onnx_ml_pb2.TensorProto,
-) -> tuple[int]:
-    # Note: turning dynamic dimensions into just 1 here, since we need
-    # a concrete (static) shape buffer of input data in the tests.
-    return tuple(
-        d.dim_value if d.HasField("dim_value") else 1 for d in tensor_proto.shape.dim
-    )
+@dataclass(frozen=True)
+class IreeModelParameterMetadata:
+    """Metadata for a single input or output used with iree-run-module tooling.
+
+    Args:
+        name: The name of the parameter.
+        type: The type of the parameter as expected by the tools, e.g. "2x2xi32".
+        data_file: Path to either the input or expected output binary file for this parameter.
+    """
+
+    name: str
+    type: str
+    data_file: Path
+
+
+@dataclass(frozen=True)
+class OnnxModelMetadata:
+    """Metadata for an ONNX model.
+
+    Args:
+        inputs: One parameter metadata per input.
+        outputs: One parameter metadata per output.
+    """
+
+    inputs: list[IreeModelParameterMetadata]
+    outputs: list[IreeModelParameterMetadata]
 
 
 def convert_onnxruntime_node_arg_to_numpy_dimensions(
@@ -44,21 +61,6 @@ def convert_onnxruntime_node_arg_to_numpy_dimensions(
     # Note: turning dynamic dimensions into just 1 here, since we need
     # a concrete (static) shape buffer of input data in the tests.
     return tuple(x if isinstance(x, int) else 1 for x in node_arg.shape)
-
-
-def convert_onnx_tensor_proto_to_iree_type_string(
-    tensor_proto: onnx.onnx_ml_pb2.TensorProto,
-) -> str:
-    shape = tensor_proto.shape
-    # Note: turning dynamic dimensions into just "1" here, since we need
-    # a concrete (static) shape buffer of input data in the tests.
-    shape = "x".join(
-        [str(d.dim_value) if d.HasField("dim_value") else "1" for d in shape.dim]
-    )
-    dtype = convert_proto_elem_type_to_iree_dtype(tensor_proto.elem_type)
-    if shape == "":
-        return dtype
-    return f"{shape}x{dtype}"
 
 
 def convert_onnxruntime_shape_to_iree_type_string(
@@ -73,7 +75,7 @@ def convert_onnxruntime_shape_to_iree_type_string(
     return f"{shape}x{dtype}"
 
 
-def get_onnx_model_metadata(onnx_path: Path):
+def get_onnx_model_metadata(onnx_path: Path) -> OnnxModelMetadata:
     # We can either
     #   A) List all metadata explicitly
     #   B) Get metadata on demand from the .onnx protobuf using 'onnx'
@@ -106,14 +108,15 @@ def get_onnx_model_metadata(onnx_path: Path):
         write_ndarray_to_binary_file(input_data, input_data_path)
 
         inputs.append(
-            {
-                "name": input.name,
-                "iree_type": iree_type,
-                "input_data_path": input_data_path,
-            }
+            IreeModelParameterMetadata(
+                name=input.name,
+                type=iree_type,
+                data_file=input_data_path,
+            )
         )
         onnx_inputs[input.name] = input_data
 
+    # Run through onnxruntime and then save the output results.
     output_names = [output.name for output in onnx_session.get_outputs()]
     onnx_results = onnx_session.run(output_names, onnx_inputs)
 
@@ -131,23 +134,14 @@ def get_onnx_model_metadata(onnx_path: Path):
         write_ndarray_to_binary_file(result, output_data_path)
 
         outputs.append(
-            {
-                "name": output.name,
-                "iree_type": iree_type,
-                "output_data_path": output_data_path,
-            }
+            IreeModelParameterMetadata(
+                name=output.name,
+                type=iree_type,
+                data_file=output_data_path,
+            )
         )
 
-    outputs = []
-    for idx, output in enumerate(onnx_session.get_outputs()):
-        logger.debug(
-            f"Session output [{idx}] name: '{output.name}', shape: {output.shape}, type: {output.type}"
-        )
-
-    return {
-        "inputs": inputs,
-        "outputs": outputs,
-    }
+    return OnnxModelMetadata(inputs=inputs, outputs=outputs)
 
 
 ###############################################################################
@@ -201,39 +195,37 @@ def compare_between_iree_and_onnxruntime():
     def fn(
         model_url: str,
     ):
+        if not ARTIFACTS_DIR.is_dir():
+            ARTIFACTS_DIR.mkdir(parents=True)
+        # TODO(scotttodd): group model artifacts into subfolders
+
+        # Extract path and file components from the model URL.
         # "https://github.com/.../mobilenetv2-12.onnx" --> "mobilenetv2-12.onnx"
         model_file_name = model_url.rsplit("/", 1)[-1]
         # "mobilenetv2-12.onnx" --> "mobilenetv2-12"
         model_name = model_file_name.rsplit(".", 1)[0]
 
-        if not ARTIFACTS_DIR.is_dir():
-            ARTIFACTS_DIR.mkdir(parents=True)
-        # TODO(scotttodd): group model artifacts into subfolders
-
+        # Download the model as needed.
         # TODO(scotttodd): move to fixture with cache / download on demand
         # TODO(scotttodd): overwrite if already existing? check SHA?
         original_onnx_path = ARTIFACTS_DIR / f"{model_name}.onnx"
         if not original_onnx_path.exists():
             urllib.request.urlretrieve(model_url, original_onnx_path)
 
-        # TODO(scotttodd): cache ONNX metadata and runtime results
+        # TODO(scotttodd): cache ONNX metadata and runtime results (pickle?)
         upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
 
         onnx_model_metadata = get_onnx_model_metadata(upgraded_onnx_path)
-        logger.debug("ONNX model metadata2:")
+        logger.debug("ONNX model metadata:")
         logger.debug(onnx_model_metadata)
 
         # Prepare inputs and expected outputs for running through IREE.
         run_module_args = []
-        for input in onnx_model_metadata["inputs"]:
-            input_type = input["iree_type"]
-            input_data_path = input["input_data_path"]
-            run_module_args.append(f"--input={input_type}=@{input_data_path}")
-        for output in onnx_model_metadata["outputs"]:
-            output_type = output["iree_type"]
-            output_data_path = output["output_data_path"]
+        for input in onnx_model_metadata.inputs:
+            run_module_args.append(f"--input={input.type}=@{input.data_file}")
+        for output in onnx_model_metadata.outputs:
             run_module_args.append(
-                f"--expected_output={output_type}=@{output_data_path}"
+                f"--expected_output={output.type}=@{output.data_file}"
             )
 
         # Import, compile, then run with IREE.
@@ -241,7 +233,8 @@ def compare_between_iree_and_onnxruntime():
         iree_module_path = compile_mlir_with_iree(
             imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
         )
-        # Note: could load the output into memory here and compare using numpy.
+        # Note: could load the output into memory here and compare using numpy
+        # if the pass/fail criteria is difficult to model in the native tooling.
         run_flags = ["--device=local-task"]
         run_flags.extend(run_module_args)
         run_iree_module(iree_module_path, run_flags)

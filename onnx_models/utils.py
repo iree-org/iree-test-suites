@@ -62,7 +62,7 @@ numpy_to_iree_dtype_map = {
 
 def convert_numpy_to_iree_type_string(ndarr: np.ndarray):
     shape = "x".join(str(x) for x in ndarr.shape)
-    dtype = numpy_to_iree_dtype_map[ndarr.dtype]
+    dtype = numpy_to_iree_dtype_map[ndarr.dtype][0]
     if shape == "":
         return dtype
     return f"{shape}x{dtype}"
@@ -87,53 +87,15 @@ def pack_ndarray_to_binary(ndarr: np.ndarray):
 ###############################################################################
 
 
-def convert_proto_elem_type_to_iree_dtype(etype) -> str:
-    if etype == onnx.TensorProto.BOOL:
-        return "i1"
-    if etype == onnx.TensorProto.INT4 or etype == onnx.TensorProto.UINT4:
-        return "i4"
-    if etype == onnx.TensorProto.INT8 or etype == onnx.TensorProto.UINT8:
-        return "i8"
-    if etype == onnx.TensorProto.INT16 or etype == onnx.TensorProto.UINT16:
-        return "i16"
-    if etype == onnx.TensorProto.INT32 or etype == onnx.TensorProto.UINT32:
-        return "i32"
-    if etype == onnx.TensorProto.INT64 or etype == onnx.TensorProto.UINT64:
-        return "i64"
-    if etype == onnx.TensorProto.FLOAT16:
-        return "f16"
-    if etype == onnx.TensorProto.FLOAT:
-        return "f32"
-    if etype == onnx.TensorProto.DOUBLE:
-        return "f64"
-    if etype == onnx.TensorProto.COMPLEX64:
-        return "complex<f32>"
-    if etype == onnx.TensorProto.COMPLEX128:
-        return "complex<f64>"
-    if etype == onnx.TensorProto.BFLOAT16:
-        return "bf16"
-    if etype == onnx.TensorProto.FLOAT8E4M3FN:
-        return "f8e4m3fn"
-    if etype == onnx.TensorProto.FLOAT8E4M3FNUZ:
-        return "f8e4m3fnuz"
-    if etype == onnx.TensorProto.FLOAT8E5M2:
-        return "f8e5m2"
-    if etype == onnx.TensorProto.FLOAT8E5M2FNUZ:
-        return "f8e5m2fnuz"
-    raise NotImplementedError(
-        f"type conversion for '{etype}' enum value not implemented"
-    )
-
-
 def convert_node_arg_type_to_numpy_dtype(type: str):
-    # TODO(scotttodd): use onnx.TensorProto instead? enums > strings
+    # TODO(scotttodd): use onnx.TensorProto instead? prefer enums over strings
     if type == "tensor(float)":
         return np.float32
     raise NotImplementedError(f"type conversion for '{type}' not implemented")
 
 
 def convert_node_arg_type_to_iree_dtype(type: str) -> str:
-    # TODO(scotttodd): use onnx.TensorProto instead? enums > strings
+    # TODO(scotttodd): use onnx.TensorProto instead? prefer enums over strings
     if type == "tensor(float)":
         return "f32"
     raise NotImplementedError(f"type conversion for '{type}' not implemented")
