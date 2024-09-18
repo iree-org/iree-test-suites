@@ -5,18 +5,16 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import logging
-import numpy as np
 import pytest
 import subprocess
 import urllib.request
 from dataclasses import dataclass
-from onnxruntime import InferenceSession, NodeArg
+from onnxruntime import InferenceSession
 from pathlib import Path
 
 from .utils import *
 
 logger = logging.getLogger(__name__)
-rng = np.random.default_rng(0)
 
 THIS_DIR = Path(__file__).parent
 ARTIFACTS_ROOT = THIS_DIR / "artifacts"
@@ -55,26 +53,6 @@ class OnnxModelMetadata:
     outputs: list[IreeModelParameterMetadata]
 
 
-def convert_onnxruntime_node_arg_to_numpy_dimensions(
-    node_arg: NodeArg,
-) -> tuple[int]:
-    # Note: turning dynamic dimensions into just 1 here, since we need
-    # a concrete (static) shape buffer of input data in the tests.
-    return tuple(x if isinstance(x, int) else 1 for x in node_arg.shape)
-
-
-def convert_onnxruntime_shape_to_iree_type_string(
-    node_arg: NodeArg,
-) -> str:
-    # Note: turning dynamic dimensions into just "1" here, since we need
-    # a concrete (static) shape buffer of input data in the tests.
-    shape = "x".join([str(x) if isinstance(x, int) else "1" for x in node_arg.shape])
-    dtype = convert_node_arg_type_to_iree_dtype(node_arg.type)
-    if shape == "":
-        return dtype
-    return f"{shape}x{dtype}"
-
-
 def get_onnx_model_metadata(onnx_path: Path) -> OnnxModelMetadata:
     # We can either
     #   A) List all metadata explicitly
@@ -89,21 +67,13 @@ def get_onnx_model_metadata(onnx_path: Path) -> OnnxModelMetadata:
     for idx, input in enumerate(onnx_session.get_inputs()):
         logger.debug(f"Session input [{idx}]")
         logger.debug(f"  name: '{input.name}'")
-        numpy_dimensions = convert_onnxruntime_node_arg_to_numpy_dimensions(input)
-        iree_type = convert_onnxruntime_shape_to_iree_type_string(input)
+        iree_type = convert_ort_to_iree_type(input)
         logger.debug(f"  shape: {input.shape}")
-        logger.debug(f"  numpy shape: {numpy_dimensions}")
         logger.debug(f"  type: '{input.type}'")
         logger.debug(f"  iree parameter: {iree_type}")
 
         # Create a numpy tensor with some random data for the input.
-        numpy_dtype = convert_node_arg_type_to_numpy_dtype(input.type)
-        if numpy_dtype == np.float32 or numpy_dtype == np.float64:
-            input_data = rng.random(numpy_dimensions, dtype=numpy_dtype)
-        elif numpy_dtype == np.int32 or numpy_dtype == np.int64:
-            input_data = rng.integers(numpy_dimensions, dtype=numpy_dtype)
-        else:
-            raise NotImplementedError(f"Unsupported numpy type: {numpy_dtype}")
+        input_data = generate_numpy_input_for_ort_node_arg(input)
         input_data_path = onnx_path.with_name(onnx_path.stem + f"_input_{idx}.bin")
         write_ndarray_to_binary_file(input_data, input_data_path)
 

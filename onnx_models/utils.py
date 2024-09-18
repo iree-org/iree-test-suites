@@ -9,9 +9,11 @@ import numpy as np
 import onnx
 import struct
 import subprocess
+from onnxruntime import NodeArg
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+rng = np.random.default_rng(0)
 
 THIS_DIR = Path(__file__).parent
 
@@ -92,18 +94,66 @@ def pack_ndarray_to_binary(ndarr: np.ndarray):
 ###############################################################################
 
 
-def convert_node_arg_type_to_numpy_dtype(type: str):
-    # TODO(scotttodd): use onnx.TensorProto instead? prefer enums over strings
-    if type == "tensor(float)":
-        return np.float32
-    raise NotImplementedError(f"type conversion for '{type}' not implemented")
+def convert_ort_shape_to_numpy_dimensions(
+    node_arg: NodeArg,
+) -> tuple[int]:
+    # Note: turning dynamic dimensions into just 1 here, since we need
+    # a concrete (static) shape buffer of input data in the tests.
+    # TODO(scotttodd): allow this to be overriden as needed
+    return tuple(x if isinstance(x, int) else 1 for x in node_arg.shape)
 
 
-def convert_node_arg_type_to_iree_dtype(type: str) -> str:
-    # TODO(scotttodd): use onnx.TensorProto instead? prefer enums over strings
-    if type == "tensor(float)":
-        return "f32"
-    raise NotImplementedError(f"type conversion for '{type}' not implemented")
+def convert_ort_type_to_numpy_dtype(node_arg: NodeArg):
+    type_str = node_arg.type
+    if type_str[0:6] != "tensor":
+        raise TypeError(f"node: {node_arg} has unhandled non-tensor type '{type_str}'")
+    dtype_str = type_str[7:-1]
+    if dtype_str == "float":
+        return np.dtype("float32")
+    if dtype_str == "int" or dtype_str == "int32":
+        return np.dtype("int32")
+    if dtype_str == "int64":
+        return np.dtype("int64")
+    if dtype_str == "int8":
+        return np.dtype("int8")
+    if dtype_str == "uint8":
+        return np.dtype("uint8")
+    if dtype_str == "bool":
+        return np.dtype("bool")
+    raise NotImplementedError(f"type conversion for '{type_str}' not implemented")
+
+
+def convert_ort_type_to_iree_dtype(node_arg: NodeArg) -> str:
+    numpy_dtype = convert_ort_type_to_numpy_dtype(node_arg)
+    return numpy_to_iree_dtype_map[numpy_dtype][0]
+
+
+def convert_ort_to_iree_type(
+    node_arg: NodeArg,
+) -> str:
+    # Note: turning dynamic dimensions into just "1" here, since we need
+    # a concrete (static) shape buffer of input data in the tests.
+    # TODO(scotttodd): allow this to be overriden as needed
+    shape = "x".join([str(x) if isinstance(x, int) else "1" for x in node_arg.shape])
+    dtype = convert_ort_type_to_iree_dtype(node_arg)
+    if shape == "":
+        return dtype
+    return f"{shape}x{dtype}"
+
+
+def generate_numpy_input_for_ort_node_arg(node_arg: NodeArg):
+    numpy_dimensions = convert_ort_shape_to_numpy_dimensions(node_arg)
+    numpy_type = convert_ort_type_to_numpy_dtype(node_arg).type
+
+    if numpy_type == np.float32 or numpy_type == np.float64:
+        return rng.random(numpy_dimensions, dtype=numpy_type)
+    if numpy_type == np.int32 or numpy_type == np.int64:
+        return rng.integers(numpy_dimensions, dtype=numpy_type)
+    # TODO(scotttodd): test i8, bool, and other dtypes
+    # if numpy_type == np.int8:
+    #     return rng.integers(-127, 128, size=numpy_dimensions, dtype=numpy_type)
+
+    raise NotImplementedError(f"Unsupported numpy type: {numpy_type}")
 
 
 # TODO(#18289): use real frontend API, import model in-memory?
