@@ -1,0 +1,61 @@
+# Copyright 2024 The IREE Authors
+#
+# Licensed under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+name: Test ONNX Models
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/test_onnx_models.yml"
+      - "onnx_models/**"
+  pull_request:
+    paths:
+      - ".github/workflows/test_onnx_models.yml"
+      - "onnx_models/**"
+  workflow_dispatch:
+  schedule:
+    # Runs at 3:00 PM UTC, which is 8:00 AM PST
+    - cron: "0 15 * * *"
+
+concurrency:
+  # A PR number if a pull request and otherwise the commit hash. This cancels
+  # queued and in-progress runs for the same PR (presubmit) or commit
+  # (postsubmit). The workflow name is prepended to avoid conflicts between
+  # different workflows.
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  test-onnx-models:
+    runs-on: ubuntu-24.04
+    env:
+      VENV_DIR: ${{ github.workspace }}/.venv
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install Python packages.
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Setup Python venv
+        run: python3 -m venv ${VENV_DIR}
+      - name: Install IREE nightly release Python packages
+        run: |
+          source ${VENV_DIR}/bin/activate
+          python3 -m pip install -r onnx_models/requirements-iree.txt
+
+      # Run tests.
+      - name: Run ONNX models test suite
+        run: |
+          source ${VENV_DIR}/bin/activate
+          pytest onnx_models/ \
+            -rA \
+            --log-cli-level=info \
+            --timeout=120 \
+            --durations=0
