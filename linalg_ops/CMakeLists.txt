@@ -117,6 +117,26 @@ iree_cc_binary(
     iree::vm::cc
 )
 
+iree_cc_binary(
+  NAME
+    iree-e2e-conv2d-test
+  SRCS
+    "iree-e2e-conv2d-test.cc"
+  DEPS
+    ::test_utils
+    iree::base
+    iree::base::internal
+    iree::base::internal::cpu
+    iree::base::internal::flags
+    iree::base::internal::path
+    iree::hal
+    iree::modules::hal
+    iree::tooling::context_util
+    iree::tooling::device_util
+    iree::vm
+    iree::vm::cc
+)
+
 #-------------------------------------------------------------------------------
 # Tests
 #-------------------------------------------------------------------------------
@@ -125,3 +145,4 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 include(iree_e2e_generated_runner_test)
 
 add_subdirectory(matmul)
+add_subdirectory(convolution)
