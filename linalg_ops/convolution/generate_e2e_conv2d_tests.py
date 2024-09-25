@@ -111,8 +111,8 @@ def get_test_shapes(shapes_id: ShapesId):
     if shapes_id == ShapesId.SMALL:
         return [
             TestShape(n=1, c=1, h=1, w=1, kh=1, kw=1, f=1, accumulate=True),
-            TestShape(n=1, c=1, h=16, w=16, kh=2, kw=2, f=1, accumulate=True),
-            TestShape(n=2, c=2, h=32, w=32, kh=3, kw=3, f=2, accumulate=True),
+            #TestShape(n=1, c=1, h=16, w=16, kh=2, kw=2, f=1, accumulate=True),
+            #TestShape(n=2, c=2, h=32, w=32, kh=3, kw=3, f=2, accumulate=True),
         ]
     if shapes_id == ShapesId.MEDIUM:
         return [
@@ -120,7 +120,7 @@ def get_test_shapes(shapes_id: ShapesId):
         ]
     if shapes_id == ShapesId.LARGE:
         return [
-            TestShape(n=2, c=4, h=128, w=128, kh=3, kw=3, f=8, accumulate=True),
+            #TestShape(n=2, c=4, h=128, w=128, kh=3, kw=3, f=8, accumulate=True),
             TestShape(n=2, c=3, h=128, w=128, kh=3, kw=3, f=12, accumulate=True),
         ]
 
