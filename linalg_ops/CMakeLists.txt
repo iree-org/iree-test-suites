@@ -29,10 +29,7 @@ set(IREE_PACKAGE_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}")
 set(IREE_PACKAGE_ROOT_PREFIX "iree-test-suites")
 set(IREE_BUILD_COMPILER OFF)
 set(IREE_BUILD_SAMPLES OFF)
-# We should also be able to set -DIREE_BUILD_TESTS=OFF, but this currently
-# depends on the core project's CMake functions like iree_native_test and
-# iree_bytecode_module.
-set(IREE_BUILD_TESTS ON)
+set(IREE_BUILD_TESTS OFF)
 
 if(IREE_USE_LOCAL_REPO)
   message(STATUS "Using IREE repo at path '${IREE_LOCAL_REPO_PATH}'")
@@ -122,6 +119,7 @@ iree_cc_binary(
 #-------------------------------------------------------------------------------
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
-include(iree_e2e_generated_runner_test)
+include(iree_test_suites_native_test)
+include(iree_test_suites_runner_test)
 
 add_subdirectory(matmul)
