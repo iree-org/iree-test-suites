@@ -161,6 +161,8 @@ endforeach()
 #
 ###############################################################################
 
+if(IREE_HIP_TEST_TARGET_CHIP)
+
 set(_DTYPES)
 list(APPEND _DTYPES "i8_into_i32")
 list(APPEND _DTYPES "f32_into_f32")
@@ -191,3 +193,5 @@ foreach(_DTYPE IN LISTS _DTYPES)
     )
   endforeach()
 endforeach()
+
+endif()
