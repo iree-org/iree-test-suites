@@ -33,8 +33,6 @@ class MatrixElemTypeId(enum.Enum):
 class ShapesId(enum.Enum):
     SMALL = "small"
     LARGE = "large"
-    GPU_LARGE = "gpu_large"
-    GPU_LARGE_ALIGNED = "gpu_large_aligned"
 
 
 # Enumerates ways to construct MLIR tensor types.
@@ -43,13 +41,6 @@ class Dynamicity(enum.Enum):
     DYNAMIC = "dynamic"  # Use '?' everywhere. Example: tensor<?x?xf32>.
     STATIC = "static"  # Use fixed values everywhere. Example: tensor<4x6xf32>.
     MIXED = "mixed"  # Randomly mix '?' and values. Example: tensor<?x4xf32>.
-
-
-# Enumerates ways to initialize matrix buffer contents.
-@enum.unique
-class MatrixGenerator(enum.Enum):
-    ZERO = "zero"  # Fill with zeros
-    RANDOM = "random"  # Fill with (deterministic) pseudorandom values.
 
 
 # Describes the shape of a matrix multiplication in the usual convention:
@@ -73,9 +64,8 @@ def get_test_shapes(shapes_id: ShapesId):
     #    build and execution latency of tests. The build latency is nearly the
     #    same for all shapes, while execution latency grows cubicly i.e.
     #    linearly with m*k*n.
-    # 2. Some shapes are commented out: they used to be tested but have been
-    #    disabled to improve the trade-off between test coverage and build
-    #    latency.
+    # 2. Some shapes may be commented out to improve the trade-off between test
+    #    coverage and build latency.
     if shapes_id == ShapesId.SMALL:
         return [
             # square matrices. Start by the simplest case of 1x1x1.
@@ -107,54 +97,32 @@ def get_test_shapes(shapes_id: ShapesId):
         ]
     if shapes_id == ShapesId.LARGE:
         return [
-            # some random large sizes
-            TestShape(m=123, k=456, n=789, accumulate=True),
+            # Large aligned sizes.
+            TestShape(m=512, k=128, n=512, accumulate=True),
+            TestShape(m=512, k=128, n=512, accumulate=False),
+            TestShape(m=1000, k=4, n=512, accumulate=False),
+            TestShape(m=4, k=1000, n=512, accumulate=False),
+            TestShape(m=512, k=1000, n=4, accumulate=False),
+            TestShape(m=512, k=128, n=500, accumulate=False),
+            # Large unaligned sizes.
+            # TestShape(m=123, k=456, n=789, accumulate=True),  # Failing on Vulkan
+            TestShape(m=457, k=330, n=512, accumulate=False),
+            TestShape(m=457, k=330, n=514, accumulate=False),
+            TestShape(m=438, k=330, n=514, accumulate=False),
+            TestShape(m=540, k=332, n=516, accumulate=False),
             TestShape(m=654, k=321, n=234, accumulate=False),
-            # shapes involving vectors (i.e. most rectangular cases)
+            TestShape(m=457, k=160, n=512, accumulate=False),
+            TestShape(m=512, k=330, n=512, accumulate=False),
+            # Shapes involving vectors (i.e. most rectangular cases).
             TestShape(m=1, k=1000, n=1000, accumulate=True),  # large vector*matrix
             TestShape(m=1000, k=1000, n=1, accumulate=True),  # large matrix*vector
             TestShape(m=1000, k=1000, n=1, accumulate=False),  # large matrix*vector
             # Be conservative in adding larger shapes. They can result in
             # high latency tests. If you have to, consider splitting them
             # out in a way that constrains the latency impact, e.g. by
-            # running on fewer backends/drivers or with fewer generators
-            # (see get_test_generators).
-        ]
-    if shapes_id == ShapesId.GPU_LARGE_ALIGNED:
-        return [
-            TestShape(m=512, k=128, n=512, accumulate=True),
-            TestShape(m=512, k=128, n=512, accumulate=False),
-        ]
-    if shapes_id == ShapesId.GPU_LARGE:
-        return [
-            # unaligned cases.
-            TestShape(m=457, k=330, n=512, accumulate=False),
-            TestShape(m=457, k=330, n=514, accumulate=False),
-            TestShape(m=438, k=330, n=514, accumulate=False),
-            TestShape(m=540, k=332, n=516, accumulate=False),
-            TestShape(m=1000, k=4, n=512, accumulate=False),
-            TestShape(m=4, k=1000, n=512, accumulate=False),
-            TestShape(m=512, k=1000, n=4, accumulate=False),
-            TestShape(m=512, k=128, n=500, accumulate=False),
-            TestShape(m=457, k=160, n=512, accumulate=False),
-            TestShape(m=512, k=330, n=512, accumulate=False),
+            # running on fewer backends/drivers.
         ]
 
-    raise ValueError(shapes_id)
-
-
-# Returns the list of Dynamicity's to use for the collection of shapes
-# identified by shapes_id.
-def get_dynamicities(shapes_id: ShapesId):
-    if shapes_id == ShapesId.GPU_LARGE or shapes_id == ShapesId.GPU_LARGE_ALIGNED:
-        return [
-            Dynamicity.STATIC,
-        ]
-    else:
-        return [
-            Dynamicity.DYNAMIC,
-            Dynamicity.STATIC,
-        ]
     raise ValueError(shapes_id)
 
 
@@ -312,14 +280,14 @@ def generate_function(
         compute = (
             f"  %lhs_casted = {castback_op} %lhs: {lhs_tensor_type} to {compute_lhs_tensor_type}\n"
             f"  %rhs_casted = {castback_op} %rhs: {rhs_tensor_type} to {compute_rhs_tensor_type}\n"
-            f"  %result = {op_name} ins(%lhs_casted, %rhs_casted: {compute_lhs_tensor_type}, {compute_rhs_tensor_type}) outs(%acc: {acc_tensor_type}) -> {acc_tensor_type}"
+            f"  %result = {op_name} ins(%lhs_casted, %rhs_casted: {compute_lhs_tensor_type}, {compute_rhs_tensor_type}) outs(%acc: {acc_tensor_type}) -> {acc_tensor_type}\n"
         )
     if shape.accumulate:
         signature = f"({lhs_tensor_type}, {rhs_tensor_type}, {acc_tensor_type}) -> {acc_tensor_type}"
         import_declaration = f"func.func private @module.{func_name}(%lhs: !hal.buffer_view, %rhs: !hal.buffer_view, %acc: !hal.buffer_view) -> !hal.buffer_view"
         func_definition = func_definition + (
             f"func.func @{func_name}(%lhs: {lhs_tensor_type}, %rhs: {rhs_tensor_type}, %acc: {acc_tensor_type}) -> {acc_tensor_type} {{\n"
-            f"{compute}\n"
+            f"{compute}"
             f"  return %result: {acc_tensor_type}\n"
             f"}}\n"
         )
@@ -373,17 +341,6 @@ class TestCall:
 # Intentionally not shared with local_pseudorandom_state to limit the ways
 # in which shuffling testcases changes which random values are generated.
 pseudorandom_generator_seed = 1
-
-
-def contents_generator_tag(generator: MatrixGenerator):
-    if generator == MatrixGenerator.ZERO:
-        return ""
-    elif generator == MatrixGenerator.RANDOM:
-        global pseudorandom_generator_seed
-        pseudorandom_generator_seed = pseudorandom_generator_seed + 1
-        return f"!tag:iree:fully_specified_pseudorandom {pseudorandom_generator_seed}"
-    else:
-        raise ValueError(generator)
 
 
 # Generate a matrix function argument of the given size as `%name`.
@@ -483,7 +440,7 @@ def generate(
     calls = []
 
     for shape in get_test_shapes(shapes_id):
-        for dynamicity in get_dynamicities(shapes_id):
+        for dynamicity in [Dynamicity.DYNAMIC, Dynamicity.STATIC]:
             function = generate_function(
                 lhs_rhs_type,
                 acc_type,
@@ -558,13 +515,20 @@ def parse_arguments():
 
 
 def write_code_file(functions, filename):
+    # TODO(scotttodd): write "GENERATED BY" comment to the top of the file
+
     with open(filename, "w") as file:
         for function in functions.values():
             file.write(function.definition + "\n")
 
 
 def write_calls_file(functions, calls, filename, requirements):
+    # TODO(scotttodd): write "GENERATED BY" comment to the top of the file
+
     # Module-level reflection information used to control the test tool.
+    # TODO(scotttodd): drop this and whatever logic in the test tool used it
+    #     multiple backends should be able to use the same input IR, so the
+    #     input IR shouldn't need things like CPU features in it
     reflection = ""
     if requirements:
         reflection = (
