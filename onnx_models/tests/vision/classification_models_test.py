@@ -11,7 +11,6 @@ import pytest
 from ...utils import *
 
 
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_alexnet(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/alexnet/model/bvlcalexnet-12.onnx",
@@ -93,7 +92,6 @@ def test_resnet50_v1(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_resnet50_v2(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/resnet/model/resnet50-v2-7.onnx",
