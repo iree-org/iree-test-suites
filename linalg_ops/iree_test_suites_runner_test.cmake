@@ -18,9 +18,9 @@ include(CMakeParseArguments)
 #   TEST_RUNNER: Test runner program.
 #   TARGET_BACKEND: Target backend to compile for.
 #   DRIVER: Driver to run the module with.
-#   COMPILER_ARGS: additional args to pass to the compiler.
+#   COMPILER_FLAGS: additional args to pass to the compiler.
 #       Target backend flags are passed automatically.
-#   RUNNER_ARGS: Additional args to pass to the runner program.
+#   RUNNER_FLAGS: Additional args to pass to the runner program.
 #       The device and input file flags are passed automatically.
 #   LABELS: Additional labels to apply to the test.
 #       "driver=${DRIVER}" is added automatically.
@@ -29,7 +29,7 @@ function(iree_test_suites_runner_test)
     _RULE
     ""
     "NAME;TESTS_SRC;CALLS_SRC;TEST_RUNNER;TARGET_BACKEND;DRIVER"
-    "COMPILER_ARGS;RUNNER_ARGS;LABELS"
+    "COMPILER_FLAGS;RUNNER_FLAGS;LABELS"
     ${ARGN}
   )
 
@@ -91,7 +91,7 @@ function(iree_test_suites_runner_test)
     ARGS
       "--module={{${_TESTS_VMFB}}}"
       "--module={{${_CALLS_VMFB}}}"
-      ${_RULE_RUNNER_ARGS}
+      ${_RULE_RUNNER_FLAGS}
     LABELS
       ${_RULE_LABELS}
     DISABLED

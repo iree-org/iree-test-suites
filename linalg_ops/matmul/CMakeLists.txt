@@ -40,8 +40,8 @@ foreach(_DTYPE IN LISTS _DTYPES)
         "llvm-cpu"
       DRIVER
         "local-task"
-      COMPILER_ARGS
-      RUNNER_ARGS
+      COMPILER_FLAGS
+      RUNNER_FLAGS
       LABELS
     )
   endforeach()
@@ -77,8 +77,8 @@ foreach(_DTYPE IN LISTS _DTYPES)
       "vmvx"
     DRIVER
       "local-task"
-    COMPILER_ARGS
-    RUNNER_ARGS
+    COMPILER_FLAGS
+    RUNNER_FLAGS
     LABELS
   )
 endforeach()
@@ -112,8 +112,8 @@ foreach(_DTYPE IN LISTS _DTYPES)
         "vulkan-spirv"
       DRIVER
         "vulkan"
-      COMPILER_ARGS
-      RUNNER_ARGS
+      COMPILER_FLAGS
+      RUNNER_FLAGS
       LABELS
     )
   endforeach()
@@ -148,8 +148,8 @@ foreach(_DTYPE IN LISTS _DTYPES)
         "cuda"
       DRIVER
         "cuda"
-      COMPILER_ARGS
-      RUNNER_ARGS
+      COMPILER_FLAGS
+      RUNNER_FLAGS
       LABELS
     )
   endforeach()
@@ -186,9 +186,9 @@ foreach(_DTYPE IN LISTS _DTYPES)
         "rocm"
       DRIVER
         "hip"
-      COMPILER_ARGS
+      COMPILER_FLAGS
         "--iree-hip-target=${IREE_HIP_TEST_TARGET_CHIP}"
-      RUNNER_ARGS
+      RUNNER_FLAGS
       LABELS
     )
   endforeach()
