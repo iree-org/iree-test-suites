@@ -86,14 +86,5 @@ for type_combination in ${type_combinations[@]}; do
       --kernel_type=${kernel_type} \
       --acc_type=${acc_type} \
       --shapes=${shape}
-
-    name="conv2d_winograd_${type_name}_${shape}"
-    python ${this_dir}/generate_e2e_conv2d_tests.py \
-      --output_conv2d_mlir=${type_combination_dir}/${name}.mlir \
-      --output_calls_mlir=${type_combination_dir}/${name}_calls.mlir \
-      --input_type=${input_type} \
-      --kernel_type=${kernel_type} \
-      --acc_type=${acc_type} \
-      --shapes=${shape}
   done
 done
