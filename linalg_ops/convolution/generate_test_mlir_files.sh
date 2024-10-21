@@ -97,9 +97,3 @@ for type_combination in ${type_combinations[@]}; do
       --shapes=${shape}
   done
 done
-
-# input_type;kernel_type;acc_type
-type_combinations=(
-  "f16;f16;f16"
-  "f32;f32;f32"
-)

@@ -18,7 +18,7 @@
 #include "iree/tooling/device_util.h"
 #include "iree/vm/api.h"
 #include "iree/vm/native_module_cc.h"
-#include "tools/testing/e2e/test_utils.h"
+#include "test_utils.h"
 
 //===----------------------------------------------------------------------===//
 // Reference conv2d (NCHW-FCHW) and (NHWC-HWCF)
