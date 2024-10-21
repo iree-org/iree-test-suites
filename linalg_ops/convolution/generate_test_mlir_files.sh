@@ -20,12 +20,6 @@
 #           conv2d_f16_f16_f16_medium.mlir
 #           conv2d_f16_f16_f16_small_calls.mlir
 #           conv2d_f16_f16_f16_small.mlir
-#           conv2d_winograd_f16_f16_f16_large_calls.mlir
-#           conv2d_winograd_f16_f16_f16_large.mlir
-#           conv2d_winograd_f16_f16_f16_medium_calls.mlir
-#           conv2d_winograd_f16_f16_f16_medium.mlir
-#           conv2d_winograd_f16_f16_f16_small_calls.mlir
-#           conv2d_winograd_f16_f16_f16_small.mlir
 #         f32_f32_f32/
 #           conv2d_f32_f32_f32_large_calls.mlir
 #           conv2d_f32_f32_f32_large.mlir
@@ -33,12 +27,6 @@
 #           conv2d_f32_f32_f32_medium.mlir
 #           conv2d_f32_f32_f32_small_calls.mlir
 #           conv2d_f32_f32_f32_small.mlir
-#           conv2d_winograd_f32_f32_f32_large_calls.mlir
-#           conv2d_winograd_f32_f32_f32_large.mlir
-#           conv2d_winograd_f32_f32_f32_medium_calls.mlir
-#           conv2d_winograd_f32_f32_f32_medium.mlir
-#           conv2d_winograd_f32_f32_f32_small_calls.mlir
-#           conv2d_winograd_f32_f32_f32_small.mlir
 #         ...
 #           ...
 # Usage:
