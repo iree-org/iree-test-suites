@@ -4,7 +4,6 @@ builtin.module @calls attributes {
 
 func.func private @conv2d_test.generate_random_tensor(%device: !hal.device, %dim0: i64, %dim1: i64, %dim2: i64, %dim3: i64, %element_type: i32, %seed: i32) -> !hal.buffer_view
 func.func private @conv2d_test.check_conv2d_results(%device: !hal.device, %n: i64, %c: i64, %h: i64, %w: i64, %f:i64, %kh:i64, %kw:i64, %layout:i64, %sh:i64, %sw:i64, %dh:i64, %dw:i64, %input: !hal.buffer_view, %kernel: !hal.buffer_view, %acc: !hal.buffer_view, %actual_result: !hal.buffer_view)
-
 func.func private @module.conv2d_accumulate_2_4_128_128_times_3_3_8_dtype_f16_f16_f16(%input: !hal.buffer_view, %kernel: !hal.buffer_view, %acc: !hal.buffer_view) -> !hal.buffer_view
 func.func private @module.conv2d_accumulate_2_3_128_128_times_3_3_12_dtype_f16_f16_f16(%input: !hal.buffer_view, %kernel: !hal.buffer_view, %acc: !hal.buffer_view) -> !hal.buffer_view
 
@@ -57,7 +56,6 @@ func.func @conv2d_accumulate_2_4_128_128_times_3_3_8_dtype_f16_f16_f16_2_4_128_1
   call @conv2d_test.check_conv2d_results(%device, %n, %c, %h, %w, %f, %kh, %kw, %layout, %sh, %sw, %dh, %dw, %input, %kernel, %acc, %result) : (!hal.device, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, !hal.buffer_view, !hal.buffer_view, !hal.buffer_view, !hal.buffer_view) -> ()
   return
 }
-
 func.func @conv2d_accumulate_2_3_128_128_times_3_3_12_dtype_f16_f16_f16_2_3_128_128_12_3_3_acc_1() attributes {
   iree.reflection = {description = "Conv2d shape (NxCxHxWxFxKHxKW): 2x3x128x128x12x3x3"}
 } {
@@ -107,6 +105,4 @@ func.func @conv2d_accumulate_2_3_128_128_times_3_3_12_dtype_f16_f16_f16_2_3_128_
   call @conv2d_test.check_conv2d_results(%device, %n, %c, %h, %w, %f, %kh, %kw, %layout, %sh, %sw, %dh, %dw, %input, %kernel, %acc, %result) : (!hal.device, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, !hal.buffer_view, !hal.buffer_view, !hal.buffer_view, !hal.buffer_view) -> ()
   return
 }
-
-
 }

@@ -38,12 +38,11 @@ static void reference_conv2d_f16_f16_f16_f16(
     iree_hal_dim_t w_size, iree_hal_dim_t f_size, iree_hal_dim_t kh_size,
     iree_hal_dim_t kw_size, iree_hal_dim_t layout, iree_hal_dim_t sh_size,
     iree_hal_dim_t sw_size, iree_hal_dim_t dh_size, iree_hal_dim_t dw_size,
-    iree_hal_dim_t oh_size, iree_hal_dim_t ow_size, const uint16_t* input_data,
-    const uint16_t* kernel_data, const uint16_t* acc_data,
-    uint16_t* result_data, iree_hal_dim_t n, iree_hal_dim_t oc,
+    iree_hal_dim_t oh_size, iree_hal_dim_t ow_size, const uint16_t *input_data,
+    const uint16_t *kernel_data, const uint16_t *acc_data,
+    uint16_t *result_data, iree_hal_dim_t n, iree_hal_dim_t oc,
     iree_hal_dim_t oh, iree_hal_dim_t ow) {
   if (layout == 0) {
-    //printf("layout == 0\n");
     // The layout of output tensor is NxfxOHxOW
     iree_hal_dim_t out_idx =
         convert_to_1d_index(f_size, oh_size, ow_size, n, oc, oh, ow);
@@ -66,7 +65,6 @@ static void reference_conv2d_f16_f16_f16_f16(
       result_data[out_idx] = iree_math_f32_to_f16(acc);
     }
   } else if (layout == 1) {
-    //printf("layout == 1\n");
     // The layout of output tensor is NxOHxOWxf
     iree_hal_dim_t out_idx =
         convert_to_1d_index(oh_size, ow_size, f_size, n, oh, ow, oc);
@@ -97,8 +95,8 @@ static void reference_conv2d_f16_f16_f32_f32(
     iree_hal_dim_t w_size, iree_hal_dim_t f_size, iree_hal_dim_t kh_size,
     iree_hal_dim_t kw_size, iree_hal_dim_t layout, iree_hal_dim_t sh_size,
     iree_hal_dim_t sw_size, iree_hal_dim_t dh_size, iree_hal_dim_t dw_size,
-    iree_hal_dim_t oh_size, iree_hal_dim_t ow_size, const uint16_t* input_data,
-    const uint16_t* kernel_data, const float* acc_data, float* result_data,
+    iree_hal_dim_t oh_size, iree_hal_dim_t ow_size, const uint16_t *input_data,
+    const uint16_t *kernel_data, const float *acc_data, float *result_data,
     iree_hal_dim_t n, iree_hal_dim_t oc, iree_hal_dim_t oh, iree_hal_dim_t ow) {
   if (layout == 0) {
     // The layout of output tensor is NxfxOHxOW
@@ -153,8 +151,8 @@ static void reference_conv2d_i8_i8_i32_i32(
     iree_hal_dim_t w_size, iree_hal_dim_t f_size, iree_hal_dim_t kh_size,
     iree_hal_dim_t kw_size, iree_hal_dim_t layout, iree_hal_dim_t sh_size,
     iree_hal_dim_t sw_size, iree_hal_dim_t dh_size, iree_hal_dim_t dw_size,
-    iree_hal_dim_t oh_size, iree_hal_dim_t ow_size, const int8_t* input_data,
-    const int8_t* kernel_data, const int32_t* acc_data, int32_t* result_data,
+    iree_hal_dim_t oh_size, iree_hal_dim_t ow_size, const int8_t *input_data,
+    const int8_t *kernel_data, const int32_t *acc_data, int32_t *result_data,
     iree_hal_dim_t n, iree_hal_dim_t oc, iree_hal_dim_t oh, iree_hal_dim_t ow) {
   if (layout == 0) {
     // The layout of output tensor is NxfxOHxOW
@@ -210,8 +208,8 @@ static void reference_conv2d_f32_f32_f32_f32(
     iree_hal_dim_t w_size, iree_hal_dim_t f_size, iree_hal_dim_t kh_size,
     iree_hal_dim_t kw_size, iree_hal_dim_t layout, iree_hal_dim_t sh_size,
     iree_hal_dim_t sw_size, iree_hal_dim_t dh_size, iree_hal_dim_t dw_size,
-    iree_hal_dim_t oh_size, iree_hal_dim_t ow_size, const float* input_data,
-    const float* kernel_data, const float* acc_data, float* result_data,
+    iree_hal_dim_t oh_size, iree_hal_dim_t ow_size, const float *input_data,
+    const float *kernel_data, const float *acc_data, float *result_data,
     iree_hal_dim_t n, iree_hal_dim_t oc, iree_hal_dim_t oh, iree_hal_dim_t ow) {
   if (layout == 0) {
     // The layout of output tensor is NxfxOHxOW
@@ -265,8 +263,8 @@ static iree_status_t reference_conv2d_element(
     iree_hal_dim_t sw_size, iree_hal_dim_t dh_size, iree_hal_dim_t dw_size,
     iree_hal_dim_t oh_size, iree_hal_dim_t ow_size,
     iree_hal_element_type_t input_type, iree_hal_element_type_t kernel_type,
-    iree_hal_element_type_t acc_type, void* input_data, void* kernel_data,
-    void* acc_data, void* result_data, iree_hal_dim_t n, iree_hal_dim_t oc,
+    iree_hal_element_type_t acc_type, void *input_data, void *kernel_data,
+    void *acc_data, void *result_data, iree_hal_dim_t n, iree_hal_dim_t oc,
     iree_hal_dim_t oh, iree_hal_dim_t ow) {
   if (input_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32 &&
       kernel_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32 &&
@@ -274,35 +272,38 @@ static iree_status_t reference_conv2d_element(
     reference_conv2d_f32_f32_f32_f32(
         n_size, c_size, h_size, w_size, f_size, kh_size, kw_size, layout,
         sh_size, sw_size, dh_size, dw_size, oh_size, ow_size,
-        (const float*)input_data, (const float*)kernel_data,
-        (const float*)acc_data, (float*)result_data, n, oc, oh, ow);
+        (const float *)input_data, (const float *)kernel_data,
+        (const float *)acc_data, (float *)result_data, n, oc, oh, ow);
   } else if (input_type == IREE_HAL_ELEMENT_TYPE_FLOAT_16 &&
              kernel_type == IREE_HAL_ELEMENT_TYPE_FLOAT_16 &&
              acc_type == IREE_HAL_ELEMENT_TYPE_FLOAT_16) {
     reference_conv2d_f16_f16_f16_f16(
         n_size, c_size, h_size, w_size, f_size, kh_size, kw_size, layout,
         sh_size, sw_size, dh_size, dw_size, oh_size, ow_size,
-        (const uint16_t*)input_data, (const uint16_t*)kernel_data,
-        (const uint16_t*)acc_data, (uint16_t*)result_data, n, oc, oh, ow);
+        (const uint16_t *)input_data, (const uint16_t *)kernel_data,
+        (const uint16_t *)acc_data, (uint16_t *)result_data, n, oc, oh, ow);
   } else if (input_type == IREE_HAL_ELEMENT_TYPE_FLOAT_16 &&
              kernel_type == IREE_HAL_ELEMENT_TYPE_FLOAT_16 &&
              acc_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32) {
     reference_conv2d_f16_f16_f32_f32(
         n_size, c_size, h_size, w_size, f_size, kh_size, kw_size, layout,
         sh_size, sw_size, dh_size, dw_size, oh_size, ow_size,
-        (const uint16_t*)input_data, (const uint16_t*)kernel_data,
-        (const float*)acc_data, (float*)result_data, n, oc, oh, ow);
+        (const uint16_t *)input_data, (const uint16_t *)kernel_data,
+        (const float *)acc_data, (float *)result_data, n, oc, oh, ow);
   } else if (input_type == IREE_HAL_ELEMENT_TYPE_INT_8 &&
              kernel_type == IREE_HAL_ELEMENT_TYPE_INT_8 &&
              acc_type == IREE_HAL_ELEMENT_TYPE_INT_32) {
     reference_conv2d_i8_i8_i32_i32(
         n_size, c_size, h_size, w_size, f_size, kh_size, kw_size, layout,
         sh_size, sw_size, dh_size, dw_size, oh_size, ow_size,
-        (const int8_t*)input_data, (const int8_t*)kernel_data,
-        (const int32_t*)acc_data, (int32_t*)result_data, n, oc, oh, ow);
+        (const int8_t *)input_data, (const int8_t *)kernel_data,
+        (const int32_t *)acc_data, (int32_t *)result_data, n, oc, oh, ow);
   } else {
-    return iree_make_status(IREE_STATUS_INVALID_ARGUMENT,
-                            "unhandled combination of element types in conv2d");
+    return iree_make_status(
+        IREE_STATUS_INVALID_ARGUMENT,
+        "unhandled combination of element types in conv2d input_type: %d,"
+        " kernel_type: %d, acc_type: %d",
+        input_type, kernel_type, acc_type);
   }
   return iree_ok_status();
 }
@@ -386,18 +387,18 @@ static iree_status_t reference_conv2d(
 
 typedef struct {
   iree_allocator_t host_allocator;
-  iree_hal_dim_t n;       // batch dim
-  iree_hal_dim_t c;       // input channels
-  iree_hal_dim_t h;       // input height
-  iree_hal_dim_t w;       // input width
-  iree_hal_dim_t f;       // output channels
-  iree_hal_dim_t kh;      // kernel height
-  iree_hal_dim_t kw;      // kernel width
-  iree_hal_dim_t layout;  // conv layout, 0 : nchwxfchw (default); 1: nhwcxhwcf
-  iree_hal_dim_t sh;      // stride along height dim
-  iree_hal_dim_t sw;      // stride along width dim
-  iree_hal_dim_t dh;      // dilation along height dim
-  iree_hal_dim_t dw;      // dilation along width dim
+  iree_hal_dim_t n;      // batch dim
+  iree_hal_dim_t c;      // input channels
+  iree_hal_dim_t h;      // input height
+  iree_hal_dim_t w;      // input width
+  iree_hal_dim_t f;      // output channels
+  iree_hal_dim_t kh;     // kernel height
+  iree_hal_dim_t kw;     // kernel width
+  iree_hal_dim_t layout; // conv layout, 0 : nchwxfchw (default); 1: nhwcxhwcf
+  iree_hal_dim_t sh;     // stride along height dim
+  iree_hal_dim_t sw;     // stride along width dim
+  iree_hal_dim_t dh;     // dilation along height dim
+  iree_hal_dim_t dw;     // dilation along width dim
   iree_hal_element_type_t input_type;
   iree_hal_element_type_t kernel_type;
   iree_hal_element_type_t acc_type;
@@ -409,17 +410,17 @@ typedef struct {
   iree_byte_span_t expected_contents;
 } conv2d_results_t;
 
-static void conv2d_results_deinitialize(conv2d_results_t* results);
+static void conv2d_results_deinitialize(conv2d_results_t *results);
 
 static iree_status_t conv2d_results_initialize(
-    iree_hal_device_t* device, iree_hal_dim_t n_size, iree_hal_dim_t c_size,
+    iree_hal_device_t *device, iree_hal_dim_t n_size, iree_hal_dim_t c_size,
     iree_hal_dim_t h_size, iree_hal_dim_t w_size, iree_hal_dim_t f_size,
     iree_hal_dim_t kh_size, iree_hal_dim_t kw_size, iree_hal_dim_t layout,
     iree_hal_dim_t sh_size, iree_hal_dim_t sw_size, iree_hal_dim_t dh_size,
-    iree_hal_dim_t dw_size, iree_hal_buffer_view_t* input,
-    iree_hal_buffer_view_t* kernel, iree_hal_buffer_view_t* acc,
-    iree_hal_buffer_view_t* result, iree_allocator_t host_allocator,
-    conv2d_results_t* out_results) {
+    iree_hal_dim_t dw_size, iree_hal_buffer_view_t *input,
+    iree_hal_buffer_view_t *kernel, iree_hal_buffer_view_t *acc,
+    iree_hal_buffer_view_t *result, iree_allocator_t host_allocator,
+    conv2d_results_t *out_results) {
   IREE_TRACE_ZONE_BEGIN(z0);
 
   memset(out_results, 0, sizeof(*out_results));
@@ -443,10 +444,10 @@ static iree_status_t conv2d_results_initialize(
   out_results->acc_type = iree_hal_buffer_view_element_type(acc);
   out_results->result_type = iree_hal_buffer_view_element_type(result);
 
-  iree_hal_buffer_t* input_buffer = iree_hal_buffer_view_buffer(input);
-  iree_hal_buffer_t* kernel_buffer = iree_hal_buffer_view_buffer(kernel);
-  iree_hal_buffer_t* acc_buffer = acc ? iree_hal_buffer_view_buffer(acc) : NULL;
-  iree_hal_buffer_t* result_buffer = iree_hal_buffer_view_buffer(result);
+  iree_hal_buffer_t *input_buffer = iree_hal_buffer_view_buffer(input);
+  iree_hal_buffer_t *kernel_buffer = iree_hal_buffer_view_buffer(kernel);
+  iree_hal_buffer_t *acc_buffer = acc ? iree_hal_buffer_view_buffer(acc) : NULL;
+  iree_hal_buffer_t *result_buffer = iree_hal_buffer_view_buffer(result);
 
   iree_status_t status = iree_ok_status();
 
@@ -455,7 +456,7 @@ static iree_status_t conv2d_results_initialize(
         iree_hal_buffer_byte_length(input_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->input_contents.data_length,
-                                   (void**)&out_results->input_contents.data);
+                                   (void **)&out_results->input_contents.data);
   }
   if (iree_status_is_ok(status)) {
     status = iree_hal_device_transfer_d2h(
@@ -469,7 +470,7 @@ static iree_status_t conv2d_results_initialize(
         iree_hal_buffer_byte_length(kernel_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->kernel_contents.data_length,
-                                   (void**)&out_results->kernel_contents.data);
+                                   (void **)&out_results->kernel_contents.data);
   }
   if (iree_status_is_ok(status)) {
     status = iree_hal_device_transfer_d2h(
@@ -484,7 +485,7 @@ static iree_status_t conv2d_results_initialize(
           iree_hal_buffer_byte_length(acc_buffer);
       status = iree_allocator_malloc(host_allocator,
                                      out_results->acc_contents.data_length,
-                                     (void**)&out_results->acc_contents.data);
+                                     (void **)&out_results->acc_contents.data);
     }
     if (iree_status_is_ok(status)) {
       status = iree_hal_device_transfer_d2h(
@@ -499,7 +500,7 @@ static iree_status_t conv2d_results_initialize(
         iree_hal_buffer_byte_length(result_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->actual_contents.data_length,
-                                   (void**)&out_results->actual_contents.data);
+                                   (void **)&out_results->actual_contents.data);
   }
   if (iree_status_is_ok(status)) {
     status = iree_hal_device_transfer_d2h(
@@ -513,7 +514,7 @@ static iree_status_t conv2d_results_initialize(
         iree_hal_buffer_byte_length(result_buffer);
     status = iree_allocator_malloc(
         host_allocator, out_results->expected_contents.data_length,
-        (void**)&out_results->expected_contents.data);
+        (void **)&out_results->expected_contents.data);
   }
 
   if (!iree_status_is_ok(status)) {
@@ -523,7 +524,7 @@ static iree_status_t conv2d_results_initialize(
   return status;
 }
 
-static void conv2d_results_deinitialize(conv2d_results_t* results) {
+static void conv2d_results_deinitialize(conv2d_results_t *results) {
   IREE_TRACE_ZONE_BEGIN(z0);
 
   iree_allocator_free(results->host_allocator, results->input_contents.data);
@@ -541,8 +542,8 @@ static void conv2d_results_deinitialize(conv2d_results_t* results) {
 // obtained and validated the {n, f, oh, ow}_size values. On error, the first
 // index is returned where the actual and expected value doesn't match. TODO:
 // Add detailed logging to |file|.
-static iree_status_t check_conv2d_results_impl(FILE* file,
-                                               const conv2d_results_t* results,
+static iree_status_t check_conv2d_results_impl(FILE *file,
+                                               const conv2d_results_t *results,
                                                int check_every) {
   IREE_TRACE_ZONE_BEGIN(z0);
 
@@ -566,7 +567,8 @@ static iree_status_t check_conv2d_results_impl(FILE* file,
     for (iree_hal_dim_t oc = 0; oc < results->f; ++oc) {
       for (iree_hal_dim_t oh = 0; oh < oh_size; ++oh) {
         for (iree_hal_dim_t ow = 0; ow < ow_size; ++ow) {
-          if (++count < check_every) continue;
+          if (++count < check_every)
+            continue;
           count = 0;
           iree_hal_dim_t idx =
               convert_to_1d_index(results->f, oh_size, ow_size, n, oc, oh, ow);
@@ -578,7 +580,8 @@ static iree_status_t check_conv2d_results_impl(FILE* file,
                   idx, results->result_type, results->expected_contents.data);
           if (!iree_test_utils_result_elements_agree(actual_value,
                                                      expected_value)) {
-            printf("HERE: actual_value: %f, actual_value: %f\n", actual_value.f32, expected_value.f32);                                          
+            printf("HERE: actual_value: %f, actual_value: %f\n",
+                   actual_value.f32, expected_value.f32);
             fprintf(
                 file,
                 "\n\nerror: the actual and expected result tensors disagree "
@@ -601,8 +604,8 @@ static iree_status_t check_conv2d_results_impl(FILE* file,
 // reference conv2d implementation on the same inputs to check if the output
 // is correct. On error, the first index is returned where the actual and
 // expected value doesn't match. TODO: Add detailed logging to |file|.
-static iree_status_t check_conv2d_results(FILE* file,
-                                          const conv2d_results_t* results) {
+static iree_status_t check_conv2d_results(FILE *file,
+                                          const conv2d_results_t *results) {
   IREE_TRACE_ZONE_BEGIN(z0);
   // TODO: Increase the check every param to reduce the number of comparisons.
   int check_every = 1;
@@ -630,7 +633,7 @@ static iree_status_t check_conv2d_results(FILE* file,
 namespace iree {
 
 class Conv2dTestModuleState final {
- public:
+public:
   explicit Conv2dTestModuleState(iree_allocator_t host_allocator)
       : host_allocator_(host_allocator) {}
   ~Conv2dTestModuleState() = default;
@@ -639,10 +642,10 @@ class Conv2dTestModuleState final {
   // |element_type|. The given |seed| is passed to the pseudorandom generator.
   // The pseudorandom values are reproducible both across runs and across
   // machines.
-  StatusOr<vm::ref<iree_hal_buffer_view_t>> GenerateRandom4dTensor(
-      const vm::ref<iree_hal_device_t> device, int64_t dim0, int64_t dim1,
-      int64_t dim2, int64_t dim3, iree_hal_element_type_t element_type,
-      int32_t seed) {
+  StatusOr<vm::ref<iree_hal_buffer_view_t>>
+  GenerateRandom4dTensor(const vm::ref<iree_hal_device_t> device, int64_t dim0,
+                         int64_t dim1, int64_t dim2, int64_t dim3,
+                         iree_hal_element_type_t element_type, int32_t seed) {
     iree_hal_dim_t dims[4] = {
         (iree_hal_dim_t)dim0,
         (iree_hal_dim_t)dim1,
@@ -665,8 +668,8 @@ class Conv2dTestModuleState final {
         device.get(), iree_hal_device_allocator(device.get()),
         IREE_ARRAYSIZE(dims), dims, element_type,
         IREE_HAL_ENCODING_TYPE_DENSE_ROW_MAJOR, buffer_params,
-        +[](iree_hal_buffer_mapping_t* mapping, void* user_data) {
-          callback_state_t callback_state = *(callback_state_t*)user_data;
+        +[](iree_hal_buffer_mapping_t *mapping, void *user_data) {
+          callback_state_t callback_state = *(callback_state_t *)user_data;
           iree_byte_span_t span = mapping->contents;
           // Generate "uniform" integer-valued numbers in the range [min,
           // max].
@@ -678,9 +681,9 @@ class Conv2dTestModuleState final {
           uint32_t range = (max - min + 1) / 4;
           iree_host_size_t element_byte_count =
               iree_hal_element_dense_byte_count(callback_state.element_type);
-          uint8_t* data_end = span.data + span.data_length;
+          uint8_t *data_end = span.data + span.data_length;
           uint32_t state = callback_state.seed;
-          for (uint8_t* data = span.data; data < data_end;
+          for (uint8_t *data = span.data; data < data_end;
                data += element_byte_count) {
             int32_t value =
                 (int32_t)iree_test_utils_pseudorandom_range(&state, range) +
@@ -694,14 +697,15 @@ class Conv2dTestModuleState final {
     return std::move(result_view);
   }
 
-  Status CheckConv2dResults(
-      const vm::ref<iree_hal_device_t> device, int64_t n, int64_t c, int64_t h,
-      int64_t w, int64_t f, int64_t kh, int64_t kw, int64_t layout, int64_t sh,
-      int64_t sw, int64_t dh, int64_t dw,
-      const vm::ref<iree_hal_buffer_view_t> input,
-      const vm::ref<iree_hal_buffer_view_t> kernel,
-      const vm::ref<iree_hal_buffer_view_t> acc,
-      const vm::ref<iree_hal_buffer_view_t> actual_result) {
+  Status
+  CheckConv2dResults(const vm::ref<iree_hal_device_t> device, int64_t n,
+                     int64_t c, int64_t h, int64_t w, int64_t f, int64_t kh,
+                     int64_t kw, int64_t layout, int64_t sh, int64_t sw,
+                     int64_t dh, int64_t dw,
+                     const vm::ref<iree_hal_buffer_view_t> input,
+                     const vm::ref<iree_hal_buffer_view_t> kernel,
+                     const vm::ref<iree_hal_buffer_view_t> acc,
+                     const vm::ref<iree_hal_buffer_view_t> actual_result) {
     conv2d_results_t results = {};
     IREE_RETURN_IF_ERROR(conv2d_results_initialize(
         device.get(), (iree_hal_dim_t)n, (iree_hal_dim_t)c, (iree_hal_dim_t)h,
@@ -715,7 +719,7 @@ class Conv2dTestModuleState final {
     return status;
   }
 
- private:
+private:
   iree_allocator_t host_allocator_;
 };
 
@@ -729,17 +733,17 @@ static const vm::NativeFunction<Conv2dTestModuleState>
 
 struct Conv2dTestModule final : public vm::NativeModule<Conv2dTestModuleState> {
   using vm::NativeModule<Conv2dTestModuleState>::NativeModule;
-  StatusOr<std::unique_ptr<Conv2dTestModuleState>> CreateState(
-      iree_allocator_t host_allocator) override {
+  StatusOr<std::unique_ptr<Conv2dTestModuleState>>
+  CreateState(iree_allocator_t host_allocator) override {
     return std::make_unique<Conv2dTestModuleState>(host_allocator);
   }
 };
 
-}  // namespace iree
+} // namespace iree
 
-static iree_status_t conv2d_test_module_create(iree_vm_instance_t* instance,
+static iree_status_t conv2d_test_module_create(iree_vm_instance_t *instance,
                                                iree_allocator_t host_allocator,
-                                               iree_vm_module_t** out_module) {
+                                               iree_vm_module_t **out_module) {
   IREE_ASSERT_ARGUMENT(out_module);
   *out_module = NULL;
   auto module = std::make_unique<iree::Conv2dTestModule>(
@@ -750,7 +754,7 @@ static iree_status_t conv2d_test_module_create(iree_vm_instance_t* instance,
   return iree_ok_status();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   IREE_TRACE_APP_ENTER();
 
   iree_flags_parse_checked(IREE_FLAGS_PARSE_MODE_DEFAULT, &argc, &argv);
