@@ -9,7 +9,7 @@ numpy
 # pin to a specific version here for reproducible test generation.
 # We could be looser here if we instead generate from ONNX sources in a git
 # repository (e.g. https://github.com/onnx/onnx as a git submodule).
-onnx==1.16.2
+onnx==1.17.0
 
 # The importer needs the `iree-import-onnx` tool.
 --find-links https://iree.dev/pip-release-links.html
