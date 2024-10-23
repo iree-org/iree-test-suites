@@ -39,9 +39,9 @@ class InputElemTypeId(enum.Enum):
 @enum.unique
 class AccElemTypeId(enum.Enum):
     NONE = ""
+    F16 = "f16"
     I32 = "i32"
     F32 = "f32"
-    F16 = "f16"
 
 
 # Enumerates of the collections of shapes that we can generate tests for.
