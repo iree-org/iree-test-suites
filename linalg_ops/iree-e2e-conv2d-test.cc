@@ -580,8 +580,6 @@ static iree_status_t check_conv2d_results_impl(FILE *file,
                   idx, results->result_type, results->expected_contents.data);
           if (!iree_test_utils_result_elements_agree(actual_value,
                                                      expected_value)) {
-            printf("HERE: actual_value: %f, actual_value: %f\n",
-                   actual_value.f32, expected_value.f32);
             fprintf(
                 file,
                 "\n\nerror: the actual and expected result tensors disagree "
