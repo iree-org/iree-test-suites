@@ -94,7 +94,6 @@ for type_and_layout_combination in ${type_and_layout_combinations[@]}; do
   kernel_layout="${combination[3]}"
   acc_type="${combination[4]}"
   type_layout_name="${input_type}_${input_layout}_${kernel_type}_${kernel_layout}_${acc_type}"
-  #layout_name="${input_layout}_${kernel_layout}"
   type_combination_dir="${generated_dir_root}/${type_layout_name}"
   mkdir -p ${type_combination_dir}
   for shape in ${shapes[@]}; do
