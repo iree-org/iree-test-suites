@@ -77,9 +77,6 @@ for type_combination in ${type_combinations[@]}; do
   done
 done
 
-shapes=(
-  "large"
-)
 # input_type;input_layout;kernel_type;kernel_layout;acc_type
 type_and_layout_combinations=(
   "f16;nhwc;f16;hwcf;f32"

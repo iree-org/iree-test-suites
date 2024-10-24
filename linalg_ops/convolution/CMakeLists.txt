@@ -83,9 +83,6 @@ endforeach()
 # To distinguish between CDNA(gfx9) and RDNA3(gfx11)
 if(IREE_HIP_TEST_TARGET_CHIP MATCHES "^gfx9")
 
-set(_SIZES)
-list(APPEND _SIZES "large")
-
 set(_DTYPES_AND_LAYOUTS)
 list(APPEND _DTYPES_AND_LAYOUTS "f16_nhwc_f16_hwcf_f32")
 list(APPEND _DTYPES_AND_LAYOUTS "f16_nchw_f16_fchw_f32")
@@ -116,9 +113,6 @@ foreach(_DTYPE_AND_LAYOUT IN LISTS _DTYPES_AND_LAYOUTS)
 endforeach()
 
 elseif(IREE_HIP_TEST_TARGET_CHIP MATCHES "^gfx11")
-
-set(_SIZES)
-list(APPEND _SIZES "large")
 
 set(_DTYPES_AND_LAYOUTS)
 list(APPEND _DTYPES_AND_LAYOUTS "f16_nhwc_f16_hwcf_f32")
