@@ -35,6 +35,7 @@ jobs:
     env:
       VENV_DIR: ${{ github.workspace }}/.venv
       CONFIG_FILE_PATH: onnx_ops/configs/onnx_ops_cpu_llvm_sync.json
+      HTML_REPORT_PATH: onnx_ops/onnx_ops_test_report_cpu_llvm_sync.html
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -53,6 +54,7 @@ jobs:
 
       # Run tests and output new config files as needed.
       - name: Run ONNX ops test suite
+        continue-on-error: true
         run: |
           source ${VENV_DIR}/bin/activate
           pytest onnx_ops/ \
@@ -60,10 +62,16 @@ jobs:
             -rA \
             --timeout=30 \
             --durations=10 \
+            --html=${HTML_REPORT_PATH} \
+            --self-contained-html \
             --report-log=/tmp/onnx_ops_cpu_logs.json \
             --config-files=${CONFIG_FILE_PATH}
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: onnx_ops_test_report_cpu_llvm_sync.html
+          path: ${{ env.HTML_REPORT_PATH }}
       - name: Update config file with latest XFAIL lists
-        if: failure()
         run: |
           source ${VENV_DIR}/bin/activate
           python onnx_ops/update_config_xfails.py \
@@ -71,7 +79,6 @@ jobs:
             --config-file=${CONFIG_FILE_PATH}
           cat ${CONFIG_FILE_PATH}
       - name: Upload new config file
-        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: onnx_ops_cpu_llvm_sync.json

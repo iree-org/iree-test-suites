@@ -4,6 +4,7 @@
 
 pyjson5
 pytest
+pytest-html
 pytest-reportlog
 pytest-timeout
 pytest-xdist
