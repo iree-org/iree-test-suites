@@ -73,3 +73,77 @@ foreach(_DTYPE IN LISTS _DTYPES)
     )
   endforeach()
 endforeach()
+
+###############################################################################
+#
+# GPU - ROCm/HIP, default flags.
+#
+###############################################################################
+
+# To distinguish between CDNA(gfx9) and RDNA3(gfx11)
+if(IREE_HIP_TEST_TARGET_CHIP MATCHES "^gfx9")
+
+set(_SIZES)
+list(APPEND _SIZES "large")
+
+set(_DTYPES_AND_LAYOUTS)
+list(APPEND _DTYPES_AND_LAYOUTS "f16_nhwc_f16_hwcf_f32")
+list(APPEND _DTYPES_AND_LAYOUTS "f16_nchw_f16_fchw_f32")
+list(APPEND _DTYPES_AND_LAYOUTS "i8_nhwc_i8_hwcf_i32")
+
+
+foreach(_DTYPE_AND_LAYOUT IN LISTS _DTYPES_AND_LAYOUTS)
+  foreach(_SIZE IN LISTS _SIZES)
+    iree_test_suites_runner_test(
+      NAME
+        conv2d_${_DTYPE_AND_LAYOUT}_${_SIZE}
+      TESTS_SRC
+        "generated/${_DTYPE_AND_LAYOUT}/conv2d_${_DTYPE_AND_LAYOUT}_${_SIZE}.mlir"
+      CALLS_SRC
+        "generated/${_DTYPE_AND_LAYOUT}/conv2d_${_DTYPE_AND_LAYOUT}_${_SIZE}_calls.mlir"
+      TEST_RUNNER
+        iree-test-suites_iree-e2e-conv2d-test
+      TARGET_BACKEND
+        "rocm"
+      DRIVER
+        "hip"
+      COMPILER_FLAGS
+        "--iree-hip-target=${IREE_HIP_TEST_TARGET_CHIP}"
+      RUNNER_FLAGS
+      LABELS
+    )
+  endforeach()
+endforeach()
+
+elseif(IREE_HIP_TEST_TARGET_CHIP MATCHES "^gfx11")
+
+set(_SIZES)
+list(APPEND _SIZES "large")
+
+set(_DTYPES_AND_LAYOUTS)
+list(APPEND _DTYPES_AND_LAYOUTS "f16_nhwc_f16_hwcf_f32")
+
+foreach(_DTYPE_AND_LAYOUT IN LISTS _DTYPES_AND_LAYOUTS)
+  foreach(_SIZE IN LISTS _SIZES)
+    iree_test_suites_runner_test(
+      NAME
+        conv2d_${_DTYPE_AND_LAYOUT}_${_SIZE}
+      TESTS_SRC
+        "generated/${_DTYPE_AND_LAYOUT}/conv2d_${_DTYPE_AND_LAYOUT}_${_SIZE}.mlir"
+      CALLS_SRC
+        "generated/${_DTYPE_AND_LAYOUT}/conv2d_${_DTYPE_AND_LAYOUT}_${_SIZE}_calls.mlir"
+      TEST_RUNNER
+        iree-test-suites_iree-e2e-conv2d-test
+      TARGET_BACKEND
+        "rocm"
+      DRIVER
+        "hip"
+      COMPILER_FLAGS
+        "--iree-hip-target=${IREE_HIP_TEST_TARGET_CHIP}"
+      RUNNER_FLAGS
+      LABELS
+    )
+  endforeach()
+endforeach()
+
+endif()

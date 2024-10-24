@@ -76,3 +76,38 @@ for type_combination in ${type_combinations[@]}; do
       --shapes=${shape}
   done
 done
+
+shapes=(
+  "large"
+)
+# input_type;input_layout;kernel_type;kernel_layout;acc_type
+type_and_layout_combinations=(
+  "f16;nhwc;f16;hwcf;f32"
+  "f16;nchw;f16;fchw;f32"
+  "i8;nhwc;i8;hwcf;i32"
+)
+for type_and_layout_combination in ${type_and_layout_combinations[@]}; do
+  IFS=";" read -r -a combination <<< "${type_and_layout_combination}"
+  input_type="${combination[0]}"
+  input_layout="${combination[1]}"
+  kernel_type="${combination[2]}"
+  kernel_layout="${combination[3]}"
+  acc_type="${combination[4]}"
+  type_layout_name="${input_type}_${input_layout}_${kernel_type}_${kernel_layout}_${acc_type}"
+  #layout_name="${input_layout}_${kernel_layout}"
+  type_combination_dir="${generated_dir_root}/${type_layout_name}"
+  mkdir -p ${type_combination_dir}
+  for shape in ${shapes[@]}; do
+    echo "Generating conv2d test files for ${type_layout_name}_${shape}"
+    name="conv2d_${type_layout_name}_${shape}"
+    python ${this_dir}/generate_e2e_conv2d_tests.py \
+      --output_conv2d_mlir=${type_combination_dir}/${name}.mlir \
+      --output_calls_mlir=${type_combination_dir}/${name}_calls.mlir \
+      --input_type=${input_type} \
+      --input_layout=${input_layout} \
+      --kernel_type=${kernel_type} \
+      --kernel_layout=${kernel_layout} \
+      --acc_type=${acc_type} \
+      --shapes=${shape}
+  done
+done
