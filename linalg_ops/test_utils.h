@@ -62,7 +62,6 @@ typedef struct iree_test_utils_value_t {
     int16_t i16;
     int32_t i32;
     int64_t i64;
-    float f16;
     float f32;
     uint16_t f16_u16;
     uint16_t bf16_u16;

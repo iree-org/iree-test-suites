@@ -22,7 +22,7 @@
 #include "iree/tooling/device_util.h"
 #include "iree/vm/api.h"
 
-IREE_FLAG(bool, require_exact_results, false,
+IREE_FLAG(bool, require_exact_results, true,
           "Requires floating point result elements to match exactly.");
 
 bool iree_test_utils_require_exact_results(void) {
@@ -193,10 +193,10 @@ bool iree_test_utils_result_elements_agree(iree_test_utils_e2e_value_t expected,
     // expected values. Inexact results are only permitted when the
     // `require_exact_results` flag is set to `false`.
     case IREE_TEST_UTILS_VALUE_TYPE_F16:
-      if (actual.f16 == expected.f16) return true;
+      if (actual.f16_u16 == expected.f16_u16) return true;
       if (iree_test_utils_require_exact_results()) return false;
-      return fabsf(iree_math_f16_to_f32(actual.f16) -
-                  iree_math_f16_to_f32(expected.f16)) <
+      return fabsf(iree_math_f16_to_f32(actual.f16_u16) -
+                  iree_math_f16_to_f32(expected.f16_u16)) <
               acceptable_fp_delta;
     case IREE_TEST_UTILS_VALUE_TYPE_BF16:
       if (actual.bf16_u16 == expected.bf16_u16) return true;

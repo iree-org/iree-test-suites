@@ -120,7 +120,7 @@ def get_test_shapes(shapes_id: ShapesId):
         return [
             TestShape(n=2, c=2, h=32, w=32, kh=3, kw=3, f=2, accumulate=True),
             TestShape(n=2, c=2, h=32, w=32, kh=3, kw=3, f=64, accumulate=True),
-            TestShape(n=2, c=32, h=32, w=32, kh=3, kw=3, f=64, accumulate=True),
+            TestShape(n=2, c=16, h=32, w=32, kh=3, kw=3, f=64, accumulate=True),
         ]
     if shapes_id == ShapesId.LARGE:
         return [
