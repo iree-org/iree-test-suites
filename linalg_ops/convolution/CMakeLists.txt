@@ -209,7 +209,7 @@ endforeach()
 
 endif()
 
-# CPU and GPU tests for "i8_nhwc_i8_hwcf_i32" combination without Winograd
+# CPU and GPU tests for without Winograd
 set(_DTYPES_AND_LAYOUTS)
 list(APPEND _DTYPES_AND_LAYOUTS "i8_nhwc_i8_hwcf_i32")
 list(APPEND _DTYPES_AND_LAYOUTS "i8_nchw_i8_fchw_i32")
