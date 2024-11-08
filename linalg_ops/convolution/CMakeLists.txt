@@ -43,6 +43,7 @@ foreach(_DTYPE_AND_LAYOUT IN LISTS _DTYPES_AND_LAYOUTS)
       DRIVER
         "local-task"
       COMPILER_FLAGS
+        "--iree-llvmcpu-target-cpu=host"
       RUNNER_FLAGS
       LABELS
          "hostonly"
@@ -236,6 +237,7 @@ foreach(_DTYPE_AND_LAYOUT IN LISTS _DTYPES_AND_LAYOUTS)
       DRIVER
         "local-task"
       COMPILER_FLAGS
+        "--iree-llvmcpu-target-cpu=host"
       RUNNER_FLAGS
       LABELS
          "hostonly"
