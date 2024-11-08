@@ -41,6 +41,7 @@ foreach(_DTYPE IN LISTS _DTYPES)
       DRIVER
         "local-task"
       COMPILER_FLAGS
+        "--iree-llvmcpu-target-cpu=host"
       RUNNER_FLAGS
       LABELS
     )
@@ -78,6 +79,7 @@ foreach(_DTYPE IN LISTS _DTYPES)
     DRIVER
       "local-task"
     COMPILER_FLAGS
+      "--iree-llvmcpu-target-cpu=host"
     RUNNER_FLAGS
     LABELS
   )
