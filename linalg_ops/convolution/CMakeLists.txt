@@ -75,6 +75,7 @@ foreach(_DTYPE_AND_LAYOUT IN LISTS _DTYPES_AND_LAYOUTS)
         "local-task"
       COMPILER_FLAGS
         "--iree-preprocessing-pass-pipeline=builtin.module\(func.func\(iree-linalg-ext-convert-conv2d-to-winograd{replace-all-convs=true}\)\)"
+        "--iree-llvmcpu-target-cpu=host"
       RUNNER_FLAGS
       LABELS
          "hostonly"
