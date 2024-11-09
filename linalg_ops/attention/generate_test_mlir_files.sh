@@ -6,7 +6,7 @@
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-# This script runs generate_e2e_conv2d_tests for all argument combinations that
+# This script runs generate_e2e_attention_tests for all argument combinations that
 # we are interested in testing.
 #
 # The output is a 'generated' folder with contents like this:
