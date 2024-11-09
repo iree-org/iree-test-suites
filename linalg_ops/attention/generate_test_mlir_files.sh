@@ -38,7 +38,7 @@ shapes=(
   "large"
 )
 
-# query_type;key_type;value_type;
+# query_type;key_type;value_type;scale_type
 type_and_layout_combinations=(
   "f16;f16;f16;f16"
 )
