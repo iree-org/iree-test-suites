@@ -225,7 +225,7 @@ def generate_function(
         f"   iree_linalg_ext.yield %score : f32\n"
         f" }} -> {result_tensor_type}\n"
         f" return %result1: {result_tensor_type}\n"
-        f"}}\n"
+        f"}}"
     )
     return MLIRFunction(
         name=func_name,

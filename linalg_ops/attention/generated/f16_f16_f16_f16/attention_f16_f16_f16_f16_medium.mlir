@@ -14,4 +14,3 @@ func.func @attention_2_512_128_64_32_dtype_f16_f16_f16_f16(%query: tensor<2x512x
  } -> tensor<2x512x32xf16>
  return %result1: tensor<2x512x32xf16>
 }
-
