@@ -11,7 +11,7 @@
 #
 # The output is a 'generated' folder with contents like this:
 #   linalg_ops/
-#     convolution/
+#     attention/
 #       generated/
 #         f16_f16_f16_f16/
 #           attention_f16_f16_f16_f16_large_calls.mlir
