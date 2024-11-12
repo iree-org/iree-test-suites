@@ -401,21 +401,21 @@ def parse_arguments():
         "--query_type",
         type=str,
         choices=["f16"],
-        help="Numeric type of query tensors ",
+        help="Numeric type of query tensors",
         required=True,
     )
     parser.add_argument(
         "--key_type",
         type=str,
         choices=["f16"],
-        help="Numeric type of key tensors ",
+        help="Numeric type of key tensors",
         required=True,
     )
     parser.add_argument(
         "--value_type",
         type=str,
         choices=["f16"],
-        help="Numeric type of value tensors ",
+        help="Numeric type of value tensors",
         required=True,
     )
     parser.add_argument(
