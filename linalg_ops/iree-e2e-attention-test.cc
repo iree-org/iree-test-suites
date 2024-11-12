@@ -29,9 +29,9 @@
 
 // Helper for reference_attention.
 // Function to allocate and initialize tensors
-float* allocate_tensor(int dim1, int dim2, int dim3) {
+float *allocate_tensor(int dim1, int dim2, int dim3) {
   const int size = dim1 * dim2 * dim3;
-  float* tensor = (float*)malloc(size * sizeof(float));
+  float *tensor = (float *)malloc(size * sizeof(float));
   for (int i = 0; i < size; ++i) {
     tensor[i] = 0.0f;
   }
@@ -39,8 +39,9 @@ float* allocate_tensor(int dim1, int dim2, int dim3) {
 }
 
 // Function to free allocated tensors
-void free_tensor(float* tensor) {
-  if (tensor != nullptr) free(tensor);
+void free_tensor(float *tensor) {
+  if (tensor != nullptr)
+    free(tensor);
 }
 
 // Function to calculate 1D index for a 3D array
@@ -50,9 +51,9 @@ int index_3d(int i, int j, int k, int dim2, int dim3) {
 
 static void reference_attention_f32_f32_f32_f32(
     iree_hal_dim_t M, iree_hal_dim_t K1, iree_hal_dim_t K2, iree_hal_dim_t N,
-    iree_hal_dim_t B, const float* query_data, const float* key_data,
-    const float* value_data, float* result_data, iree_hal_dim_t b,
-    float* Attention) {
+    iree_hal_dim_t B, const float *query_data, const float *key_data,
+    const float *value_data, float *result_data, iree_hal_dim_t b,
+    float *qk_cache) {
   // Compute Q * K^T
   for (int m = 0; m < M; ++m) {
     for (int k2 = 0; k2 < K2; ++k2) {
@@ -64,30 +65,30 @@ static void reference_attention_f32_f32_f32_f32(
         sum += query_data[q_idx] * key_data[k_idx];
       }
       int att_idx = index_3d(0, m, k2, M, K2);
-      Attention[att_idx] = sum / sqrt(K1);  // Scale by sqrt(K1)
+      qk_cache[att_idx] = sum / sqrt(K1); // Scale by sqrt(K1)
     }
   }
 
-  // Compute softmax on Attention
+  // Compute softmax on qk_cache
   for (int m = 0; m < M; ++m) {
     // Find the maximum value for the current sequence
     float max_val = -FLT_MAX;
     for (int k2 = 0; k2 < K2; ++k2) {
       int att_idx = index_3d(0, m, k2, M, K2);
-      max_val = iree_max(max_val, Attention[att_idx]);
+      max_val = iree_max(max_val, qk_cache[att_idx]);
     }
 
     // Calculate the softmax denominator
     float sum = 0.0f;
     for (int k2 = 0; k2 < K2; ++k2) {
       int att_idx = index_3d(0, m, k2, M, K2);
-      sum += exp(Attention[att_idx] - max_val);
+      sum += exp(qk_cache[att_idx] - max_val);
     }
 
     // Apply softmax
     for (int k2 = 0; k2 < K2; ++k2) {
       int att_idx = index_3d(0, m, k2, M, K2);
-      Attention[att_idx] = exp(Attention[att_idx]) / sum;
+      qk_cache[att_idx] = exp(qk_cache[att_idx]) / sum;
     }
   }
 
@@ -98,7 +99,7 @@ static void reference_attention_f32_f32_f32_f32(
       for (int k2 = 0; k2 < K2; ++k2) {
         int att_idx = index_3d(0, m, k2, M, K2);
         int v_idx = index_3d(b, k2, n, K2, N);
-        sum += Attention[att_idx] * value_data[v_idx];
+        sum += qk_cache[att_idx] * value_data[v_idx];
       }
       int o_idx = index_3d(b, m, n, M, N);
       result_data[o_idx] = sum;
@@ -110,15 +111,15 @@ static iree_status_t reference_attention_element(
     iree_hal_dim_t M, iree_hal_dim_t K1, iree_hal_dim_t K2, iree_hal_dim_t N,
     iree_hal_dim_t B, iree_hal_element_type_t query_elem_type,
     iree_hal_element_type_t key_elem_type,
-    iree_hal_element_type_t value_elem_type, void* query_data, void* key_data,
-    void* value_data, void* actual_data, void* result_data, iree_hal_dim_t b,
-    float* Attention) {
+    iree_hal_element_type_t value_elem_type, void *query_data, void *key_data,
+    void *value_data, void *actual_data, void *result_data, iree_hal_dim_t b,
+    float *qk_cache) {
   if (query_elem_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32 &&
       key_elem_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32 &&
       value_elem_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32) {
     reference_attention_f32_f32_f32_f32(
-        M, K1, K2, N, B, (const float*)query_data, (const float*)key_data,
-        (const float*)value_data, (float*)result_data, b, Attention);
+        M, K1, K2, N, B, (const float *)query_data, (const float *)key_data,
+        (const float *)value_data, (float *)result_data, b, qk_cache);
 
   } else {
     return iree_make_status(
@@ -146,21 +147,25 @@ static iree_status_t reference_attention(
   IREE_TRACE_ZONE_APPEND_VALUE_I64(z0, N);
 
   iree_host_size_t count = 0;
-  float* Attention = allocate_tensor(1, M, K2);
+  float *qk_cache = allocate_tensor(1, M, K2);
+  iree_status_t status = iree_ok_status();
   for (iree_hal_dim_t b = 0; b < B; ++b) {
-    if (++count < compute_every) continue;
+    if (++count < compute_every)
+      continue;
     count = 0;
-    IREE_RETURN_AND_END_ZONE_IF_ERROR(
-        z0,
-        reference_attention_element(
-            M, K1, K2, N, B, query_elem_type, key_elem_type, value_elem_type,
-            query_contents.data, key_contents.data, value_contents.data,
-            actual_contents.data, result_contents.data, b, Attention));
+    if (iree_status_is_ok(status)) {
+      IREE_RETURN_AND_END_ZONE_IF_ERROR(
+          z0,
+          status = reference_attention_element(
+              M, K1, K2, N, B, query_elem_type, key_elem_type, value_elem_type,
+              query_contents.data, key_contents.data, value_contents.data,
+              actual_contents.data, result_contents.data, b, qk_cache));
+    }
   }
-  free_tensor(Attention);
+  free_tensor(qk_cache);
 
   IREE_TRACE_ZONE_END(z0);
-  return iree_ok_status();
+  return status;
 }
 //===----------------------------------------------------------------------===//
 // Attention comparison/logging
@@ -184,14 +189,14 @@ typedef struct {
   iree_byte_span_t expected_contents;
 } attention_results_t;
 
-static void attention_results_deinitialize(attention_results_t* results);
+static void attention_results_deinitialize(attention_results_t *results);
 
 static iree_status_t attention_results_initialize(
-    iree_hal_device_t* device, iree_hal_dim_t b_size, iree_hal_dim_t m_size,
+    iree_hal_device_t *device, iree_hal_dim_t b_size, iree_hal_dim_t m_size,
     iree_hal_dim_t k1_size, iree_hal_dim_t k2_size, iree_hal_dim_t n_size,
-    iree_hal_buffer_view_t* query, iree_hal_buffer_view_t* key,
-    iree_hal_buffer_view_t* value, iree_hal_buffer_view_t* result,
-    iree_allocator_t host_allocator, attention_results_t* out_results) {
+    iree_hal_buffer_view_t *query, iree_hal_buffer_view_t *key,
+    iree_hal_buffer_view_t *value, iree_hal_buffer_view_t *result,
+    iree_allocator_t host_allocator, attention_results_t *out_results) {
   IREE_TRACE_ZONE_BEGIN(z0);
 
   memset(out_results, 0, sizeof(*out_results));
@@ -208,10 +213,10 @@ static iree_status_t attention_results_initialize(
   out_results->value_elem_type = iree_hal_buffer_view_element_type(value);
   out_results->result_elem_type = iree_hal_buffer_view_element_type(result);
 
-  iree_hal_buffer_t* query_buffer = iree_hal_buffer_view_buffer(query);
-  iree_hal_buffer_t* key_buffer = iree_hal_buffer_view_buffer(key);
-  iree_hal_buffer_t* value_buffer = iree_hal_buffer_view_buffer(value);
-  iree_hal_buffer_t* result_buffer = iree_hal_buffer_view_buffer(result);
+  iree_hal_buffer_t *query_buffer = iree_hal_buffer_view_buffer(query);
+  iree_hal_buffer_t *key_buffer = iree_hal_buffer_view_buffer(key);
+  iree_hal_buffer_t *value_buffer = iree_hal_buffer_view_buffer(value);
+  iree_hal_buffer_t *result_buffer = iree_hal_buffer_view_buffer(result);
 
   iree_status_t status = iree_ok_status();
 
@@ -220,7 +225,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(query_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->query_contents.data_length,
-                                   (void**)&out_results->query_contents.data);
+                                   (void **)&out_results->query_contents.data);
   }
   if (iree_status_is_ok(status)) {
     status = iree_hal_device_transfer_d2h(
@@ -233,7 +238,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(key_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->key_contents.data_length,
-                                   (void**)&out_results->key_contents.data);
+                                   (void **)&out_results->key_contents.data);
   }
   if (iree_status_is_ok(status)) {
     status = iree_hal_device_transfer_d2h(
@@ -246,7 +251,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(value_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->value_contents.data_length,
-                                   (void**)&out_results->value_contents.data);
+                                   (void **)&out_results->value_contents.data);
   }
 
   if (iree_status_is_ok(status)) {
@@ -260,7 +265,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(result_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->actual_contents.data_length,
-                                   (void**)&out_results->actual_contents.data);
+                                   (void **)&out_results->actual_contents.data);
   }
   if (iree_status_is_ok(status)) {
     status = iree_hal_device_transfer_d2h(
@@ -273,7 +278,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(result_buffer);
     status = iree_allocator_malloc(
         host_allocator, out_results->expected_contents.data_length,
-        (void**)&out_results->expected_contents.data);
+        (void **)&out_results->expected_contents.data);
   }
   if (!iree_status_is_ok(status)) {
     attention_results_deinitialize(out_results);
@@ -282,7 +287,7 @@ static iree_status_t attention_results_initialize(
   return status;
 }
 
-static void attention_results_deinitialize(attention_results_t* results) {
+static void attention_results_deinitialize(attention_results_t *results) {
   IREE_TRACE_ZONE_BEGIN(z0);
   iree_allocator_free(results->host_allocator, results->query_contents.data);
   iree_allocator_free(results->host_allocator, results->key_contents.data);
@@ -296,8 +301,9 @@ static void attention_results_deinitialize(attention_results_t* results) {
 // Helper for check_attention_results: the actual interesting part once we've
 // obtained and validated the {b,m,k1,k2,n}_size values. On error, detailed
 // logging is written to |file| if it is not NULL.
-static iree_status_t check_attention_results_impl(
-    FILE* file, const attention_results_t* results, int check_every) {
+static iree_status_t
+check_attention_results_impl(FILE *file, const attention_results_t *results,
+                             int check_every) {
   IREE_TRACE_ZONE_BEGIN(z0);
 
   IREE_RETURN_AND_END_ZONE_IF_ERROR(
@@ -316,8 +322,8 @@ static iree_status_t check_attention_results_impl(
 // reference attention implementation on the same inputs to check if the output
 // is correct. On error, detailed logging is written to |file| if it is not
 // NULL.
-static iree_status_t check_attention_results(
-    FILE* file, const attention_results_t* results) {
+static iree_status_t
+check_attention_results(FILE *file, const attention_results_t *results) {
   IREE_TRACE_ZONE_BEGIN(z0);
   // TODO: Increase the check every param to reduce the number of comparisons.
   int check_every = 1;
@@ -346,7 +352,7 @@ static iree_status_t check_attention_results(
 namespace iree {
 
 class AttentionTestModuleState final {
- public:
+public:
   explicit AttentionTestModuleState(iree_allocator_t host_allocator)
       : host_allocator_(host_allocator) {}
   ~AttentionTestModuleState() = default;
@@ -355,9 +361,10 @@ class AttentionTestModuleState final {
   // |element_type|. The given |seed| is passed to the pseudorandom generator.
   // The pseudorandom values are reproducible both across runs and across
   // machines.
-  StatusOr<vm::ref<iree_hal_buffer_view_t>> GenerateRandom3dTensor(
-      const vm::ref<iree_hal_device_t> device, int64_t dim0, int64_t dim1,
-      int64_t dim2, iree_hal_element_type_t element_type, int32_t seed) {
+  StatusOr<vm::ref<iree_hal_buffer_view_t>>
+  GenerateRandom3dTensor(const vm::ref<iree_hal_device_t> device, int64_t dim0,
+                         int64_t dim1, int64_t dim2,
+                         iree_hal_element_type_t element_type, int32_t seed) {
     iree_hal_dim_t dims[3] = {
         (iree_hal_dim_t)dim0,
         (iree_hal_dim_t)dim1,
@@ -379,8 +386,8 @@ class AttentionTestModuleState final {
         device.get(), iree_hal_device_allocator(device.get()),
         IREE_ARRAYSIZE(dims), dims, element_type,
         IREE_HAL_ENCODING_TYPE_DENSE_ROW_MAJOR, buffer_params,
-        +[](iree_hal_buffer_mapping_t* mapping, void* user_data) {
-          callback_state_t callback_state = *(callback_state_t*)user_data;
+        +[](iree_hal_buffer_mapping_t *mapping, void *user_data) {
+          callback_state_t callback_state = *(callback_state_t *)user_data;
           iree_byte_span_t span = mapping->contents;
           // Generate "uniform" integer-valued numbers in the range [min, max].
           int32_t min = 0;
@@ -390,9 +397,9 @@ class AttentionTestModuleState final {
           uint32_t range = (max - min + 1);
           iree_host_size_t element_byte_count =
               iree_hal_element_dense_byte_count(callback_state.element_type);
-          uint8_t* data_end = span.data + span.data_length;
+          uint8_t *data_end = span.data + span.data_length;
           uint32_t state = callback_state.seed;
-          for (uint8_t* data = span.data; data < data_end;
+          for (uint8_t *data = span.data; data < data_end;
                data += element_byte_count) {
             int32_t value =
                 (int32_t)iree_test_utils_pseudorandom_range(&state, range) +
@@ -406,12 +413,13 @@ class AttentionTestModuleState final {
     return std::move(result_view);
   }
 
-  Status CheckAttentionResults(
-      const vm::ref<iree_hal_device_t> device, int64_t b, int64_t m, int64_t k1,
-      int64_t k2, int64_t n, const vm::ref<iree_hal_buffer_view_t> query,
-      const vm::ref<iree_hal_buffer_view_t> key,
-      const vm::ref<iree_hal_buffer_view_t> value,
-      const vm::ref<iree_hal_buffer_view_t> actual_result) {
+  Status
+  CheckAttentionResults(const vm::ref<iree_hal_device_t> device, int64_t b,
+                        int64_t m, int64_t k1, int64_t k2, int64_t n,
+                        const vm::ref<iree_hal_buffer_view_t> query,
+                        const vm::ref<iree_hal_buffer_view_t> key,
+                        const vm::ref<iree_hal_buffer_view_t> value,
+                        const vm::ref<iree_hal_buffer_view_t> actual_result) {
     attention_results_t results = {};
     IREE_RETURN_IF_ERROR(attention_results_initialize(
         device.get(), (iree_hal_dim_t)b, (iree_hal_dim_t)m, (iree_hal_dim_t)k1,
@@ -422,7 +430,7 @@ class AttentionTestModuleState final {
     return status;
   }
 
- private:
+private:
   iree_allocator_t host_allocator_;
 };
 
@@ -439,22 +447,23 @@ static const vm::NativeFunction<AttentionTestModuleState>
 struct AttentionTestModule final
     : public vm::NativeModule<AttentionTestModuleState> {
   using vm::NativeModule<AttentionTestModuleState>::NativeModule;
-  StatusOr<std::unique_ptr<AttentionTestModuleState>> CreateState(
-      iree_allocator_t host_allocator) override {
+  StatusOr<std::unique_ptr<AttentionTestModuleState>>
+  CreateState(iree_allocator_t host_allocator) override {
     return std::make_unique<AttentionTestModuleState>(host_allocator);
   }
-  StatusOr<std::unique_ptr<AttentionTestModuleState>> ForkState(
-      AttentionTestModuleState* parent_state,
-      iree_allocator_t host_allocator)  {
+  StatusOr<std::unique_ptr<AttentionTestModuleState>>
+  ForkState(AttentionTestModuleState *parent_state,
+            iree_allocator_t host_allocator) {
     return std::make_unique<AttentionTestModuleState>(host_allocator);
   }
 };
 
-}  // namespace iree
+} // namespace iree
 
-static iree_status_t attention_test_module_create(
-    iree_vm_instance_t* instance, iree_allocator_t host_allocator,
-    iree_vm_module_t** out_module) {
+static iree_status_t
+attention_test_module_create(iree_vm_instance_t *instance,
+                             iree_allocator_t host_allocator,
+                             iree_vm_module_t **out_module) {
   IREE_ASSERT_ARGUMENT(out_module);
   *out_module = NULL;
   auto module = std::make_unique<iree::AttentionTestModule>(
@@ -466,7 +475,7 @@ static iree_status_t attention_test_module_create(
   return iree_ok_status();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   IREE_TRACE_APP_ENTER();
 
   iree_flags_parse_checked(IREE_FLAGS_PARSE_MODE_DEFAULT, &argc, &argv);
