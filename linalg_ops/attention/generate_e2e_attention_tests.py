@@ -469,9 +469,9 @@ def write_calls_file(functions, calls, filename, requirements):
 
     # Emit the test cases for each call.
     for call in calls:
-        module_definition = module_definition + call.op + "\n"
+        module_definition = module_definition + call.op + ""
 
-    module_definition = module_definition + "\n}\n"
+    module_definition = module_definition + "}\n"
 
     with open(filename, "w") as file:
         file.write(module_definition)

@@ -52,6 +52,4 @@ func.func @attention_2_512_128_64_32_dtype_f16_f16_f16_f16_2_512_128_64_32_128_1
   call @attention_test.check_attention_results(%device, %batch, %m, %k1, %k2, %n, %queryExtBufferView, %keyExtBufferView, %valueExtBufferView, %resultExtBufferView) : (!hal.device, i64, i64, i64, i64, i64, !hal.buffer_view, !hal.buffer_view, !hal.buffer_view, !hal.buffer_view) -> ()
   return
 }
-
-
 }
