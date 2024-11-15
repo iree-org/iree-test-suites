@@ -29,9 +29,9 @@
 
 // Helper for reference_attention.
 // Function to allocate and initialize tensors
-float *allocate_tensor(int dim1, int dim2, int dim3) {
+float* allocate_tensor(int dim1, int dim2, int dim3) {
   const int size = dim1 * dim2 * dim3;
-  float *tensor = (float *)malloc(size * sizeof(float));
+  float* tensor = (float*) malloc(size * sizeof(float));
   for (int i = 0; i < size; ++i) {
     tensor[i] = 0.0f;
   }
@@ -39,7 +39,7 @@ float *allocate_tensor(int dim1, int dim2, int dim3) {
 }
 
 // Function to free allocated tensors
-void free_tensor(float *tensor) {
+void free_tensor(float* tensor) {
   if (tensor != nullptr)
     free(tensor);
 }
@@ -51,9 +51,9 @@ int index_3d(int i, int j, int k, int dim2, int dim3) {
 
 static void reference_attention_f32_f32_f32_f32(
     iree_hal_dim_t M, iree_hal_dim_t K1, iree_hal_dim_t K2, iree_hal_dim_t N,
-    iree_hal_dim_t B, const float *query_data, const float *key_data,
-    const float *value_data, float *result_data, iree_hal_dim_t b,
-    float *qk_cache) {
+    iree_hal_dim_t B, const float* query_data, const float* key_data,
+    const float* value_data, float* result_data, iree_hal_dim_t b,
+    float* qk_cache) {
   // Compute Q * K^T
   for (int m = 0; m < M; ++m) {
     for (int k2 = 0; k2 < K2; ++k2) {
@@ -111,15 +111,15 @@ static iree_status_t reference_attention_element(
     iree_hal_dim_t M, iree_hal_dim_t K1, iree_hal_dim_t K2, iree_hal_dim_t N,
     iree_hal_dim_t B, iree_hal_element_type_t query_elem_type,
     iree_hal_element_type_t key_elem_type,
-    iree_hal_element_type_t value_elem_type, void *query_data, void *key_data,
-    void *value_data, void *actual_data, void *result_data, iree_hal_dim_t b,
-    float *qk_cache) {
+    iree_hal_element_type_t value_elem_type, void* query_data, void* key_data,
+    void* value_data, void* actual_data, void* result_data, iree_hal_dim_t b,
+    float* qk_cache) {
   if (query_elem_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32 &&
       key_elem_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32 &&
       value_elem_type == IREE_HAL_ELEMENT_TYPE_FLOAT_32) {
     reference_attention_f32_f32_f32_f32(
-        M, K1, K2, N, B, (const float *)query_data, (const float *)key_data,
-        (const float *)value_data, (float *)result_data, b, qk_cache);
+        M, K1, K2, N, B, (const float*)query_data, (const float*)key_data,
+        (const float*)value_data, (float*)result_data, b, qk_cache);
 
   } else {
     return iree_make_status(
@@ -147,7 +147,7 @@ static iree_status_t reference_attention(
   IREE_TRACE_ZONE_APPEND_VALUE_I64(z0, N);
 
   iree_host_size_t count = 0;
-  float *qk_cache = allocate_tensor(1, M, K2);
+  float* qk_cache = allocate_tensor(1, M, K2);
   iree_status_t status = iree_ok_status();
   for (iree_hal_dim_t b = 0; b < B; ++b) {
     if (++count < compute_every)
@@ -189,14 +189,14 @@ typedef struct {
   iree_byte_span_t expected_contents;
 } attention_results_t;
 
-static void attention_results_deinitialize(attention_results_t *results);
+static void attention_results_deinitialize(attention_results_t* results);
 
 static iree_status_t attention_results_initialize(
-    iree_hal_device_t *device, iree_hal_dim_t b_size, iree_hal_dim_t m_size,
+    iree_hal_device_t* device, iree_hal_dim_t b_size, iree_hal_dim_t m_size,
     iree_hal_dim_t k1_size, iree_hal_dim_t k2_size, iree_hal_dim_t n_size,
-    iree_hal_buffer_view_t *query, iree_hal_buffer_view_t *key,
-    iree_hal_buffer_view_t *value, iree_hal_buffer_view_t *result,
-    iree_allocator_t host_allocator, attention_results_t *out_results) {
+    iree_hal_buffer_view_t* query, iree_hal_buffer_view_t* key,
+    iree_hal_buffer_view_t* value, iree_hal_buffer_view_t* result,
+    iree_allocator_t host_allocator, attention_results_t* out_results) {
   IREE_TRACE_ZONE_BEGIN(z0);
 
   memset(out_results, 0, sizeof(*out_results));
@@ -213,10 +213,10 @@ static iree_status_t attention_results_initialize(
   out_results->value_elem_type = iree_hal_buffer_view_element_type(value);
   out_results->result_elem_type = iree_hal_buffer_view_element_type(result);
 
-  iree_hal_buffer_t *query_buffer = iree_hal_buffer_view_buffer(query);
-  iree_hal_buffer_t *key_buffer = iree_hal_buffer_view_buffer(key);
-  iree_hal_buffer_t *value_buffer = iree_hal_buffer_view_buffer(value);
-  iree_hal_buffer_t *result_buffer = iree_hal_buffer_view_buffer(result);
+  iree_hal_buffer_t* query_buffer = iree_hal_buffer_view_buffer(query);
+  iree_hal_buffer_t* key_buffer = iree_hal_buffer_view_buffer(key);
+  iree_hal_buffer_t* value_buffer = iree_hal_buffer_view_buffer(value);
+  iree_hal_buffer_t* result_buffer = iree_hal_buffer_view_buffer(result);
 
   iree_status_t status = iree_ok_status();
 
@@ -225,7 +225,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(query_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->query_contents.data_length,
-                                   (void **)&out_results->query_contents.data);
+                                   (void**)&out_results->query_contents.data);
   }
   if (iree_status_is_ok(status)) {
     status = iree_hal_device_transfer_d2h(
@@ -238,7 +238,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(key_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->key_contents.data_length,
-                                   (void **)&out_results->key_contents.data);
+                                   (void**)&out_results->key_contents.data);
   }
   if (iree_status_is_ok(status)) {
     status = iree_hal_device_transfer_d2h(
@@ -251,7 +251,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(value_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->value_contents.data_length,
-                                   (void **)&out_results->value_contents.data);
+                                   (void**)&out_results->value_contents.data);
   }
 
   if (iree_status_is_ok(status)) {
@@ -265,7 +265,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(result_buffer);
     status = iree_allocator_malloc(host_allocator,
                                    out_results->actual_contents.data_length,
-                                   (void **)&out_results->actual_contents.data);
+                                   (void**)&out_results->actual_contents.data);
   }
   if (iree_status_is_ok(status)) {
     status = iree_hal_device_transfer_d2h(
@@ -278,7 +278,7 @@ static iree_status_t attention_results_initialize(
         iree_hal_buffer_byte_length(result_buffer);
     status = iree_allocator_malloc(
         host_allocator, out_results->expected_contents.data_length,
-        (void **)&out_results->expected_contents.data);
+        (void**)&out_results->expected_contents.data);
   }
   if (!iree_status_is_ok(status)) {
     attention_results_deinitialize(out_results);
@@ -287,7 +287,7 @@ static iree_status_t attention_results_initialize(
   return status;
 }
 
-static void attention_results_deinitialize(attention_results_t *results) {
+static void attention_results_deinitialize(attention_results_t* results) {
   IREE_TRACE_ZONE_BEGIN(z0);
   iree_allocator_free(results->host_allocator, results->query_contents.data);
   iree_allocator_free(results->host_allocator, results->key_contents.data);
@@ -302,7 +302,7 @@ static void attention_results_deinitialize(attention_results_t *results) {
 // obtained and validated the {b,m,k1,k2,n}_size values. On error, detailed
 // logging is written to |file| if it is not NULL.
 static iree_status_t
-check_attention_results_impl(FILE *file, const attention_results_t *results,
+check_attention_results_impl(FILE* file, const attention_results_t* results,
                              int check_every) {
   IREE_TRACE_ZONE_BEGIN(z0);
 
@@ -323,7 +323,7 @@ check_attention_results_impl(FILE *file, const attention_results_t *results,
 // is correct. On error, detailed logging is written to |file| if it is not
 // NULL.
 static iree_status_t
-check_attention_results(FILE *file, const attention_results_t *results) {
+check_attention_results(FILE* file, const attention_results_t* results) {
   IREE_TRACE_ZONE_BEGIN(z0);
   // TODO: Increase the check every param to reduce the number of comparisons.
   int check_every = 1;
@@ -386,8 +386,8 @@ public:
         device.get(), iree_hal_device_allocator(device.get()),
         IREE_ARRAYSIZE(dims), dims, element_type,
         IREE_HAL_ENCODING_TYPE_DENSE_ROW_MAJOR, buffer_params,
-        +[](iree_hal_buffer_mapping_t *mapping, void *user_data) {
-          callback_state_t callback_state = *(callback_state_t *)user_data;
+        +[](iree_hal_buffer_mapping_t* mapping, void* user_data) {
+          callback_state_t callback_state = *(callback_state_t*)user_data;
           iree_byte_span_t span = mapping->contents;
           // Generate "uniform" integer-valued numbers in the range [min, max].
           int32_t min = 0;
@@ -397,9 +397,9 @@ public:
           uint32_t range = (max - min + 1);
           iree_host_size_t element_byte_count =
               iree_hal_element_dense_byte_count(callback_state.element_type);
-          uint8_t *data_end = span.data + span.data_length;
+          uint8_t* data_end = span.data + span.data_length;
           uint32_t state = callback_state.seed;
-          for (uint8_t *data = span.data; data < data_end;
+          for (uint8_t* data = span.data; data < data_end;
                data += element_byte_count) {
             int32_t value =
                 (int32_t)iree_test_utils_pseudorandom_range(&state, range) +
@@ -452,7 +452,7 @@ struct AttentionTestModule final
     return std::make_unique<AttentionTestModuleState>(host_allocator);
   }
   StatusOr<std::unique_ptr<AttentionTestModuleState>>
-  ForkState(AttentionTestModuleState *parent_state,
+  ForkState(AttentionTestModuleState* parent_state,
             iree_allocator_t host_allocator) {
     return std::make_unique<AttentionTestModuleState>(host_allocator);
   }
@@ -461,9 +461,9 @@ struct AttentionTestModule final
 } // namespace iree
 
 static iree_status_t
-attention_test_module_create(iree_vm_instance_t *instance,
+attention_test_module_create(iree_vm_instance_t* instance,
                              iree_allocator_t host_allocator,
-                             iree_vm_module_t **out_module) {
+                             iree_vm_module_t** out_module) {
   IREE_ASSERT_ARGUMENT(out_module);
   *out_module = NULL;
   auto module = std::make_unique<iree::AttentionTestModule>(
@@ -475,7 +475,7 @@ attention_test_module_create(iree_vm_instance_t *instance,
   return iree_ok_status();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   IREE_TRACE_APP_ENTER();
 
   iree_flags_parse_checked(IREE_FLAGS_PARSE_MODE_DEFAULT, &argc, &argv);
