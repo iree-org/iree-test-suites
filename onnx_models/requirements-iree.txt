@@ -5,5 +5,5 @@
 
 --find-links https://iree.dev/pip-release-links.html
 --pre
-iree-compiler
-iree-runtime
+iree-base-compiler
+iree-base-runtime
