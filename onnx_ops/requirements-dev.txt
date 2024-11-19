@@ -12,5 +12,4 @@ numpy
 onnx==1.17.0
 
 # The importer needs the `iree-import-onnx` tool.
---find-links https://iree.dev/pip-release-links.html
-iree-compiler[onnx]
+iree-base-compiler[onnx]>=3.0.0

@@ -9,10 +9,8 @@ import logging
 import onnx
 import shutil
 import subprocess
-import sys
 from import_onnx_tests_utils import *
 from multiprocessing import Pool
-from onnx import version_converter
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -72,31 +70,14 @@ def import_onnx_files(test_dir_path: Path, imported_dir_path: Path):
     test_data_flagfile_path = imported_dir_path / "run_module_io_flags.txt"
     test_data_flagfile_lines = []
 
-    # Convert model.onnx up to ONNX_CONVERTER_OUTPUT_MIN_VERSION if needed.
-    # TODO(scotttodd): stamp some info e.g. importer tool / version / flags used
-    original_model_path = test_dir_path / "model.onnx"
-    converted_model_path = imported_dir_path / "model.onnx"
-    original_model = onnx.load_model(original_model_path)
-    original_version = original_model.opset_import[0].version
-    if original_version < ONNX_CONVERTER_OUTPUT_MIN_VERSION:
-        try:
-            converted_model = version_converter.convert_version(
-                original_model, ONNX_CONVERTER_OUTPUT_MIN_VERSION
-            )
-            onnx.save(converted_model, converted_model_path)
-        except:
-            # Conversion failed. Do our best with the original file.
-            # TODO(scotttodd): log a warning?
-            shutil.copy(original_model_path, converted_model_path)
-    else:
-        # No conversion needed.
-        shutil.copy(original_model_path, converted_model_path)
-
-    # Import converted model.onnx to model.mlir.
+    # Import model.onnx to model.mlir.
+    model_path = test_dir_path / "model.onnx"
     imported_model_path = imported_dir_path / "model.mlir"
     exec_args = [
         "iree-import-onnx",
-        str(converted_model_path),
+        str(model_path),
+        "--opset-version",
+        str(ONNX_CONVERTER_OUTPUT_MIN_VERSION),
         "-o",
         str(imported_model_path),
     ]
@@ -126,7 +107,7 @@ def import_onnx_files(test_dir_path: Path, imported_dir_path: Path):
     test_data_dir = test_data_dirs[0]
     test_inputs = sorted(list(test_data_dir.glob("input_*.pb")))
     test_outputs = sorted(list(test_data_dir.glob("output_*.pb")))
-    model = onnx.load(converted_model_path)
+    model = onnx.load(model_path)
     for i in range(len(test_inputs)):
         test_input = test_inputs[i]
         type_proto = model.graph.input[i].type
