@@ -1,2 +1,0 @@
---input=6x1xf32=@input_0.bin
---expected_output=6x4xf32=@output_0.bin

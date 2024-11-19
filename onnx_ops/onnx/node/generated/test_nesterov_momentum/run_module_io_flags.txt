@@ -1,7 +1,0 @@
---input=f32=@input_0.bin
---input=i64=@input_1.bin
---input=2xf32=@input_2.bin
---input=2xf32=@input_3.bin
---input=2xf32=@input_4.bin
---expected_output=2xf32=@output_0.bin
---expected_output=2xf32=@output_1.bin
