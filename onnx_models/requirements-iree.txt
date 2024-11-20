@@ -4,5 +4,6 @@
 -r requirements.txt
 
 --find-links https://iree.dev/pip-release-links.html
-iree-compiler
-iree-runtime
+--pre
+iree-base-compiler
+iree-base-runtime
