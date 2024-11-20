@@ -3,10 +3,6 @@ test_acos
 test_acos_example
 test_acosh
 test_acosh_example
-test_adagrad
-test_adagrad_multiple
-test_adam
-test_adam_multiple
 test_add
 test_add_bcast
 test_add_uint8
@@ -18,10 +14,6 @@ test_affine_grid_3d
 test_affine_grid_3d_align_corners
 test_affine_grid_3d_align_corners_expanded
 test_affine_grid_3d_expanded
-test_ai_onnx_ml_array_feature_extractor
-test_ai_onnx_ml_binarizer
-test_ai_onnx_ml_tree_ensemble_set_membership
-test_ai_onnx_ml_tree_ensemble_single_tree
 test_and2d
 test_and3d
 test_and4d
@@ -600,8 +592,6 @@ test_mod_uint16
 test_mod_uint32
 test_mod_uint64
 test_mod_uint8
-test_momentum
-test_momentum_multiple
 test_mul
 test_mul_bcast
 test_mul_example
@@ -611,7 +601,6 @@ test_mvn_expanded
 test_mvn_expanded_ver18
 test_neg
 test_neg_example
-test_nesterov_momentum
 test_nllloss_NC
 test_nllloss_NC_expanded
 test_nllloss_NCd1
