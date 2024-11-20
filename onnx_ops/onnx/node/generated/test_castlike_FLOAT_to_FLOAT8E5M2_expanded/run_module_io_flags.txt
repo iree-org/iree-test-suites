@@ -1,3 +1,0 @@
---input=3x4xf32=@input_0.bin
---input=1xf8e5m2=@input_1.bin
---expected_output=3x4xf8e5m2=@output_0.bin

@@ -27,7 +27,7 @@ Test suites for IREE and related projects.
 
 [![Test ONNX Ops](https://github.com/iree-org/iree-test-suites/actions/workflows/test_onnx_ops.yml/badge.svg?branch=main)](https://github.com/iree-org/iree-test-suites/actions/workflows/test_onnx_ops.yml?query=branch%3Amain)
 
-* 1250+ tests for [ONNX](https://onnx.ai/) framework
+* 1000+ tests for [ONNX](https://onnx.ai/) framework
   [operators](https://onnx.ai/onnx/operators/).
 * Runnable via [pytest](https://docs.pytest.org/) using a
   configurable set of flags to `iree-compile` and `iree-run-module`.
