@@ -199,7 +199,12 @@ def compare_between_iree_and_onnxruntime_fn(model_url: str, artifacts_subdir="")
     # Import, compile, then run with IREE.
     imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)
     iree_module_path = compile_mlir_with_iree(
-        imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
+        imported_mlir_path,
+        "cpu",
+        [
+            "--iree-hal-target-backends=llvm-cpu",
+            "--iree-llvmcpu-target-cpu=host",
+        ],
     )
     # Note: could load the output into memory here and compare using numpy
     # if the pass/fail criteria is difficult to model in the native tooling.
