@@ -13,7 +13,7 @@ from .....utils import *
 artifacts_subdir = "model_zoo/validated/vision/object_detection_segmentation"
 
 
-@pytest.mark.size_medium
+@pytest.mark.size_large
 def test_duc(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/object_detection_segmentation/duc/model/ResNet101-DUC-12.onnx",

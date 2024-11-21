@@ -63,11 +63,11 @@ graph LR
     pytest -k resnet
     ```
 
-* Skip "medium" sized tests using custom markers
+* Skip "large" tests using custom markers
   (https://docs.pytest.org/en/stable/example/markers.html):
 
     ```bash
-    pytest -m "not size_medium"
+    pytest -m "not size_large"
     ```
 
 * Ignore xfail marks

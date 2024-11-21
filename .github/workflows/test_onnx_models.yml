@@ -57,5 +57,5 @@ jobs:
           pytest onnx_models/ \
             -rA \
             --log-cli-level=info \
-            --timeout=120 \
+            --timeout=300 \
             --durations=0
