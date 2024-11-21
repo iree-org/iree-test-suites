@@ -175,14 +175,12 @@ def compare_between_iree_and_onnxruntime_fn(model_url: str, artifacts_subdir="")
     # Download the model as needed.
     # TODO(scotttodd): move to fixture with cache / download on demand
     # TODO(scotttodd): overwrite if already existing? check SHA?
-    original_onnx_path = test_artifacts_dir / f"{model_name}.onnx"
-    if not original_onnx_path.exists():
-        urllib.request.urlretrieve(model_url, original_onnx_path)
+    onnx_path = test_artifacts_dir / f"{model_name}.onnx"
+    if not onnx_path.exists():
+        urllib.request.urlretrieve(model_url, onnx_path)
 
     # TODO(scotttodd): cache ONNX metadata and runtime results (pickle?)
-    upgraded_onnx_path = upgrade_onnx_model_version(original_onnx_path)
-
-    onnx_model_metadata = get_onnx_model_metadata(upgraded_onnx_path)
+    onnx_model_metadata = get_onnx_model_metadata(onnx_path)
     logger.debug(onnx_model_metadata)
 
     # Prepare inputs and expected outputs for running through IREE.
@@ -197,7 +195,7 @@ def compare_between_iree_and_onnxruntime_fn(model_url: str, artifacts_subdir="")
         )
 
     # Import, compile, then run with IREE.
-    imported_mlir_path = import_onnx_model_to_mlir(upgraded_onnx_path)
+    imported_mlir_path = import_onnx_model_to_mlir(onnx_path)
     iree_module_path = compile_mlir_with_iree(
         imported_mlir_path, "cpu", ["--iree-hal-target-backends=llvm-cpu"]
     )
