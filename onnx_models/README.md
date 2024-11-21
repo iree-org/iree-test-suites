@@ -47,8 +47,8 @@ graph LR
     ```bash
     pytest \
       -rA \
-      --log-cli-level=info
-      --durations=0 \
+      --log-cli-level=info \
+      --durations=0
     ```
 
     See https://docs.pytest.org/en/stable/how-to/usage.html for other options.
