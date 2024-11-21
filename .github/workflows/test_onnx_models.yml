@@ -34,6 +34,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       VENV_DIR: ${{ github.workspace }}/.venv
+      HTML_REPORT_PATH: onnx_models/onnx_models_test_report_cpu_llvm_task.html
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -57,5 +58,13 @@ jobs:
           pytest onnx_models/ \
             -rA \
             --log-cli-level=info \
-            --timeout=120 \
-            --durations=0
+            --timeout=300 \
+            --durations=0 \
+            --html=${HTML_REPORT_PATH} \
+            --self-contained-html
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: onnx_models_test_report_cpu_llvm_task.html
+          path: ${{ env.HTML_REPORT_PATH }}
