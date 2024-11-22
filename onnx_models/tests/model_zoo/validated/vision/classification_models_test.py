@@ -122,7 +122,7 @@ def test_squeezenet(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.size_medium
+@pytest.mark.size_large
 def test_vgg19(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/vgg/model/vgg19-7.onnx",
@@ -130,7 +130,7 @@ def test_vgg19(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.size_medium
+@pytest.mark.size_large
 @pytest.mark.xfail(raises=IreeCompileException)
 def test_zfnet_512(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
