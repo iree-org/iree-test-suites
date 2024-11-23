@@ -15,6 +15,9 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 rng = np.random.default_rng(0)
 
+# Convert test cases to at least this version using The ONNX Version Converter.
+ONNX_CONVERTER_OUTPUT_MIN_VERSION = 17
+
 THIS_DIR = Path(__file__).parent
 
 ###############################################################################
@@ -157,29 +160,6 @@ def generate_numpy_input_for_ort_node_arg(node_arg: NodeArg):
 
 
 # TODO(#18289): use real frontend API, import model in-memory?
-def upgrade_onnx_model_version(original_onnx_path: Path, min_version=17):
-    original_model = onnx.load_model(original_onnx_path)
-    original_version = original_model.opset_import[0].version
-    if original_version >= min_version:
-        logger.debug(
-            f"ONNX model at {original_onnx_path.relative_to(THIS_DIR)} version {original_version} >= {min_version}, skipping upgrade"
-        )
-        return original_onnx_path
-
-    converted_model = onnx.version_converter.convert_version(
-        original_model, min_version
-    )
-    upgraded_onnx_path = original_onnx_path.with_name(
-        original_onnx_path.stem + f"_version{min_version}.onnx"
-    )
-    logger.info(
-        f"Upgrading '{original_onnx_path.relative_to(THIS_DIR)}' to '{upgraded_onnx_path.relative_to(THIS_DIR)}'"
-    )
-    onnx.save(converted_model, upgraded_onnx_path)
-    return upgraded_onnx_path
-
-
-# TODO(#18289): use real frontend API, import model in-memory?
 def import_onnx_model_to_mlir(onnx_path: Path):
     imported_mlir_path = onnx_path.with_suffix(".mlir")
     logger.info(
@@ -188,6 +168,8 @@ def import_onnx_model_to_mlir(onnx_path: Path):
     exec_args = [
         "iree-import-onnx",
         str(onnx_path),
+        "--opset-version",
+        str(ONNX_CONVERTER_OUTPUT_MIN_VERSION),
         "-o",
         str(imported_mlir_path),
     ]
