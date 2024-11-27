@@ -129,6 +129,7 @@ def prefill_cross_entropy(toy_llama, ids):
 
 @pytest.mark.target_cpu
 def test_prefill_cpu(toy_llama_cpu):
+    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
     ids = numpy.array(
         [[0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]],
         numpy.int64,
@@ -142,6 +143,7 @@ def test_prefill_cpu(toy_llama_cpu):
 
 @pytest.mark.target_hip
 def test_prefill_gfx1100(toy_llama_gfx1100):
+    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
     ids = numpy.array(
         [[0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]],
         numpy.int64,
