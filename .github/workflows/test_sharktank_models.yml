@@ -59,7 +59,7 @@ jobs:
           source ${VENV_DIR}/bin/activate
           pytest sharktank_models/ \
             -rA \
-            -m "target_cpu"
+            -m "target_cpu" \
             --timeout=300 \
             --durations=0 \
             --html=${HTML_REPORT_PATH} \
