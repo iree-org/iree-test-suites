@@ -40,10 +40,10 @@ def compile_llama_cpu(llama_mlir):
 
 @pytest.fixture
 def compile_llama_gfx1100(llama_mlir):
-    if "HIP_GPU" not in os.environ:
+    if "HIP_TARGET" not in os.environ:
         return None
 
-    target_gpu = os.environ["HIP_GPU"]
+    target_gpu = os.environ["HIP_TARGET"]
     return iree.compiler.compile_file(
         llama_mlir,
         extra_args=["--iree-hal-target-device=hip", f"--iree-hip-target={target_gpu}"],

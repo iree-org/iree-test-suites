@@ -62,6 +62,7 @@ jobs:
             -m "target_cpu" \
             --timeout=300 \
             --durations=0 \
+            --log-cli-level=info \
             --html=${HTML_REPORT_PATH} \
             --self-contained-html
 
