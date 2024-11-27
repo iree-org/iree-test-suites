@@ -10,7 +10,6 @@ import numpy
 import os
 import pathlib
 import pytest
-import torch
 
 page_size = 12288
 block_size = 16
@@ -86,6 +85,26 @@ def toy_llama_gfx1100(compile_llama_gfx1100, llama_irpa):
     return ToyLlama(compiled=compile_llama_gfx1100, device_id="hip", irpa=llama_irpa)
 
 
+def cross_entropy(predictions, targets, epsilon=1e-12):
+    """
+    Computes cross entropy between targets (encoded as one-hot vectors)
+    and predictions.
+    Input: predictions (N, k) ndarray
+           targets (N, k) ndarray
+    Returns: scalar
+    """
+    # predictions = numpy.clip(predictions, epsilon, 1. - epsilon)
+    N = predictions.shape[0]
+
+    predictions = numpy.exp(predictions)
+    selected = predictions[numpy.arange(N), targets]
+    sum = numpy.sum(predictions, axis=-1)
+    norm = selected / sum
+    norm = -numpy.log(norm)
+    ce = numpy.sum(norm) / N
+    return ce
+
+
 def prefill_cross_entropy(toy_llama, ids):
     if not hasattr(toy_llama, "prefill"):
         return
@@ -99,13 +118,13 @@ def prefill_cross_entropy(toy_llama, ids):
 
     logits = toy_llama.prefill(ids[:, : ids.shape[1]], len, pages, cache)
 
-    logits = torch.Tensor(numpy.asarray(logits)).to(torch.float32)
-    ids = torch.Tensor(numpy.asarray(ids)).to(torch.int64)
+    logits = numpy.asarray(logits).astype(numpy.float32)
+    ids = numpy.asarray(ids)
 
     logits = logits[0, :-1, :]
     ids = ids[0, 1 : ids.shape[1]]
 
-    return torch.nn.functional.cross_entropy(logits, ids, ignore_index=0)
+    return cross_entropy(logits, ids)
 
 
 @pytest.mark.target_cpu

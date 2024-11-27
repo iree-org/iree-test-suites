@@ -55,7 +55,7 @@ jobs:
       - name: Run Sharktank models test suite
         run: |
           source ${VENV_DIR}/bin/activate
-          pytest sharkktank_models/ \
+          pytest sharktank_models/ \
             -rA \
             -m "target_cpu"
             --log-cli-level=info \
