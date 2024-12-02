@@ -74,19 +74,21 @@ class ToyLlama:
         self._decode = self.modules[-1].decode_bs1
 
     def prefill(self, *, ids):
-        N = len(ids)
-        pad = (16 - N % 16) % 16
+        id_len = len(ids)
+
+        # Pad out to the blocked sequence length
+        pad = (block_size - id_len % block_size) % block_size
         ids = ids + [0] * pad
-        PADN = N + pad
+        padded_len = id_len + pad
 
         ids = numpy.asarray([ids], dtype=numpy.int64)
-        length = numpy.asarray([N], numpy.int64)
-        pages = PADN // block_size
+        length = numpy.asarray([id_len], numpy.int64)
+        pages = padded_len // block_size
         pages = numpy.asarray([list(range(pages))], numpy.int64)
 
-        logits = self._prefill(ids[:, :PADN], length, pages, *self._cache)
+        logits = self._prefill(ids[:, :padded_len], length, pages, *self._cache)
         logits = numpy.asarray(logits).astype(numpy.float32)
-        return logits[:, :N]
+        return logits[:, :id_len]
 
     def decode(self, *, ids, start=0):
         N = len(ids) + start
@@ -157,17 +159,17 @@ def decode_cross_entropy(toy_llama, ids):
     N = len(ids)
     logits = toy_llama.decode(ids=ids, start=0)
     ids = numpy.asarray([ids])
+
+    # Compare predictions to selected tokens
     logits = logits[0, :-1, :]
     ids = ids[:, 1:]
-
     return cross_entropy(logits, ids)
 
 
 def prefill_decode_cross_entropy(toy_llama, ids):
     N = len(ids)
-    prefill_ids = ids[:N//2]
-    decode_ids = ids[N//2:]
-
+    prefill_ids = ids[: N // 2]
+    decode_ids = ids[N // 2 :]
 
     prefill_logits = toy_llama.prefill(ids=prefill_ids)
     decode_logits = toy_llama.decode(ids=decode_ids, start=len(prefill_ids))
@@ -176,9 +178,9 @@ def prefill_decode_cross_entropy(toy_llama, ids):
     ids = numpy.asarray([ids])
     logits = numpy.concatenate([prefill_logits, decode_logits], axis=-2)
 
+    # Compare predictions to selected tokens
     logits = logits[0, :-1, :]
     ids = ids[:, 1:]
-
     return cross_entropy(logits, ids)
 
 
@@ -250,4 +252,3 @@ def test_prefill_decode_hip(toy_llama_hip):
     assert cross_entropy == pytest.approx(
         0.589, 1e-3
     ), "cross entropy outside of tolerance"
-
