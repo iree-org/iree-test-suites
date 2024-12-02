@@ -39,9 +39,9 @@ def compile_llama_cpu(llama_mlir):
 
 
 @pytest.fixture
-def compile_llama_gfx1100(llama_mlir):
+def compile_llama_hip(llama_mlir):
     if "HIP_TARGET" not in os.environ:
-        return None
+        raise RuntimeError("HIP_TARGET not set")
 
     target_gpu = os.environ["HIP_TARGET"]
     return iree.compiler.compile_file(
@@ -52,9 +52,6 @@ def compile_llama_gfx1100(llama_mlir):
 
 class ToyLlama:
     def __init__(self, compiled, device_id, irpa):
-        if compiled is None:
-            return
-
         paramIndex = iree.runtime.ParameterIndex()
         paramIndex.load(irpa)
         provider = paramIndex.create_provider("model")
@@ -71,8 +68,51 @@ class ToyLlama:
             self.parameters, self.hal, self.binary, config=self.config
         )
 
-        self.prefill = self.modules[-1].prefill_bs1
-        self.decode = self.modules[-1].decode_bs1
+        self._cache = self.allocate_cache()
+
+        self._prefill = self.modules[-1].prefill_bs1
+        self._decode = self.modules[-1].decode_bs1
+
+    def prefill(self, *, ids):
+        id_len = len(ids)
+
+        # Pad out to the blocked sequence length
+        pad = (block_size - id_len % block_size) % block_size
+        ids = ids + [0] * pad
+        padded_len = id_len + pad
+
+        ids = numpy.asarray([ids], dtype=numpy.int64)
+        length = numpy.asarray([id_len], numpy.int64)
+        pages = padded_len // block_size
+        pages = numpy.asarray([list(range(pages))], numpy.int64)
+
+        logits = self._prefill(ids[:, :padded_len], length, pages, *self._cache)
+        logits = numpy.asarray(logits).astype(numpy.float32)
+        return logits[:, :id_len]
+
+    def decode(self, *, ids, start=0):
+        N = len(ids) + start
+        pages = N // block_size + 1
+        pages = numpy.asarray([list(range(pages))], numpy.int64)
+        cache = self._cache
+
+        all_logits = []
+        for idx, id in enumerate(ids):
+            id = numpy.asarray([[id]], dtype=numpy.int64)
+            start_position = numpy.asarray([idx + start], dtype=numpy.int64)
+            seq_len = numpy.asarray([idx + 1 + start], dtype=numpy.int64)
+
+            logits = self._decode(id, seq_len, start_position, pages, *cache)
+            all_logits.append(logits.to_host())
+
+        logits = numpy.concatenate(all_logits, axis=1).astype(numpy.float32)
+        return logits
+
+    def allocate_cache(self):
+        return [self.to_device(numpy.zeros((128, page_size), numpy.float16))]
+
+    def to_device(self, a):
+        return iree.runtime.asdevicearray(self.device, a)
 
 
 @pytest.fixture
@@ -81,8 +121,8 @@ def toy_llama_cpu(compile_llama_cpu, llama_irpa):
 
 
 @pytest.fixture
-def toy_llama_gfx1100(compile_llama_gfx1100, llama_irpa):
-    return ToyLlama(compiled=compile_llama_gfx1100, device_id="hip", irpa=llama_irpa)
+def toy_llama_hip(compile_llama_hip, llama_irpa):
+    return ToyLlama(compiled=compile_llama_hip, device_id="hip", irpa=llama_irpa)
 
 
 def cross_entropy(predictions, targets, epsilon=1e-12):
@@ -106,34 +146,48 @@ def cross_entropy(predictions, targets, epsilon=1e-12):
 
 
 def prefill_cross_entropy(toy_llama, ids):
-    if not hasattr(toy_llama, "prefill"):
-        return
-
-    assert ids.shape[1] % block_size == 0
-
-    len = numpy.asarray([ids.shape[1]], numpy.int64)
-    pages = ids.shape[1] // block_size
-    pages = numpy.asarray([list(range(pages))], numpy.int64)
-    cache = numpy.zeros((128, page_size), numpy.float16)
-
-    logits = toy_llama.prefill(ids[:, : ids.shape[1]], len, pages, cache)
-
-    logits = numpy.asarray(logits).astype(numpy.float32)
-    ids = numpy.asarray(ids)
+    logits = toy_llama.prefill(ids=ids)
+    ids = numpy.asarray([ids])
 
     logits = logits[0, :-1, :]
-    ids = ids[0, 1 : ids.shape[1]]
+    ids = ids[:, 1:]
 
+    return cross_entropy(logits, ids)
+
+
+def decode_cross_entropy(toy_llama, ids):
+    N = len(ids)
+    logits = toy_llama.decode(ids=ids, start=0)
+    ids = numpy.asarray([ids])
+
+    # Compare predictions to selected tokens
+    logits = logits[0, :-1, :]
+    ids = ids[:, 1:]
+    return cross_entropy(logits, ids)
+
+
+def prefill_decode_cross_entropy(toy_llama, ids):
+    N = len(ids)
+    prefill_ids = ids[: N // 2]
+    decode_ids = ids[N // 2 :]
+
+    prefill_logits = toy_llama.prefill(ids=prefill_ids)
+    decode_logits = toy_llama.decode(ids=decode_ids, start=len(prefill_ids))
+    debug_logits = toy_llama.prefill(ids=ids)
+
+    ids = numpy.asarray([ids])
+    logits = numpy.concatenate([prefill_logits, decode_logits], axis=-2)
+
+    # Compare predictions to selected tokens
+    logits = logits[0, :-1, :]
+    ids = ids[:, 1:]
     return cross_entropy(logits, ids)
 
 
 @pytest.mark.target_cpu
 def test_prefill_cpu(toy_llama_cpu):
     # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = numpy.array(
-        [[0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]],
-        numpy.int64,
-    )
+    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
     cross_entropy = prefill_cross_entropy(toy_llama_cpu, ids)
     cross_entropy = cross_entropy.item()
     assert cross_entropy == pytest.approx(
@@ -142,17 +196,58 @@ def test_prefill_cpu(toy_llama_cpu):
 
 
 @pytest.mark.target_hip
-def test_prefill_gfx1100(toy_llama_gfx1100):
+def test_prefill_hip(toy_llama_hip):
     # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = numpy.array(
-        [[0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]],
-        numpy.int64,
-    )
-    cross_entropy = prefill_cross_entropy(toy_llama_gfx1100, ids)
+    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
+    cross_entropy = prefill_cross_entropy(toy_llama_hip, ids)
 
     if cross_entropy is None:
         return
 
+    cross_entropy = cross_entropy.item()
+    assert cross_entropy == pytest.approx(
+        0.589, 1e-3
+    ), "cross entropy outside of tolerance"
+
+
+@pytest.mark.target_cpu
+def test_decode_cpu(toy_llama_cpu):
+    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
+    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
+    cross_entropy = decode_cross_entropy(toy_llama_cpu, ids)
+    cross_entropy = cross_entropy.item()
+    assert cross_entropy == pytest.approx(
+        0.589, 1e-3
+    ), "cross entropy outside of tolerance"
+
+
+@pytest.mark.target_hip
+def test_decode_hip(toy_llama_hip):
+    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
+    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
+    cross_entropy = decode_cross_entropy(toy_llama_hip, ids)
+    cross_entropy = cross_entropy.item()
+    assert cross_entropy == pytest.approx(
+        0.589, 1e-3
+    ), "cross entropy outside of tolerance"
+
+
+@pytest.mark.target_cpu
+def test_prefill_decode_cpu(toy_llama_cpu):
+    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
+    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
+    cross_entropy = prefill_decode_cross_entropy(toy_llama_cpu, ids)
+    cross_entropy = cross_entropy.item()
+    assert cross_entropy == pytest.approx(
+        0.589, 1e-3
+    ), "cross entropy outside of tolerance"
+
+
+@pytest.mark.target_hip
+def test_prefill_decode_hip(toy_llama_hip):
+    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
+    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
+    cross_entropy = prefill_decode_cross_entropy(toy_llama_hip, ids)
     cross_entropy = cross_entropy.item()
     assert cross_entropy == pytest.approx(
         0.589, 1e-3
