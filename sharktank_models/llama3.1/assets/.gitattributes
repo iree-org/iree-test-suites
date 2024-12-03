@@ -1,6 +1,2 @@
-toy_llama.irpa filter=lfs diff=lfs merge=lfs -text
-toy_llama.mlir filter=lfs diff=lfs merge=lfs -text
-toy_llama_tp2.rank0.irpa filter=lfs diff=lfs merge=lfs -text
-toy_llama_tp2.rank1.irpa filter=lfs diff=lfs merge=lfs -text
-toy_llama_tp2.mlir filter=lfs diff=lfs merge=lfs -text
-toy_llama_tp2.irpa filter=lfs diff=lfs merge=lfs -text
+*.irpa filter=lfs diff=lfs merge=lfs -text
+*.mlir filter=lfs diff=lfs merge=lfs -text

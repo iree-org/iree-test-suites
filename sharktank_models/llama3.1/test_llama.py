@@ -15,85 +15,27 @@ page_size = 12288
 block_size = 16
 
 THIS_DIR = pathlib.Path(__file__).parent
+llama_mlir = str(THIS_DIR / "assets/toy_llama.mlir")
+llama_irpa = [str(THIS_DIR / "assets/toy_llama.irpa")]
 
-
-@pytest.fixture
-def llama_mlir():
-    return str(THIS_DIR / "assets/toy_llama.mlir")
-
-
-@pytest.fixture
-def llama_tp2_mlir():
-    return str(THIS_DIR / "assets/toy_llama_tp2.mlir")
-
-
-@pytest.fixture
-def llama_irpa():
-    return [str(THIS_DIR / "assets/toy_llama.irpa")]
-
-
-@pytest.fixture
-def llama_tp2_irpa():
-    return [
-        str(THIS_DIR / "assets/toy_llama_tp2.irpa"),
-        str(THIS_DIR / "assets/toy_llama_tp2.rank0.irpa"),
-        str(THIS_DIR / "assets/toy_llama_tp2.rank1.irpa"),
-    ]
-
-
-@pytest.fixture
-def compile_llama_cpu(llama_mlir):
-    return iree.compiler.compile_file(
-        llama_mlir,
-        extra_args=[
-            "--iree-hal-target-device=llvm-cpu",
-            "--iree-llvmcpu-target-cpu=host",
-        ],
-    )
-
-
-@pytest.fixture
-def compile_llama_hip(llama_mlir):
-    if "HIP_TARGET" not in os.environ:
-        raise RuntimeError("HIP_TARGET not set")
-
-    target_gpu = os.environ["HIP_TARGET"]
-    return iree.compiler.compile_file(
-        llama_mlir,
-        extra_args=["--iree-hal-target-device=hip", f"--iree-hip-target={target_gpu}"],
-    )
-
-
-@pytest.fixture
-def compile_llama_tp2_cpu(llama_tp2_mlir):
-    return iree.compiler.compile_file(
-        llama_tp2_mlir,
-        extra_args=[
-            "--iree-hal-target-device=llvm-cpu",
-            "--iree-hal-target-device=llvm-cpu",
-            "--iree-llvmcpu-target-cpu=host",
-        ],
-    )
-
-
-@pytest.fixture
-def compile_llama_tp2_hip(llama_tp2_mlir):
-    if "HIP_TARGET" not in os.environ:
-        raise RuntimeError("HIP_TARGET not set")
-
-    target_gpu = os.environ["HIP_TARGET"]
-    return iree.compiler.compile_file(
-        llama_tp2_mlir,
-        extra_args=[
-            "--iree-hal-target-device=hip",
-            "--iree-hal-target-device=hip",
-            f"--iree-hip-target={target_gpu}",
-        ],
-    )
+llama_tp2_mlir = str(THIS_DIR / "assets/toy_llama_tp2.mlir")
+llama_tp2_irpa = [
+    str(THIS_DIR / "assets/toy_llama_tp2.irpa"),
+    str(THIS_DIR / "assets/toy_llama_tp2.rank0.irpa"),
+    str(THIS_DIR / "assets/toy_llama_tp2.rank1.irpa"),
+]
 
 
 class ToyLlama:
     def __init__(self, compiled, device_id, irpa, sharding=1):
+        """ToyLlama is wrapper / initalizer for an exported llama model
+
+        Args:
+            Compiled:  the compiled VMFB
+            Device_id: the device id of the target device
+            Irps:      the parameter weight file
+            Sharding:  the number of devices used by model
+        """
         paramIndex = iree.runtime.ParameterIndex()
         for i in irpa:
             paramIndex.load(i)
@@ -164,31 +106,45 @@ class ToyLlama:
         return iree.runtime.asdevicearray(self.device, a)
 
 
-@pytest.fixture
-def toy_llama_cpu(compile_llama_cpu, llama_irpa):
-    return ToyLlama(compiled=compile_llama_cpu, device_id="local-task", irpa=llama_irpa)
+def cpu_flags(sharding):
+    return ["--iree-hal-target-device=llvm-cpu"] * sharding + [
+        "--iree-llvmcpu-target-cpu=host"
+    ]
 
 
-@pytest.fixture
-def toy_llama_hip(compile_llama_hip, llama_irpa):
-    return ToyLlama(compiled=compile_llama_hip, device_id="hip", irpa=llama_irpa)
+def hip_flags(sharding):
+    if "HIP_TARGET" not in os.environ:
+        raise RuntimeError("HIP_TARGET not set")
+
+    target_gpu = os.environ["HIP_TARGET"]
+    return ["--iree-hal-target-device=hip"] * sharding + [
+        f"--iree-hip-target={target_gpu}"
+    ]
 
 
-@pytest.fixture
-def toy_llama_tp2_cpu(compile_llama_tp2_cpu, llama_tp2_irpa):
-    return ToyLlama(
-        compiled=compile_llama_tp2_cpu,
-        device_id="local-task",
-        irpa=llama_tp2_irpa,
-        sharding=2,
-    )
+CPU_TP1_CONFIG = (cpu_flags, llama_mlir, "local-task", llama_irpa, 1)
+HIP_TP1_CONFIG = (hip_flags, llama_mlir, "hip", llama_irpa, 1)
+
+CPU_TP2_CONFIG = (cpu_flags, llama_tp2_mlir, "local-task", llama_tp2_irpa, 2)
+HIP_TP2_CONFIG = (hip_flags, llama_tp2_mlir, "hip", llama_tp2_irpa, 2)
 
 
-@pytest.fixture
-def toy_llama_tp2_hip(compile_llama_tp2_hip, llama_tp2_irpa):
-    return ToyLlama(
-        compiled=compile_llama_tp2_hip, device_id="hip", irpa=llama_tp2_irpa, sharding=2
-    )
+@pytest.fixture(
+    params=[
+        pytest.param(CPU_TP1_CONFIG, marks=pytest.mark.target_cpu),
+        pytest.param(CPU_TP2_CONFIG, marks=pytest.mark.target_cpu),
+        pytest.param(HIP_TP1_CONFIG, marks=pytest.mark.target_hip),
+        pytest.param(HIP_TP2_CONFIG, marks=pytest.mark.target_hip),
+    ],
+    ids=["cpu", "cpu_tp2", "hip", "hip_tp2"],
+    scope="session",
+)
+def toy_llama(request):
+    flags, mlir, device, irpa, sharding = request.param
+    flags = flags(sharding)
+    compiled = iree.compiler.compile_file(mlir, extra_args=flags)
+
+    return ToyLlama(compiled=compiled, device_id=device, irpa=irpa, sharding=sharding)
 
 
 def cross_entropy(predictions, targets, epsilon=1e-12):
@@ -211,8 +167,8 @@ def cross_entropy(predictions, targets, epsilon=1e-12):
     return ce
 
 
-def prefill_cross_entropy(toy_llama, ids):
-    logits = toy_llama.prefill(ids=ids)
+def prefill_cross_entropy(model, ids):
+    logits = model.prefill(ids=ids)
     ids = numpy.asarray([ids])
 
     logits = logits[0, :-1, :]
@@ -221,9 +177,9 @@ def prefill_cross_entropy(toy_llama, ids):
     return cross_entropy(logits, ids)
 
 
-def decode_cross_entropy(toy_llama, ids):
+def decode_cross_entropy(model, ids):
     N = len(ids)
-    logits = toy_llama.decode(ids=ids, start=0)
+    logits = model.decode(ids=ids, start=0)
     ids = numpy.asarray([ids])
 
     # Compare predictions to selected tokens
@@ -232,13 +188,13 @@ def decode_cross_entropy(toy_llama, ids):
     return cross_entropy(logits, ids)
 
 
-def prefill_decode_cross_entropy(toy_llama, ids):
+def prefill_decode_cross_entropy(model, ids):
     N = len(ids)
     prefill_ids = ids[: N // 2]
     decode_ids = ids[N // 2 :]
 
-    prefill_logits = toy_llama.prefill(ids=prefill_ids)
-    decode_logits = toy_llama.decode(ids=decode_ids, start=len(prefill_ids))
+    prefill_logits = model.prefill(ids=prefill_ids)
+    decode_logits = model.decode(ids=decode_ids, start=len(prefill_ids))
 
     ids = numpy.asarray([ids])
     logits = numpy.concatenate([prefill_logits, decode_logits], axis=-2)
@@ -249,140 +205,30 @@ def prefill_decode_cross_entropy(toy_llama, ids):
     return cross_entropy(logits, ids)
 
 
-@pytest.mark.target_cpu
-def test_prefill_cpu(toy_llama_cpu):
+def test_prefill(toy_llama):
     # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
     ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = prefill_cross_entropy(toy_llama_cpu, ids)
+    cross_entropy = prefill_cross_entropy(toy_llama, ids)
     cross_entropy = cross_entropy.item()
     assert cross_entropy == pytest.approx(
         0.589, 1e-2
     ), "cross entropy outside of tolerance"
 
 
-@pytest.mark.target_hip
-def test_prefill_hip(toy_llama_hip):
+def test_decode(toy_llama):
     # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
     ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = prefill_cross_entropy(toy_llama_hip, ids)
-
-    if cross_entropy is None:
-        return
-
+    cross_entropy = decode_cross_entropy(toy_llama, ids)
     cross_entropy = cross_entropy.item()
     assert cross_entropy == pytest.approx(
         0.589, 1e-2
     ), "cross entropy outside of tolerance"
 
 
-@pytest.mark.target_cpu
-def test_decode_cpu(toy_llama_cpu):
+def test_prefill_decode(toy_llama):
     # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
     ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = decode_cross_entropy(toy_llama_cpu, ids)
-    cross_entropy = cross_entropy.item()
-    assert cross_entropy == pytest.approx(
-        0.589, 1e-2
-    ), "cross entropy outside of tolerance"
-
-
-@pytest.mark.target_hip
-def test_decode_hip(toy_llama_hip):
-    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = decode_cross_entropy(toy_llama_hip, ids)
-    cross_entropy = cross_entropy.item()
-    assert cross_entropy == pytest.approx(
-        0.589, 1e-2
-    ), "cross entropy outside of tolerance"
-
-
-@pytest.mark.target_cpu
-def test_prefill_decode_cpu(toy_llama_cpu):
-    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = prefill_decode_cross_entropy(toy_llama_cpu, ids)
-    cross_entropy = cross_entropy.item()
-    assert cross_entropy == pytest.approx(
-        0.589, 1e-2
-    ), "cross entropy outside of tolerance"
-
-
-@pytest.mark.target_hip
-def test_prefill_decode_hip(toy_llama_hip):
-    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = prefill_decode_cross_entropy(toy_llama_hip, ids)
-    cross_entropy = cross_entropy.item()
-    assert cross_entropy == pytest.approx(
-        0.589, 1e-2
-    ), "cross entropy outside of tolerance"
-
-
-@pytest.mark.target_cpu
-def test_prefill_tp2_cpu(toy_llama_tp2_cpu):
-    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = prefill_cross_entropy(toy_llama_tp2_cpu, ids)
-    cross_entropy = cross_entropy.item()
-    assert cross_entropy == pytest.approx(
-        0.589, 1e-2
-    ), "cross entropy outside of tolerance"
-
-
-@pytest.mark.target_hip
-def test_prefill_tp2_hip(toy_llama_tp2_hip):
-    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = prefill_cross_entropy(toy_llama_tp2_hip, ids)
-
-    if cross_entropy is None:
-        return
-
-    cross_entropy = cross_entropy.item()
-    assert cross_entropy == pytest.approx(
-        0.589, 1e-2
-    ), "cross entropy outside of tolerance"
-
-
-@pytest.mark.target_cpu
-def test_decode_tp2_cpu(toy_llama_tp2_cpu):
-    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = decode_cross_entropy(toy_llama_tp2_cpu, ids)
-    cross_entropy = cross_entropy.item()
-    assert cross_entropy == pytest.approx(
-        0.589, 1e-2
-    ), "cross entropy outside of tolerance"
-
-
-@pytest.mark.target_hip
-def test_decode_tp2_hip(toy_llama_tp2_hip):
-    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = decode_cross_entropy(toy_llama_tp2_hip, ids)
-    cross_entropy = cross_entropy.item()
-    assert cross_entropy == pytest.approx(
-        0.589, 1e-2
-    ), "cross entropy outside of tolerance"
-
-
-@pytest.mark.target_cpu
-def test_prefill_decode_tp2_cpu(toy_llama_tp2_cpu):
-    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = prefill_decode_cross_entropy(toy_llama_tp2_cpu, ids)
-    cross_entropy = cross_entropy.item()
-    assert cross_entropy == pytest.approx(
-        0.589, 1e-2
-    ), "cross entropy outside of tolerance"
-
-
-@pytest.mark.target_hip
-def test_prefill_decode_tp2_hip(toy_llama_tp2_hip):
-    # These are the maximized selected tokens when prompted with 0. It is designed to get the highest possible cross entropy.
-    ids = [0, 208, 214, 29, 19, 86, 176, 120, 120, 80, 120, 208, 37, 157, 191, 137]
-    cross_entropy = prefill_decode_cross_entropy(toy_llama_tp2_hip, ids)
+    cross_entropy = prefill_decode_cross_entropy(toy_llama, ids)
     cross_entropy = cross_entropy.item()
     assert cross_entropy == pytest.approx(
         0.589, 1e-2
