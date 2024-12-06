@@ -230,29 +230,23 @@ def generate_function(
     )
 
     query_shape, key_shape, value_shape, result_shape = get_tensor_shapes(shapes_scale)
-    query_shape0 = int_or_question_mark(query_shape[0])
-    query_shape1 = int_or_question_mark(query_shape[1])
-    query_shape2 = int_or_question_mark(query_shape[2])
-    key_shape0 = int_or_question_mark(key_shape[0])
-    key_shape1 = int_or_question_mark(key_shape[1])
-    key_shape2 = int_or_question_mark(key_shape[2])
-    value_shape0 = int_or_question_mark(value_shape[0])
-    value_shape1 = int_or_question_mark(value_shape[1])
-    value_shape2 = int_or_question_mark(value_shape[2])
-    result_shape0 = int_or_question_mark(result_shape[0])
-    result_shape1 = int_or_question_mark(result_shape[1])
-    result_shape2 = int_or_question_mark(result_shape[2])
+
+    for i in range(len(query_shape)):
+        query_shape[i] = int_or_question_mark(query_shape[i])
+        key_shape[i] = int_or_question_mark(key_shape[i])
+        value_shape[i] = int_or_question_mark(value_shape[i])
+        result_shape[i] = int_or_question_mark(result_shape[i])
 
     query_tensor_type = (
-        f"tensor<{query_shape0}x{query_shape1}x{query_shape2}x{query_type.value}>"
+        f"tensor<{query_shape[0]}x{query_shape[1]}x{query_shape[2]}x{query_type.value}>"
     )
     key_tensor_type = (
-        f"tensor<{key_shape0}x{key_shape1}x{key_shape2}x{key_type.value}>"
+        f"tensor<{key_shape[0]}x{key_shape[1]}x{key_shape[2]}x{key_type.value}>"
     )
     value_tensor_type = (
-        f"tensor<{value_shape0}x{value_shape1}x{value_shape2}x{value_type.value}>"
+        f"tensor<{value_shape[0]}x{value_shape[1]}x{value_shape[2]}x{value_type.value}>"
     )
-    result_tensor_type = f"tensor<{result_shape0}x{result_shape1}x{result_shape2}x{value_type.value}>"
+    result_tensor_type = f"tensor<{result_shape[0]}x{result_shape[1]}x{result_shape[2]}x{value_type.value}>"
     F32 = "f32"
     F16 = "f16"
     op_name = "iree_linalg_ext.attention"
