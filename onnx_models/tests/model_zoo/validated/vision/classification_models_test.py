@@ -71,7 +71,6 @@ def test_mnist(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeRunException)
 def test_mobilenet(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/mobilenet/model/mobilenetv2-12.onnx",
