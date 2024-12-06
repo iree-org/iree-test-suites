@@ -222,7 +222,6 @@ def generate_function(
     dynamicity: Dynamicity,
 ):
     shapes_scale = generate_shapes_and_scale(shape_scale, dynamicity)
-    # print("shapes_scale",shapes_scale)
     func_name = generate_function_name(
         query_type,
         key_type,
@@ -262,7 +261,6 @@ def generate_function(
     func_definition = ""
 
     signature = f"({query_tensor_type}, {key_tensor_type}, {value_tensor_type}, {result_tensor_type}) -> {result_tensor_type}"
-    # print("signature",signature)
 
     import_declaration = f"func.func private @module.{func_name}(%query: !hal.buffer_view, %key: !hal.buffer_view, %value: !hal.buffer_view, %scale: {F32}) -> !hal.buffer_view"
     func_definition = func_definition + (
@@ -377,12 +375,8 @@ def generate_call(
     shapes_scale: TestShapeAndScale,
 ):
     global call_id
-    # print("shapes_scale.batch",shapes_scale.batch)
-    # print("function.name",function.name)
     func_name = f"{function.name}_{shapes_scale.batch}_{shapes_scale.m}_{shapes_scale.n}_{shapes_scale.k1}_{shapes_scale.k2}_{shapes_scale.k1}_{shapes_scale.scale}"
-    # print("func_name1", func_name)
     func_name = f"{func_name}_{call_id}"
-    # print("func_name2", func_name)
     call_id = call_id + 1
 
     description = f"Attention shape (BATCHxMxNxK1xK2): {shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}x{shapes_scale.k1}x{shapes_scale.k2}x{shapes_scale.scale}"
