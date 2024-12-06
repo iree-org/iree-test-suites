@@ -244,7 +244,6 @@ def generate_function(
     result_shape1 = int_or_question_mark(result_shape[1])
     result_shape2 = int_or_question_mark(result_shape[2])
 
-
     query_tensor_type = (
         f"tensor<{query_shape0}x{query_shape1}x{query_shape2}x{query_type.value}>"
     )
