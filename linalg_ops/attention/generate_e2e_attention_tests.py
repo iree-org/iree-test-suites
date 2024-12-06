@@ -136,7 +136,7 @@ def generate_shapes_and_scale(shape: TestShapeAndScale, dynamicity: Dynamicity):
     
     m = shape_dim(shape.m, dynamicity)
     k2 = shape_dim(shape.k2, dynamicity)
-    if Dynamicity.MIXED == dynamicity:
+    if dynamicity == Dynamicity.MIXED:
         batch = shape_dim(shape.batch, Dynamicity.STATIC)
         n = shape_dim(shape.n, Dynamicity.STATIC)
         k1 = shape_dim(shape.k1, Dynamicity.STATIC)
@@ -266,7 +266,7 @@ def generate_function(
     func_definition = func_definition + (
         f"func.func @{func_name}(%query: {query_tensor_type}, %key: {key_tensor_type}, %value: {value_tensor_type}, %scale: {F32}) -> {result_tensor_type} {{\n"
     )
-    if Dynamicity.MIXED == dynamicity:
+    if dynamicity == Dynamicity.MIXED:
         func_definition = func_definition + (
              f"  %c1 = arith.constant 1 : index\n"
              f"  %m_in = tensor.dim %query, %c1 : {query_tensor_type}\n"
@@ -290,7 +290,7 @@ def generate_function(
         f"                       affine_map<(batch, m, n, k1, k2) -> ()>,\n"
         f"                       affine_map<(batch, m, n, k1, k2) -> (batch, m, n)>]\n}}"
     )
-    if Dynamicity.MIXED == dynamicity:
+    if dynamicity == Dynamicity.MIXED:
         func_definition = func_definition + (
             f"  ins(%query_mixed, %key_mixed, %value_mixed, %scale_f16: {query_tensor_type}, {key_tensor_type}, {value_tensor_type}, {F16})\n"
         )
