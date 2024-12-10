@@ -41,18 +41,20 @@ class ToyLlama:
             paramIndex.load(i)
         provider = paramIndex.create_provider("model")
 
+        self.sharding = sharding
         self.instance = iree.runtime.VmInstance()
-        self.device = iree.runtime.get_device(device_id)
-        self.config = iree.runtime.Config(device=self.device)
+        self.devices = [
+            iree.runtime.get_device(device_id) for _ in range(self.sharding)
+        ]
+        self.config = iree.runtime.Config(device=self.devices[0])
         self.parameters = iree.runtime.create_io_parameters_module(
             self.instance, provider
         )
-        self.hal = iree.runtime.create_hal_module(self.instance, self.device)
+        self.hal = iree.runtime.create_hal_module(self.instance, devices=self.devices)
         self.binary = iree.runtime.VmModule.copy_buffer(self.instance, compiled)
         self.modules = iree.runtime.load_vm_modules(
             self.parameters, self.hal, self.binary, config=self.config
         )
-        self.sharding = sharding
 
         self._cache = self.allocate_cache()
 
@@ -97,13 +99,13 @@ class ToyLlama:
     def allocate_cache(self):
         return [
             self.to_device(
-                numpy.zeros((128, page_size // self.sharding), numpy.float16)
+                numpy.zeros((128, page_size // self.sharding), numpy.float16), d
             )
-            for i in range(self.sharding)
+            for d in self.devices
         ]
 
-    def to_device(self, a):
-        return iree.runtime.asdevicearray(self.device, a)
+    def to_device(self, a, d):
+        return iree.runtime.asdevicearray(d, a)
 
 
 def cpu_flags(sharding):
@@ -117,8 +119,10 @@ def hip_flags(sharding):
         raise RuntimeError("HIP_TARGET not set")
 
     target_gpu = os.environ["HIP_TARGET"]
-    return ["--iree-hal-target-device=hip"] * sharding + [
-        f"--iree-hip-target={target_gpu}"
+    return [f"--iree-hal-target-device=hip[{i}]" for i in range(sharding)] + [
+        f"--iree-hip-target={target_gpu}",
+        # TODO: Remove once https://github.com/iree-org/iree/issues/19347 is addressed
+        "--iree-codegen-block-dynamic-dimensions-of-contractions=false",
     ]
 
 
