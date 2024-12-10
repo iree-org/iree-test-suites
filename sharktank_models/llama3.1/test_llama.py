@@ -121,7 +121,7 @@ def hip_flags(sharding):
     target_gpu = os.environ["HIP_TARGET"]
     return [f"--iree-hal-target-device=hip[{i}]" for i in range(sharding)] + [
         f"--iree-hip-target={target_gpu}",
-        # TODO: Remove once #19347 is addressed
+        # TODO: Remove once https://github.com/iree-org/iree/issues/19347 is addressed
         "--iree-codegen-block-dynamic-dimensions-of-contractions=false",
     ]
 
