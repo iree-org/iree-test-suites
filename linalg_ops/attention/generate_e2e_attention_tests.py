@@ -50,6 +50,11 @@ class ShapesId(enum.Enum):
     MEDIUM = "medium"
     LARGE = "large"
 
+# Enumerates ways to construct MLIR tensor types.
+@enum.unique
+class Dynamicity(enum.Enum):
+    MIXED = "mixed"  # Randomly mix '?' and values. Example: tensor<?x4xf32>.
+    STATIC = "static"  # Use fixed values everywhere. Example: tensor<4x6xf32>.
 
 # batch: Batch dimension
 # m: M dimension of first and second matmul
@@ -60,53 +65,87 @@ class ShapesId(enum.Enum):
 class TestShapeAndScale:
     batch: int
     m: int
+    n: int
     k1: int
     k2: int
-    n: int
     scale: float
 
 
 # Returns the list of TestShape's to use for the collection of shapes
 # identified by shapes_id.
+# For dynamic tests, m and k2 must multiple of 16
 def get_test_shapes(shapes_id: ShapesId):
     if shapes_id == ShapesId.SMALL:
         return [
-            TestShapeAndScale(batch=2, m=256, k1=64, k2=32, n=16, scale=1.0),
+            TestShapeAndScale(batch=2, m=256, n=16, k1=64, k2=32, scale=1.0),
         ]
     if shapes_id == ShapesId.MEDIUM:
         return [
-            TestShapeAndScale(batch=2, m=512, k1=128, k2=64, n=32, scale=1.0),
+            TestShapeAndScale(batch=2, m=512, n=32, k1=128, k2=64, scale=1.0),
         ]
     if shapes_id == ShapesId.LARGE:
         return [
-            TestShapeAndScale(batch=2, m=1024, k1=128, k2=128, n=64, scale=1.0),
+            TestShapeAndScale(batch=2, m=1024, n=64, k1=128, k2=128, scale=1.0),
         ]
 
     raise ValueError(shapes_id)
 
+# A shape dimension value, i.e. a size value that could appear in a MLIR type
+# such as 'tensor<?x4xf32>'. None means a dynamic size, similar to '?' in MLIR.
+@dataclasses.dataclass
+class DimSize:
+    value: typing.Optional[int]
+
+
+# Generates a compile-time MLIR size value, i.e. either a fixed positive integer
+# or None (which maps to MLIR '?') depending on dynamicity.
+def shape_dim(x: int, dynamicity: Dynamicity):
+    if dynamicity == Dynamicity.MIXED:
+        return DimSize(None)
+    elif dynamicity == Dynamicity.STATIC:
+        return DimSize(x)
+    else:
+        raise ValueError(dynamicity)
+
+
+# Stringification used for generating MLIR types, e.g. tensor<?x?xf32>.
+def int_or_question_mark(s: DimSize):
+    return s.value or "?"
+
+
+# Stringification used for generating alphanumeric identifiers, e.g.
+# func.func @somefunction_DYNxDYNxf32, where we can't use "?" characters.
+def int_or_DYN(s: DimSize):
+    return s.value or "DYN"
 
 # Determines the shape of input and kernel tensors.
 @dataclasses.dataclass
 class TestInputTensorShapes:
-    batch: int
-    m: int
-    k1: int
-    k2: int
-    n: int
+    batch: DimSize
+    m: DimSize
+    n: DimSize
+    k1: DimSize
+    k2: DimSize
     scale: float
 
 
 # Helper for generate_function. Generates TestInputTensorShapes, i.e.
 # converts from the runtime shape dimensions in TestShape and given dynamicity to
 # the set of shapes to be used in a test function's input tensors.
-def generate_shapes_and_scale(shape: TestShapeAndScale):
-    batch = shape.batch
-    m = shape.m
-    k1 = shape.k1
-    k2 = shape.k2
-    n = shape.n
-    scale = shape.scale
+def generate_shapes_and_scale(shape: TestShapeAndScale, dynamicity: Dynamicity):
+    
+    m = shape_dim(shape.m, dynamicity)
+    k2 = shape_dim(shape.k2, dynamicity)
+    if dynamicity == Dynamicity.MIXED:
+        batch = shape_dim(shape.batch, Dynamicity.STATIC)
+        n = shape_dim(shape.n, Dynamicity.STATIC)
+        k1 = shape_dim(shape.k1, Dynamicity.STATIC)
+    else:
+        batch = shape_dim(shape.batch, dynamicity)
+        n = shape_dim(shape.n, dynamicity)
+        k1 = shape_dim(shape.k1, dynamicity)
 
+    scale = shape.scale
     shapes_scale = TestInputTensorShapes(
         batch=batch,
         m=m,
@@ -150,15 +189,15 @@ def generate_function_name(
     value_t = value_type.value
     result_t = value_type.value
 
-    batch = shapes_scale.batch
-    m = shapes_scale.m
-    k1 = shapes_scale.k1
-    k2 = shapes_scale.k2
-    n = shapes_scale.n
+    batch = int_or_DYN(shapes_scale.batch)
+    m = int_or_DYN(shapes_scale.m)
+    n = int_or_DYN(shapes_scale.n)
+    k1 = int_or_DYN(shapes_scale.k1)
+    k2 = int_or_DYN(shapes_scale.k2)
 
     attention = "attention"
     return (
-        f"{attention}_{batch}_{m}_{k1}_{k2}_{n}"
+        f"{attention}_{batch}_{m}_{n}_{k1}_{k2}"
         + f"_dtype_{query_t}_{key_t}_{value_t}_{result_t}"
     )
 
@@ -180,8 +219,9 @@ def generate_function(
     key_type: KeyElemTypeId,
     value_type: ValueElemTypeId,
     shape_scale: TestShapeAndScale,
+    dynamicity: Dynamicity,
 ):
-    shapes_scale = generate_shapes_and_scale(shape_scale)
+    shapes_scale = generate_shapes_and_scale(shape_scale, dynamicity)
     func_name = generate_function_name(
         query_type,
         key_type,
@@ -190,6 +230,13 @@ def generate_function(
     )
 
     query_shape, key_shape, value_shape, result_shape = get_tensor_shapes(shapes_scale)
+
+    for i in range(len(query_shape)):
+        query_shape[i] = int_or_question_mark(query_shape[i])
+        key_shape[i] = int_or_question_mark(key_shape[i])
+        value_shape[i] = int_or_question_mark(value_shape[i])
+        result_shape[i] = int_or_question_mark(result_shape[i])
+
     query_tensor_type = (
         f"tensor<{query_shape[0]}x{query_shape[1]}x{query_shape[2]}x{query_type.value}>"
     )
@@ -208,20 +255,46 @@ def generate_function(
     func_definition = ""
 
     signature = f"({query_tensor_type}, {key_tensor_type}, {value_tensor_type}, {result_tensor_type}) -> {result_tensor_type}"
+
     import_declaration = f"func.func private @module.{func_name}(%query: !hal.buffer_view, %key: !hal.buffer_view, %value: !hal.buffer_view, %scale: {F32}) -> !hal.buffer_view"
     func_definition = func_definition + (
         f"func.func @{func_name}(%query: {query_tensor_type}, %key: {key_tensor_type}, %value: {value_tensor_type}, %scale: {F32}) -> {result_tensor_type} {{\n"
-        f"  %result0 = tensor.empty(): {result_tensor_type}\n"
-        f"  %scale_f16 = arith.truncf %scale : {F32} to {F16} \n"
+    )
+    if dynamicity == Dynamicity.MIXED:
+        func_definition = func_definition + (
+             f"  %c1 = arith.constant 1 : index\n"
+             f"  %m_in = tensor.dim %query, %c1 : {query_tensor_type}\n"
+             f"  %k2_in = tensor.dim %key, %c1 : {key_tensor_type}\n"
+             f"  %m = util.assume.int %m_in<udiv = 16> : index\n"
+             f"  %k2 = util.assume.int %k2_in<udiv = 16> : index\n"
+             f"  %query_mixed = flow.tensor.tie_shape %query : {query_tensor_type}""{%m}\n"
+             f"  %key_mixed = flow.tensor.tie_shape %key : {key_tensor_type}""{%k2}\n"
+             f"  %value_mixed = flow.tensor.tie_shape %value : {value_tensor_type}""{%k2}\n"
+             f"  %result0 = tensor.empty(%m): {result_tensor_type}\n"
+        )
+    else:
+        func_definition = func_definition + ( f"  %result0 = tensor.empty(): {result_tensor_type}\n")
+
+    func_definition = func_definition + (
+        f"  %scale_f16 = arith.truncf %scale : {F32} to {F16}\n"
         f"  %result1 = {op_name} {{\n"
         f"      indexing_maps = [affine_map<(batch, m, n, k1, k2) -> (batch, m, k1)>,\n"
         f"                       affine_map<(batch, m, n, k1, k2) -> (batch, k2, k1)>,\n"
         f"                       affine_map<(batch, m, n, k1, k2) -> (batch, k2, n)>,\n"
         f"                       affine_map<(batch, m, n, k1, k2) -> ()>,\n"
         f"                       affine_map<(batch, m, n, k1, k2) -> (batch, m, n)>]\n}}"
-        f"      ins(%query, %key, %value, %scale_f16: {query_tensor_type}, {key_tensor_type}, {value_tensor_type}, {F16})\n"
+    )
+    if dynamicity == Dynamicity.MIXED:
+        func_definition = func_definition + (
+            f"  ins(%query_mixed, %key_mixed, %value_mixed, %scale_f16: {query_tensor_type}, {key_tensor_type}, {value_tensor_type}, {F16})\n"
+        )
+    else:
+        func_definition = func_definition + (
+            f"  ins(%query, %key, %value, %scale_f16: {query_tensor_type}, {key_tensor_type}, {value_tensor_type}, {F16})\n"
+        )
+    func_definition = func_definition + (
         f"      outs(%result0: {result_tensor_type}) {{\n"
-        f"   ^bb0(%score: f32): \n"
+        f"   ^bb0(%score: f32):\n"
         f"   iree_linalg_ext.yield %score : f32\n"
         f" }} -> {result_tensor_type}\n"
         f" return %result1: {result_tensor_type}\n"
@@ -296,11 +369,11 @@ def generate_call(
     shapes_scale: TestShapeAndScale,
 ):
     global call_id
-    func_name = f"{function.name}_{shapes_scale.batch}_{shapes_scale.m}_{shapes_scale.k1}_{shapes_scale.k2}_{shapes_scale.n}_{shapes_scale.k1}_{shapes_scale.scale}"
+    func_name = f"{function.name}_{shapes_scale.batch}_{shapes_scale.m}_{shapes_scale.n}_{shapes_scale.k1}_{shapes_scale.k2}_{shapes_scale.k1}_{shapes_scale.scale}"
     func_name = f"{func_name}_{call_id}"
     call_id = call_id + 1
 
-    description = f"Attention shape (BATCHxMxK1xK2xN): {shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.k1}x{shapes_scale.k2}x{shapes_scale.k1}x{shapes_scale.n}"
+    description = f"Attention shape (BATCHxMxNxK1xK2): {shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}x{shapes_scale.k1}x{shapes_scale.k2}x{shapes_scale.scale}"
     op = (
         f"func.func @{func_name}() attributes {{\n"
         f'  iree.reflection = {{description = "{description}"}}\n'
@@ -325,23 +398,23 @@ def generate_call(
     )
 
     op = op + (
-        f"  %batch = arith.constant {shapes_scale.batch} : i64 \n"
-        f"  %m = arith.constant {shapes_scale.m} : i64 \n"
-        f"  %k1 = arith.constant {shapes_scale.k1} : i64 \n"
-        f"  %k2 = arith.constant {shapes_scale.k2} : i64 \n"
-        f"  %n = arith.constant {shapes_scale.n} : i64 \n"
-        f"  %queryTensor = hal.tensor.import %query : !hal.buffer_view -> tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.k1}xf16> \n"
-        f"  %keyTensor = hal.tensor.import %key : !hal.buffer_view -> tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.k1}xf16> \n"
-        f"  %valueTensor = hal.tensor.import %value : !hal.buffer_view -> tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.n}xf16> \n"
-        f"  %resultTensor = hal.tensor.import %result : !hal.buffer_view -> tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}xf16> \n"
-        f"  %queryExt = arith.extf %queryTensor : tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.k1}xf16> to tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.k1}xf32> \n"
-        f"  %keyExt = arith.extf %keyTensor : tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.k1}xf16> to tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.k1}xf32> \n"
-        f"  %valueExt = arith.extf %valueTensor : tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.n}xf16> to tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.n}xf32> \n"
-        f"  %resultExt = arith.extf %resultTensor : tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}xf16> to tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}xf32> \n"
-        f"  %queryExtBufferView = hal.tensor.export %queryExt : tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.k1}xf32> -> !hal.buffer_view \n"
-        f"  %keyExtBufferView = hal.tensor.export %keyExt : tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.k1}xf32> -> !hal.buffer_view \n"
-        f"  %valueExtBufferView = hal.tensor.export %valueExt : tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.n}xf32> -> !hal.buffer_view \n"
-        f"  %resultExtBufferView = hal.tensor.export %resultExt : tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}xf32> -> !hal.buffer_view \n"
+        f"  %batch = arith.constant {shapes_scale.batch} : i64\n"
+        f"  %m = arith.constant {shapes_scale.m} : i64\n"
+        f"  %n = arith.constant {shapes_scale.n} : i64\n"
+        f"  %k1 = arith.constant {shapes_scale.k1} : i64\n"
+        f"  %k2 = arith.constant {shapes_scale.k2} : i64\n"
+        f"  %queryTensor = hal.tensor.import %query : !hal.buffer_view -> tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.k1}xf16>\n"
+        f"  %keyTensor = hal.tensor.import %key : !hal.buffer_view -> tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.k1}xf16>\n"
+        f"  %valueTensor = hal.tensor.import %value : !hal.buffer_view -> tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.n}xf16>\n"
+        f"  %resultTensor = hal.tensor.import %result : !hal.buffer_view -> tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}xf16>\n"
+        f"  %queryExt = arith.extf %queryTensor : tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.k1}xf16> to tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.k1}xf32>\n"
+        f"  %keyExt = arith.extf %keyTensor : tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.k1}xf16> to tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.k1}xf32>\n"
+        f"  %valueExt = arith.extf %valueTensor : tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.n}xf16> to tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.n}xf32>\n"
+        f"  %resultExt = arith.extf %resultTensor : tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}xf16> to tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}xf32>\n"
+        f"  %queryExtBufferView = hal.tensor.export %queryExt : tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.k1}xf32> -> !hal.buffer_view\n"
+        f"  %keyExtBufferView = hal.tensor.export %keyExt : tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.k1}xf32> -> !hal.buffer_view\n"
+        f"  %valueExtBufferView = hal.tensor.export %valueExt : tensor<{shapes_scale.batch}x{shapes_scale.k2}x{shapes_scale.n}xf32> -> !hal.buffer_view\n"
+        f"  %resultExtBufferView = hal.tensor.export %resultExt : tensor<{shapes_scale.batch}x{shapes_scale.m}x{shapes_scale.n}xf32> -> !hal.buffer_view\n"
         f"  call @attention_test.check_attention_results(%device, %batch, %m, %k1, %k2, %n, %queryExtBufferView, %keyExtBufferView, %valueExtBufferView, %resultExtBufferView) : (!hal.device, i64, i64, i64, i64, i64, !hal.buffer_view, !hal.buffer_view, !hal.buffer_view, !hal.buffer_view) -> ()\n"
     )
 
@@ -362,24 +435,25 @@ def generate(
     calls = []
 
     for shape in get_test_shapes(shapes_id):
-        function = generate_function(
-            query_type,
-            key_type,
-            value_type,
-            shape,
-        )
-        if function.name not in functions:
-            functions[function.name] = function
-        calls.append(
-            generate_call(
-                function,
+        for dynamicity in [Dynamicity.MIXED, Dynamicity.STATIC]:
+            function = generate_function(
                 query_type,
                 key_type,
                 value_type,
                 shape,
+                dynamicity,
             )
-        )
-
+            if function.name not in functions:
+                functions[function.name] = function
+            calls.append(
+                generate_call(
+                    function,
+                    query_type,
+                    key_type,
+                    value_type,
+                    shape,
+                )
+            )
     return (functions, calls)
 
 
