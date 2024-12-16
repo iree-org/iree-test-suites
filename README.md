@@ -31,3 +31,27 @@ Test suites for IREE and related projects.
   [operators](https://onnx.ai/onnx/operators/).
 * Runnable via [pytest](https://docs.pytest.org/) using a
   configurable set of flags to `iree-compile` and `iree-run-module`.
+
+### [sharktank_models/](sharktank_models/) : Models exported using sharktank
+
+[![Test Sharktank Models](https://github.com/iree-org/iree-test-suites/actions/workflows/test_sharktank_models.yml/badge.svg?branch=main)](https://github.com/iree-org/iree-test-suites/actions/workflows/test_sharktank_models.yml?query=branch%3Amain)
+
+* Tests for small scale versions of Large Language Models (LLMs) and other
+  Generative AI (GenAI) programs exported using the
+  [sharktank package](https://github.com/nod-ai/shark-ai/tree/main/sharktank)
+  built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
+* Runnable via [pytest](https://docs.pytest.org/) for both CPU and GPU targets.
+
+## Git repository details
+
+This repository uses [Git Large File Storage (LFS)](https://git-lfs.com/) to
+store some model files (`.mlir`, `.mlirbc`) and parameters (`*.irpa`).
+
+* If you would like to access these files, ensure you have `git-lfs` installed.
+* If you have `git-lfs` installed and do _not_ want to download these files,
+  you can set the `GIT_LFS_SKIP_SMUDGE=1` environment variable before cloning.
+
+<!-- TODO: .lfsconfig file to make LFS default to not fetch?
+    https://github.com/onnx/models?tab=readme-ov-file#usage
+    https://github.com/onnx/models/blob/main/.lfsconfig
+    https://github.com/git-lfs/git-lfs/blob/main/docs/man/git-lfs-fetch.adoc -->
