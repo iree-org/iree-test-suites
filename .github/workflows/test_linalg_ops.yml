@@ -31,6 +31,7 @@ concurrency:
 
 jobs:
   test-linalg-ops:
+    if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
     runs-on: ubuntu-24.04
     env:
       BUILD_DIR: build
