@@ -11,8 +11,9 @@ import os
 import pathlib
 import pytest
 
-page_size = 12288
-block_size = 16
+kv_size = 768
+block_size = 32
+page_size = kv_size * block_size
 
 THIS_DIR = pathlib.Path(__file__).parent
 llama_mlir = str(THIS_DIR / "assets/toy_llama.mlir")
@@ -109,7 +110,7 @@ class ToyLlama:
 
 
 def cpu_flags(sharding):
-    return ["--iree-hal-target-device=llvm-cpu"] * sharding + [
+    return [f"--iree-hal-target-device=llvm-cpu[{i}]" for i in range(sharding)] + [
         "--iree-llvmcpu-target-cpu=host"
     ]
 
