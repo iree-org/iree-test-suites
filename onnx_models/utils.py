@@ -6,7 +6,6 @@
 
 import logging
 import numpy as np
-import onnx
 import struct
 import subprocess
 from onnxruntime import NodeArg
@@ -160,7 +159,7 @@ def generate_numpy_input_for_ort_node_arg(node_arg: NodeArg):
 
 
 # TODO(#18289): use real frontend API, import model in-memory?
-def import_onnx_model_to_mlir(onnx_path: Path):
+def import_onnx_model_to_mlir(onnx_path: Path) -> Path:
     imported_mlir_path = onnx_path.with_suffix(".mlir")
     logger.info(
         f"Importing '{onnx_path.relative_to(THIS_DIR)}' to '{imported_mlir_path.relative_to(THIS_DIR)}'"
