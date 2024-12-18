@@ -13,7 +13,6 @@ from .....utils import *
 artifacts_subdir = "model_zoo/validated/vision/style_transfer"
 
 
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_fast_neural_style(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/style_transfer/fast_neural_style/model/mosaic-9.onnx",

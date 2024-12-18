@@ -1,0 +1,35 @@
+{
+  "config_name": "gpu_rocm_rdna3",
+  "iree_compile_flags": [
+    "--iree-hal-target-backends=rocm",
+    "--iree-hip-target=gfx1100"
+  ],
+  "iree_run_module_flags": [
+    "--device=hip"
+  ],
+  "tests_and_expected_outcomes": {
+    "default": "pass",
+    "tests/model_zoo/validated/vision/body_analysis_models_test.py::test_age_gender_age_googlenet": "fail-compile",
+    "tests/model_zoo/validated/vision/body_analysis_models_test.py::test_age_gender_gender_googlenet": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_efficientnet_lite4": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_inception_v1": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_rcnn_ilsvrc13": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_zfnet_512": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_densenet_121": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_googlenet": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_inception_v2": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_mobilenet": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_resnet50_v1": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_resnet50_v2": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_duc": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_faster_rcnn": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_fcn": "fail-run",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_mask_rcnn": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_retinanet": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_ssd": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_tiny_yolov2": "fail-run",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_yolov2_coco": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_yolov4": "fail-compile",
+    "tests/model_zoo/validated/vision/style_transfer_models_test.py::test_fast_neural_style": "fail-compile"
+  }
+}

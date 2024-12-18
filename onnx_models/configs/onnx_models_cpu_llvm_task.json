@@ -1,0 +1,24 @@
+{
+  "config_name": "cpu_llvm_task",
+  "iree_compile_flags": [
+    "--iree-hal-target-backends=llvm-cpu",
+    "--iree-llvmcpu-target-cpu=host"
+  ],
+  "iree_run_module_flags": [
+    "--device=local-task"
+  ],
+  "tests_and_expected_outcomes": {
+    "default": "pass",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_efficientnet_lite4": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_inception_v1": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_rcnn_ilsvrc13": "fail-compile",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_zfnet_512": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_faster_rcnn": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_fcn": "fail-run",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_mask_rcnn": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_retinanet": "fail-run",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_ssd": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_yolov4": "fail-run",
+    "tests/model_zoo/validated/vision/style_transfer_models_test.py::test_fast_neural_style": "fail-compile"
+  }
+}
