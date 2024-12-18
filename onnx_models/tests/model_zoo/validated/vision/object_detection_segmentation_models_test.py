@@ -21,7 +21,6 @@ def test_duc(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_faster_rcnn(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/object_detection_segmentation/faster-rcnn/model/FasterRCNN-12.onnx",
@@ -29,7 +28,6 @@ def test_faster_rcnn(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeRunException)
 def test_fcn(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/object_detection_segmentation/fcn/model/fcn-resnet50-12.onnx",
@@ -37,7 +35,6 @@ def test_fcn(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_mask_rcnn(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/object_detection_segmentation/mask-rcnn/model/MaskRCNN-12.onnx",
@@ -45,7 +42,6 @@ def test_mask_rcnn(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeRunException)
 def test_retinanet(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/object_detection_segmentation/retinanet/model/retinanet-9.onnx",
@@ -53,7 +49,6 @@ def test_retinanet(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_ssd(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/object_detection_segmentation/ssd/model/ssd-12.onnx",
@@ -99,7 +94,6 @@ def test_yolov3(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeRunException)
 def test_yolov4(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/object_detection_segmentation/yolov4/model/yolov4.onnx",
