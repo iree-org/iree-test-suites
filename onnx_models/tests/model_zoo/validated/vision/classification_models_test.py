@@ -34,7 +34,6 @@ def test_densenet_121(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_efficientnet_lite4(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/efficientnet-lite4/model/efficientnet-lite4-11.onnx",
@@ -78,7 +77,6 @@ def test_mobilenet(compare_between_iree_and_onnxruntime):
     )
 
 
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_rcnn_ilsvrc13(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/rcnn_ilsvrc13/model/rcnn-ilsvrc13-9.onnx",
@@ -130,7 +128,6 @@ def test_vgg19(compare_between_iree_and_onnxruntime):
 
 
 @pytest.mark.size_large
-@pytest.mark.xfail(raises=IreeCompileException)
 def test_zfnet_512(compare_between_iree_and_onnxruntime):
     compare_between_iree_and_onnxruntime(
         model_url="https://github.com/onnx/models/raw/main/validated/vision/classification/zfnet-512/model/zfnet512-12.onnx",
