@@ -12,7 +12,7 @@ import pytest
 import subprocess
 import urllib.request
 from dataclasses import dataclass
-from onnxruntime import InferenceSession
+from onnxruntime import InferenceSession, SessionOptions
 from pathlib import Path
 
 from .utils import *
@@ -150,7 +150,9 @@ def get_onnx_model_metadata(onnx_path: Path) -> OnnxModelMetadata:
     #   C) Get metadata on demand from the InferenceSession using 'onnxruntime'
     # This is option C.
 
-    onnx_session = InferenceSession(onnx_path)
+    so = SessionOptions()
+    so.log_severity_level = 3  # ignore warnings
+    onnx_session = InferenceSession(onnx_path, so)
     logger.info(f"Getting model metadata for '{onnx_path.relative_to(THIS_DIR)}'")
     inputs = []
     onnx_inputs = {}
