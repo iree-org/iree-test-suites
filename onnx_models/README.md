@@ -53,6 +53,31 @@ graph LR
 
     See https://docs.pytest.org/en/stable/how-to/usage.html for other options.
 
+## Customizing compile and run configurations
+
+By default, the
+[`onnx_models_cpu_llvm_task.json`](./configs/onnx_models_cpu_llvm_task.json)
+config is used, which runs the tests on IREE's CPU backend and sets some
+pass/fail test expectations. To change this, run pytest with the
+`--test-config-file=` option:
+
+```bash
+pytest \
+  -rA \
+  --log-cli-level=info \
+  --test-config-file=./onnx_models/configs/onnx_models_gpu_vulkan.json \
+  --durations=0
+```
+
+Note that these config files can be tracked independently from the
+iree-test-suites repository so you can, for example:
+
+* Run the tests from [iree-org/iree](https://github.com/iree-org/iree) at a
+  specific commit that impacts tests outcomes and updates the config file to
+  match the new results
+* Run the tests from another repository using a custom backend
+* Add custom flags to see if the test outcomes change
+
 ## Advanced pytest usage
 
 * The `log-cli-level` level can also be set to `debug`, `warning`, or `error`.
