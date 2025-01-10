@@ -10,11 +10,19 @@ import pytest
 
 from .....utils import *
 
-artifacts_subdir = "model_zoo/validated/vision/super_resolution"
+ARTIFACTS_SUBDIR = "model_zoo/validated/vision/super_resolution"
+BASE_URL = "https://github.com/onnx/models/raw/main/validated/vision/super_resolution/"
 
 
-def test_fast_neural_style(compare_between_iree_and_onnxruntime):
+@pytest.mark.parametrize(
+    "model",
+    [
+        # fmt: off
+        pytest.param("sub_pixel_cnn_2016/model/super-resolution-10.onnx"),
+        # fmt: on
+    ],
+)
+def test_models(compare_between_iree_and_onnxruntime, model):
     compare_between_iree_and_onnxruntime(
-        model_url="https://github.com/onnx/models/raw/main/validated/vision/super_resolution/sub_pixel_cnn_2016/model/super-resolution-10.onnx",
-        artifacts_subdir=artifacts_subdir,
+        model_url=BASE_URL + model, artifacts_subdir=ARTIFACTS_SUBDIR
     )

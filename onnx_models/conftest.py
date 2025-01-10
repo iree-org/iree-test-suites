@@ -48,7 +48,9 @@ def pytest_addoption(parser):
     #     "tests_and_expected_outcomes": {
     #       "default": "skip",
     #       "tests/foo/bar/baz.py::test_a": "pass",
-    #       "tests/foo/bar/baz.py::test_b": "fail-import",
+    #       "tests/foo/bar/baz.py::test_b[params/x]": "fail-import",
+    #       "tests/foo/bar/baz.py::test_b[params/y]": "fail-import",
+    #       "tests/foo/bar/baz.py::test_b[params/z]": "fail-import",
     #       "tests/foo/bar/baz.py::test_c": "fail-compile",
     #       "tests/foo/bar/baz.py::test_d": "fail-run"
     #     }
