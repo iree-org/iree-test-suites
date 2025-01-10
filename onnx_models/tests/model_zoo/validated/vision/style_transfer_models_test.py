@@ -11,7 +11,7 @@ import pytest
 from .....utils import *
 
 ARTIFACTS_SUBDIR = "model_zoo/validated/vision/style_transfer"
-BASE_URL = "https://github.com/onnx/models/raw/main/validated/vision/classification/"
+BASE_URL = "https://github.com/onnx/models/raw/main/validated/vision/style_transfer/"
 
 
 @pytest.mark.parametrize(
