@@ -91,7 +91,8 @@ def pytest_collection_modifyitems(session, config, items):
         # appears in logs, e.g.
         # "tests/model_zoo/validated/vision/classification_models_test.py::test_alexnet"
         # https://docs.pytest.org/en/stable/reference/reference.html#pytest.Item
-        item_path = f"{item.location[0]}::{item.location[2]}"
+        standardized_location_0 = item.location[0].replace("\\", "/")
+        item_path = f"{standardized_location_0}::{item.location[2]}"
 
         expected_outcome = tests_and_expected_outcomes.get(item_path, default_outcome)
         logger.debug(f"Expected outcome for {item_path} is {expected_outcome}")
@@ -275,6 +276,7 @@ def compare_between_iree_and_onnxruntime(pytestconfig):
         # Download the model as needed.
         # TODO(scotttodd): move to fixture with cache / download on demand
         # TODO(scotttodd): overwrite if already existing? check SHA?
+        # TODO(scotttodd): redownload if file is corrupted (e.g. partial download)
         onnx_path = test_artifacts_dir / f"{model_name}.onnx"
         if not onnx_path.exists():
             urllib.request.urlretrieve(model_url, onnx_path)
