@@ -1,0 +1,14 @@
+# Baseline requirements for running the test suite.
+#   * See requirements-iree.txt for using IREE packages.
+
+pytest
+pytest-html
+pytest-reportlog
+pytest-timeout
+pytest-xdist
+
+# Not available on Windows. Make optional? Generate test goldens on Linux?
+# ai-edge-litert
+# tflite-runtime
+kagglehub
+tensorflow

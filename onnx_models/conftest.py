@@ -215,7 +215,9 @@ def get_onnx_model_metadata(onnx_path: Path) -> OnnxModelMetadata:
 ###############################################################################
 
 
-def compile_mlir_with_iree(mlir_path: Path, config_name: str, compile_flags: list[str]):
+def compile_mlir_with_iree(
+    mlir_path: Path, config_name: str, compile_flags: list[str]
+) -> Path:
     cwd = THIS_DIR
     iree_module_path = mlir_path.with_name(mlir_path.stem + f"_{config_name}.vmfb")
     compile_args = ["iree-compile", mlir_path.relative_to(cwd)]
