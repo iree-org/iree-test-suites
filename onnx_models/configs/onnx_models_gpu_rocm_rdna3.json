@@ -1,0 +1,21 @@
+{
+  "config_name": "gpu_rocm_rdna3",
+  "iree_compile_flags": [
+    "--iree-hal-target-backends=rocm",
+    "--iree-hip-target=gfx1100"
+  ],
+  "iree_run_module_flags": [
+    "--device=hip"
+  ],
+  "tests_and_expected_outcomes": {
+    "default": "pass",
+    "tests/model_zoo/validated/vision/classification_models_test.py::test_models[inception_and_googlenet/inception_v1/model/inception-v1-12.onnx]": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_models[faster-rcnn/model/FasterRCNN-12.onnx]": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_models[fcn/model/fcn-resnet50-12.onnx]": "fail-run",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_models[mask-rcnn/model/MaskRCNN-12.onnx]": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_models[retinanet/model/retinanet-9.onnx]": "fail-run",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_models[ssd/model/ssd-12.onnx]": "fail-compile",
+    "tests/model_zoo/validated/vision/object_detection_segmentation_models_test.py::test_models[yolov4/model/yolov4.onnx]": "fail-run",
+    "tests/model_zoo/validated/vision/style_transfer_models_test.py::test_models[fast_neural_style/model/mosaic-9.onnx]": "fail-compile"
+  }
+}

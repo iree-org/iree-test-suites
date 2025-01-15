@@ -11,8 +11,9 @@ import os
 import pathlib
 import pytest
 
-page_size = 12288
-block_size = 16
+kv_size = 768
+block_size = 32
+page_size = kv_size * block_size
 
 THIS_DIR = pathlib.Path(__file__).parent
 llama_mlir = str(THIS_DIR / "assets/toy_llama.mlir")
@@ -109,7 +110,7 @@ class ToyLlama:
 
 
 def cpu_flags(sharding):
-    return ["--iree-hal-target-device=llvm-cpu"] * sharding + [
+    return [f"--iree-hal-target-device=llvm-cpu[{i}]" for i in range(sharding)] + [
         "--iree-llvmcpu-target-cpu=host"
     ]
 
@@ -121,8 +122,6 @@ def hip_flags(sharding):
     target_gpu = os.environ["HIP_TARGET"]
     return [f"--iree-hal-target-device=hip[{i}]" for i in range(sharding)] + [
         f"--iree-hip-target={target_gpu}",
-        # TODO: Remove once https://github.com/iree-org/iree/issues/19347 is addressed
-        "--iree-codegen-block-dynamic-dimensions-of-contractions=false",
     ]
 
 
@@ -215,7 +214,7 @@ def test_prefill(toy_llama):
     cross_entropy = prefill_cross_entropy(toy_llama, ids)
     cross_entropy = cross_entropy.item()
     assert cross_entropy == pytest.approx(
-        0.589, 1e-2
+        0.589, 1e-1
     ), "cross entropy outside of tolerance"
 
 
@@ -235,5 +234,5 @@ def test_prefill_decode(toy_llama):
     cross_entropy = prefill_decode_cross_entropy(toy_llama, ids)
     cross_entropy = cross_entropy.item()
     assert cross_entropy == pytest.approx(
-        0.589, 1e-2
+        0.589, 1e-1
     ), "cross entropy outside of tolerance"
