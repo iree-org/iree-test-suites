@@ -208,4 +208,5 @@ iree-run-module \
 
 Test input files from https://github.com/onnx/models are cached by default at a
 local git checkout stored at `~/.cache/iree-test-suites/onnx_models`. The cache
-location can be changed by passing `--cache-dir=/path/to/cache`.
+location can be changed by passing `--cache-dir=/path/to/cache` or by setting
+the `IREE_TEST_FILES` environment variable.

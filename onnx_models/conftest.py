@@ -71,11 +71,16 @@ def pytest_addoption(parser):
         help="Config JSON file used to parameterize test cases",
     )
 
+    env_path_root = os.getenv("IREE_TEST_FILES")
+    if env_path_root:
+        default_cache_dir = Path(env_path_root) / "iree-test-suites"
+    else:
+        default_cache_dir = Path.home() / ".cache" / "iree-test-suites"
     parser.addoption(
         "--cache-dir",
         type=Path,
-        default=Path.home() / ".cache" / "iree-test-suites",
-        help="Cache directory to store files at. Defaults to ~/.cache/iree-test-suites",
+        default=default_cache_dir,
+        help="Cache directory to store files at. Defaults to ${IREE_TEST_FILES}/iree-test-suites if IREE_TEST_FILES is set, or ~/.cache/iree-test-suites",
     )
 
 
