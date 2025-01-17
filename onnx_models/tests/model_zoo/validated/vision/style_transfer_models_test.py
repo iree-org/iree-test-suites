@@ -10,8 +10,7 @@ import pytest
 
 from .....utils import *
 
-ARTIFACTS_SUBDIR = "model_zoo/validated/vision/style_transfer"
-BASE_URL = "https://github.com/onnx/models/raw/main/validated/vision/style_transfer/"
+BASE_PATH = "validated/vision/style_transfer/"
 
 
 @pytest.mark.parametrize(
@@ -24,5 +23,5 @@ BASE_URL = "https://github.com/onnx/models/raw/main/validated/vision/style_trans
 )
 def test_models(compare_between_iree_and_onnxruntime, model):
     compare_between_iree_and_onnxruntime(
-        model_url=BASE_URL + model, artifacts_subdir=ARTIFACTS_SUBDIR
+        model_url=BASE_PATH + model, artifacts_subdir=BASE_PATH
     )
