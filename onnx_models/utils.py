@@ -173,7 +173,7 @@ def import_onnx_model_to_mlir(onnx_path: Path) -> Path:
         f"Running import command:\n"  #
         f"  {import_cmd}"
     )
-    ret = subprocess.run(import_cmd, capture_output=True)
+    ret = subprocess.run(import_cmd, shell=True, capture_output=True)
     if ret.returncode != 0:
         logger.error(f"Import of '{onnx_path.name}' failed!")
         logger.error("iree-import-onnx stdout:")

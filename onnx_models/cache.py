@@ -114,15 +114,14 @@ class GitHubLFSRepositoryCacheScope(CacheScope):
     def setup_github_repository(self, repository_name: str, clone_method: str):
         logger.info(f"Setting up GitHub repository '{repository_name}'")
 
-        # Command does not exist on GitHub-hosted Linux runners?
-        # logger.info("Checking for working 'git lfs' (https://git-lfs.com/)")
-        # subprocess.run("git lfs env", capture_output=True, check=True)
+        logger.info("Checking for working 'git lfs' (https://git-lfs.com/)")
+        subprocess.run(["git", "lfs", "env"], capture_output=True, check=True)
 
         # Skip if the directory already exists (and is a git directory).
         if self.local_repository_dir.is_dir():
             logger.info(f"Directory '{self.local_repository_dir}' already exists")
             subprocess.run(
-                "git rev-parse --is-inside-work-tree",
+                ["git", "rev-parse", "--is-inside-work-tree"],
                 cwd=self.local_repository_dir,
                 capture_output=True,
                 check=True,
@@ -136,7 +135,7 @@ class GitHubLFSRepositoryCacheScope(CacheScope):
             remote_url = f"git@github.com:{repository_name}.git"
         logger.info(f"Cloning {remote_url} into '{self.local_repository_dir}'")
         subprocess.run(
-            f"git clone {remote_url} {self.local_repository_dir}", check=True
+            ["git", "clone", remote_url, self.local_repository_dir], check=True
         )
 
     def pull_lfs_file(self, file_relative_path: str):
