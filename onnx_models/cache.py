@@ -114,8 +114,9 @@ class GitHubLFSRepositoryCacheScope(CacheScope):
     def setup_github_repository(self, repository_name: str, clone_method: str):
         logger.info(f"Setting up GitHub repository '{repository_name}'")
 
-        logger.info("Checking for working 'git lfs' (https://git-lfs.com/)")
-        subprocess.run("git lfs env", capture_output=True, check=True)
+        # Command does not exist on GitHub-hosted Linux runners?
+        # logger.info("Checking for working 'git lfs' (https://git-lfs.com/)")
+        # subprocess.run("git lfs env", capture_output=True, check=True)
 
         # Skip if the directory already exists (and is a git directory).
         if self.local_repository_dir.is_dir():
