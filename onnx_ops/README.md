@@ -7,7 +7,7 @@ Testing follows several stages:
 
 ```mermaid
 graph LR
-  Import -. "\n(offline)" .-> Compile
+  Import -. "(offline)" .-> Compile
   Compile --> Run
 ```
 
