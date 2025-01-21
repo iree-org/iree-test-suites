@@ -70,14 +70,14 @@ class CacheManager:
         working_subdirectory_file = working_subdirectory / file_name
         logger.debug(f"Symlinking '{working_subdirectory_file}' to '{file_in_cache}'")
         if working_subdirectory_file.is_symlink():
-            if os.path.samefile(str(working_subdirectory_file), str(file_in_cache)):
+            if working_subdirectory_file.samefile(file_in_cache):
                 logger.debug("  Expected symlink already exists")
                 return working_subdirectory_file
-            os.remove(working_subdirectory_file)
+            working_subdirectory_file.unlink()
         elif working_subdirectory_file.exists():
             logger.warning("  Non-symlink file exists. Replacing with a symlink")
-            os.remove(working_subdirectory_file)
-        os.symlink(src=file_in_cache, dst=working_subdirectory_file)
+            working_subdirectory_file.unlink()
+        file_in_cache.symlink_to(working_subdirectory_file)
         return working_subdirectory_file
 
 
