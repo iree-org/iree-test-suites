@@ -20,7 +20,19 @@ class CacheScope(abc.ABC):
 
     @abc.abstractmethod
     def get_file(self, relative_path: str) -> Path:
-        """Get the path to a file loaded from the cache."""
+        """Gets the local path to a file, populating the cache as needed.
+
+        Implementations of this class are responsible for performing any setup,
+        download, or other tasks needed to get a local file system path for the
+        file.
+        """
+
+    # TODO(scotttodd): more [abstract] methods?
+    # def print_stats(self):
+    # def prune_cache(self, max_size_in_bytes: int):
+    # def clear_cache(self, max_size_in_bytes: int):
+    # def warm_cache_for_file(self, relative_path: str):
+    # def get_files(self, relative_paths: list[str]) -> list[Path]:
 
 
 class CacheManager:
@@ -62,7 +74,7 @@ class CacheManager:
         self.cache_scopes[scope.scope_name] = scope
 
     def get_file_in_cache(self, scope_name: str, relative_path: str) -> Path:
-        """Gets the path to a file in the cache, if it exists."""
+        """Gets the path to a file in the cache, downloading as needed, if it exists."""
         logger.info(f"Getting file from {scope_name} cache: {relative_path}")
         if scope_name not in self.cache_scopes:
             raise ValueError(f"Unknown cache scope: '{scope_name}'")
@@ -71,16 +83,27 @@ class CacheManager:
     def get_file_in_working_directory(
         self, scope_name: str, relative_path: str, subdirectory: str
     ) -> Path:
-        """Gets the path to a file from the cache, symlinked into the working directory."""
+        """Gets the path to a file symlinked into a subdirectory within the working directory."""
         file_in_cache = self.get_file_in_cache(scope_name, relative_path)
 
-        # Create symlink from cache dir to working directory.
+        # TODO(scotttodd): refactor directory structure:
+        #   * remove subdirectory concept here
+        #   * remove the common `self.working_directory`?
+        #   * always pass the directory to this function
+        #   * have the caller handle path manipulation
         working_subdirectory = self.working_directory / scope_name / subdirectory
         logger.debug(f"Working subdirectory: {working_subdirectory}")
         working_subdirectory.mkdir(parents=True, exist_ok=True)
 
         file_name = relative_path.rsplit("/", 1)[-1]
         working_subdirectory_file = working_subdirectory / file_name
+
+        # Create a symlink in the working subdirectory pointing at the file in
+        # the cache, cleaning up existing files or symlinks as needed.
+        #
+        # Both the cache and working directories should be treated as scratch
+        # space that the test runner is free to modify as it wants, but there
+        # might be files leftover from prior versions of the test suite.
         logger.debug(f"Symlinking '{working_subdirectory_file}' to '{file_in_cache}'")
         if working_subdirectory_file.is_symlink():
             if working_subdirectory_file.samefile(file_in_cache):
@@ -158,12 +181,15 @@ class GitHubLFSRepositoryCacheScope(CacheScope):
 
     def get_file(self, relative_path: str) -> Path:
         # Log file information for easier reproduction outside of the test suite.
+        view_url = (
+            f"https://github.com/{self.repository_name}/tree/main/{relative_path}"
+        )
         direct_download_url = (
             f"https://github.com/{self.repository_name}/raw/main/{relative_path}"
         )
-        logger.info(
-            f"Getting file '{relative_path}' from cache. Direct download URL:\n  {direct_download_url}"
-        )
+        logger.info(f"Getting file '{relative_path}' from cache.")
+        logger.info(f"View URL:\n  {view_url}")
+        logger.info(f"Direct download URL:\n  {direct_download_url}")
 
         self.pull_lfs_file(relative_path)
         return self.local_repository_dir / relative_path
