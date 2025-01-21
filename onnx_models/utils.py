@@ -158,13 +158,9 @@ def generate_numpy_input_for_ort_node_arg(node_arg: NodeArg):
     raise NotImplementedError(f"Unsupported numpy type: {numpy_type}")
 
 
-# TODO(#18289): use real frontend API, import model in-memory?
 def import_onnx_model_to_mlir(onnx_path: Path) -> Path:
     imported_mlir_path = onnx_path.with_suffix(".mlir")
-    logger.info(
-        f"Importing '{onnx_path.relative_to(THIS_DIR)}' to '{imported_mlir_path.relative_to(THIS_DIR)}'"
-    )
-    exec_args = [
+    import_args = [
         "iree-import-onnx",
         str(onnx_path),
         "--opset-version",
@@ -172,7 +168,12 @@ def import_onnx_model_to_mlir(onnx_path: Path) -> Path:
         "-o",
         str(imported_mlir_path),
     ]
-    ret = subprocess.run(exec_args, capture_output=True)
+    import_cmd = subprocess.list2cmdline(import_args)
+    logger.info(
+        f"Running import command:\n"  #
+        f"  {import_cmd}"
+    )
+    ret = subprocess.run(import_cmd, shell=True, capture_output=True)
     if ret.returncode != 0:
         logger.error(f"Import of '{onnx_path.name}' failed!")
         logger.error("iree-import-onnx stdout:")
