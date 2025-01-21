@@ -102,7 +102,7 @@ def pytest_sessionstart(session):
         cache_dir=cache_dir,
         repository_name="onnx/models",
     )
-    cache_manager.cache_scopes.append(onnx_models_cache)
+    cache_manager.register_scope(onnx_models_cache)
     session.config.cache_manager = cache_manager
 
 

@@ -12,6 +12,17 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+class CacheScope(abc.ABC):
+    """Abstract base class for a cache scope."""
+
+    def __init__(self, scope_name: str):
+        self.scope_name = scope_name
+
+    @abc.abstractmethod
+    def get_file(self, relative_path: str) -> Path:
+        """Get the path to a file loaded from the cache."""
+
+
 class CacheManager:
     """Manager class for multiple CacheScope instances.
 
@@ -43,21 +54,24 @@ class CacheManager:
     """
 
     def __init__(self, working_directory: Path):
-        self.cache_scopes = []
+        self.cache_scopes = {}
         self.working_directory = working_directory
 
+    def register_scope(self, scope: CacheScope):
+        """Registers a cache scope with the manager."""
+        self.cache_scopes[scope.scope_name] = scope
+
     def get_file_in_cache(self, scope_name: str, relative_path: str) -> Path:
-        """Gets the path to a file in the cache, if it exists"""
+        """Gets the path to a file in the cache, if it exists."""
         logger.info(f"Getting file from {scope_name} cache: {relative_path}")
-        for cache_scope in self.cache_scopes:
-            if cache_scope.scope_name == scope_name:
-                return cache_scope.get_file(relative_path)
-        raise ValueError(f"Unknown cache scope: '{cache_scope}'")
+        if scope_name not in self.cache_scopes:
+            raise ValueError(f"Unknown cache scope: '{scope_name}'")
+        return self.cache_scopes[scope_name].get_file(relative_path)
 
     def get_file_in_working_directory(
         self, scope_name: str, relative_path: str, subdirectory: str
     ) -> Path:
-        """Gets the path to a file from the cache, symlinked into the working directory"""
+        """Gets the path to a file from the cache, symlinked into the working directory."""
         file_in_cache = self.get_file_in_cache(scope_name, relative_path)
 
         # Create symlink from cache dir to working directory.
@@ -78,17 +92,6 @@ class CacheManager:
             working_subdirectory_file.unlink()
         working_subdirectory_file.symlink_to(file_in_cache)
         return working_subdirectory_file
-
-
-class CacheScope(abc.ABC):
-    """Abstract base class for a cache scope."""
-
-    def __init__(self, scope_name: str):
-        self.scope_name = scope_name
-
-    @abc.abstractmethod
-    def get_file(self, relative_path: str) -> Path:
-        """Get the path to a file loaded from the cache"""
 
 
 class GitHubLFSRepositoryCacheScope(CacheScope):
