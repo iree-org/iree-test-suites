@@ -6,7 +6,6 @@
 
 import abc
 import logging
-import os
 import subprocess
 from pathlib import Path
 
@@ -77,7 +76,7 @@ class CacheManager:
         elif working_subdirectory_file.exists():
             logger.warning("  Non-symlink file exists. Replacing with a symlink")
             working_subdirectory_file.unlink()
-        file_in_cache.symlink_to(working_subdirectory_file)
+        working_subdirectory_file.symlink_to(file_in_cache)
         return working_subdirectory_file
 
 
