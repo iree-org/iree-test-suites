@@ -21,7 +21,14 @@ graph LR
 
 ## Quickstart
 
-1. Set up your virtual environment and install requirements:
+1. Ensure you have [Git Large File Storage (LFS)](https://git-lfs.com/)
+   installed:
+
+   ```bash
+   git lfs install
+   ```
+
+2. Set up your virtual environment and install requirements:
 
     ```bash
     python -m venv .venv
@@ -42,7 +49,7 @@ graph LR
         export PATH=path/to/iree-build:$PATH
         ```
 
-2. Run pytest using typical flags:
+3. Run pytest using typical flags:
 
     ```bash
     pytest \
@@ -196,3 +203,10 @@ iree-run-module \
   --input=1x1x28x28xf32=@artifacts/model_zoo/validated/vision/classification/mnist-12_version17_input_0.bin \
   --expected_output=1x10xf32=@artifacts/model_zoo/validated/vision/classification/mnist-12_version17_output_0.bin
 ```
+
+## Caching
+
+Test input files from https://github.com/onnx/models are cached by default at a
+local git checkout stored at `~/.cache/iree-test-suites/onnx_models`. The cache
+location can be changed by passing `--cache-dir=/path/to/cache` or by setting
+the `IREE_TEST_FILES` environment variable.
