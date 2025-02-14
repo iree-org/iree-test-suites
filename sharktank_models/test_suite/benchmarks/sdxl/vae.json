@@ -1,0 +1,28 @@
+{
+    "inputs": [
+        "1x4x128x128xf16"
+    ],
+    "function_run": "main", 
+    "benchmark_repetitions": 10,
+    "benchmark_min_warmup_time": 3.0,
+    "golden_time_tolerance_multiplier": {
+        "mi250": 1.3,
+        "mi300": 1.1,
+        "mi308": 1.1
+    },
+    "golden_time": {
+        "mi250": 310,
+        "mi300": 75,
+        "mi308": 190.0
+    },
+    "golden_dispatch": {
+        "mi250": 246,
+        "mi300": 246,
+        "mi308": 246
+    },
+    "golden_size": {
+        "mi250": 840000,
+        "mi300": 840000,
+        "mi308": 840000
+    }
+}
