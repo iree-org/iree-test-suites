@@ -1,0 +1,33 @@
+{
+    "inputs": [
+        "1x4x128x128xf16",
+        "2x64x2048xf16",
+        "2x1280xf16",
+        "2x6xf16",
+        "1xf16",
+        "1xi64"
+    ],
+    "function_run": "run_forward", 
+    "benchmark_repetitions": 10,
+    "benchmark_min_warmup_time": 3.0,
+    "golden_time_tolerance_multiplier": {
+        "mi250": 1.3,
+        "mi300": 1.1,
+        "mi308": 1.1
+    },
+    "golden_time": {
+        "mi250": 255,
+        "mi300": 80,
+        "mi308": 195
+    },
+    "golden_dispatch": {
+        "mi250": 1602,
+        "mi300": 1602,
+        "mi308": 1602
+    },
+    "golden_size": {
+        "mi250": 2280000,
+        "mi300": 2270000,
+        "mi308": 2270000
+    }
+}
