@@ -15,15 +15,15 @@ import json
 rocm_chip = os.getenv("ROCM_CHIP", default="gfx942")
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=Path.cwd()) 
 sku = os.getenv("SKU", default="mi300")
-model_name = os.getenv("MODEL", default="sdxl")
-submodel_name = os.getenv("SUBMODEL", default="*")
+model_name = os.getenv("THRESHOLD_MODEL")
+submodel_name = os.getenv("THRESHOLD_SUBMODEL")
 
 # if a specific submodel is not specified, all the submodels under the model directory will be tested
 parameters = []
 if submodel_name != "*":
     parameters = [submodel_name]
 else:
-    for filename in os.listdir(f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/{model_name}/{submodel_name}"):
+    for filename in os.listdir(f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/{model_name}"):
         if ".json" in filename:
             parameters.append(filename.split(".")[0])
 
@@ -64,8 +64,6 @@ class TestModelThreshold:
     def setup_class(self, submodel_name):
         self.model_name = model_name
         self.submodel_name = submodel_name
-        # self.model_name = pytestconfig.getoption("model_name")
-        # self.submodel_name = pytestconfig.getoption("submodel_name")
 
         file_name = f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/{self.model_name}/{self.submodel_name}.json"
 

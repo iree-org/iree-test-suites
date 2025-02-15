@@ -6,23 +6,12 @@
 
 ### How to run
 
-- Example command to run all submodels for a specific model
+- Example command to run a specific submodel or all submodels for a specific model
 
 ```
-python sharktank_models/test_suite/regression_tests/run_all_submodels.py --model sdxl
-```
+python sharktank_models/test_suite/regression_tests/run_threshold_test.py --model sdxl --submodel *
 
-- Example command to run a specific model and submodel
-
-```
-pytest sharktank_models/test_suite/regression_tests/test_model_threshold.py \
-    -rpfE \
-    --log-cli-level=info \
-    --capture=no \
-    --timeout=600 \
-    --durations=0 \
-    --model-name sd3 \
-    --submodel-name vae
+python sharktank_models/test_suite/regression_tests/run_threshold_test.py --model sdxl --submodel clip
 ```
 
 ### Required and optional fields for the JSON model file
