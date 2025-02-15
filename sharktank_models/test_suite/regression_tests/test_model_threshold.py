@@ -15,6 +15,17 @@ import json
 rocm_chip = os.getenv("ROCM_CHIP", default="gfx942")
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=Path.cwd()) 
 sku = os.getenv("SKU", default="mi300")
+model_name = os.getenv("MODEL", default="sdxl")
+submodel_name = os.getenv("SUBMODEL", default="*")
+
+# if a specific submodel is not specified, all the submodels under the model directory will be tested
+parameters = []
+if submodel_name != "*":
+    parameters = [submodel_name]
+else:
+    for filename in os.listdir(f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/{model_name}/{submodel_name}"):
+        if ".json" in filename:
+            parameters.append(filename.split(".")[0])
 
 # Helper methods
 def fetch_source_fixtures_for_run_flags(inference_list, model_name, submodel_name):
@@ -46,13 +57,15 @@ def common_run_flags_generation(input_list, output_list):
     
     return flags_list
 
-
+@pytest.mark.parametrize("submodel_name", parameters)
 class TestModelThreshold:
     @pytest.fixture(autouse = True)
     @classmethod
-    def setup_class(self, pytestconfig):
-        self.model_name = pytestconfig.getoption("model_name")
-        self.submodel_name = pytestconfig.getoption("submodel_name")
+    def setup_class(self, submodel_name):
+        self.model_name = model_name
+        self.submodel_name = submodel_name
+        # self.model_name = pytestconfig.getoption("model_name")
+        # self.submodel_name = pytestconfig.getoption("submodel_name")
 
         file_name = f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/{self.model_name}/{self.submodel_name}.json"
 
