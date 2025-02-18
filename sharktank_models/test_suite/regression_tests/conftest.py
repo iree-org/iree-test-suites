@@ -11,17 +11,3 @@ class VmfbManager:
     rocm_vmfb = None
     pipeline_cpu_vmfb = None
     pipeline_rocm_vmfb = None
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--model-name", 
-        action="store", 
-        type=str, 
-        default=""
-    )
-    parser.addoption(
-        "--submodel-name", 
-        action="store", 
-        type=str, 
-        default=""
-    )

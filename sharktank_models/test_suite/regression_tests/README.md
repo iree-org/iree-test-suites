@@ -14,6 +14,15 @@ python sharktank_models/test_suite/regression_tests/run_threshold_test.py --mode
 python sharktank_models/test_suite/regression_tests/run_threshold_test.py --model sdxl --submodel clip
 ```
 
+Argument options for the script
+
+| Argument Name | Default value | Description                                                                                                                                      |
+| ------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| --model       | sdxl          | Runs threshold tests for a specific model                                                                                                        |
+| --submodel    | \*            | If specified, the threshold tests will run for a specific submodel (ex: `--submodel clip`). If not specified, it will run tests on all submodels |
+| --sku         | mi300         | The threshold tests will run on this sku and retrieve golden values from the specified sku                                                       |
+| --rocm-chip   | gfx942        | The threshold tests will run on this ROCM chip                                                                                                   |
+
 ### Required and optional fields for the JSON model file
 
 | Field Name                          | Required | Type    | Description                                                                                                                                      |
@@ -36,6 +45,6 @@ python sharktank_models/test_suite/regression_tests/run_threshold_test.py --mode
 | rocm_compile_chip_expecting_to_fail | optional | array   | If an array is passed in, the ROCM compilation tests will fail on the specified chip, ex: `["gfx90a"]`                                           |
 | compile_only                        | optional | boolean | If true, only the compilation tests will run                                                                                                     |
 | add_pipeline_module                 | optional | boolean | If true, the <b>pipeline mlir</b> module will be added to the `iree_run_module` as an argument                                                   |
-| tuner_file                          | optional | dict    | Adds a `iree-codegen-transform-dialect-library `ROCM compiler flag for a SKU-specific tuner file (ex: `{"mi308": "{path_to_tuner_file}"}`)         |
+| tuner_file                          | optional | dict    | Adds a `iree-codegen-transform-dialect-library `ROCM compiler flag for a SKU-specific tuner file (ex: `{"mi308": "{path_to_tuner_file}"}`)       |
 
 Please feel free to look at any JSON examples under a model directory (ex: sd3, sdxl)

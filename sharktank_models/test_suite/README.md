@@ -1,1 +1,3 @@
-## PkgCI Regression Suite
+## Regression Test Suite
+
+details to come!

@@ -14,7 +14,7 @@
         "mi300": 1.1,
         "mi308": 1.1
     },
-    "golden_time": {
+    "golden_time_ms": {
         "mi300": 52,
         "mi308": 150
     },

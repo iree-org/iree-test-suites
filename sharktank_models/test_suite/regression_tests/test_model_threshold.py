@@ -7,18 +7,20 @@
 import pytest
 from ireers_tools import *
 import os
-from conftest import VmfbManager
 from pathlib import Path
+from conftest import VmfbManager
 import subprocess
 import json 
 
+THIS_DIR = Path(__file__).parent
+vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=THIS_DIR) 
 rocm_chip = os.getenv("ROCM_CHIP", default="gfx942")
-vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=Path.cwd()) 
 sku = os.getenv("SKU", default="mi300")
-model_name = os.getenv("THRESHOLD_MODEL")
-submodel_name = os.getenv("THRESHOLD_SUBMODEL")
+model_name = os.getenv("THRESHOLD_MODEL", default="sdxl")
+submodel_name = os.getenv("THRESHOLD_SUBMODEL", default="*")
 
-# if a specific submodel is not specified, all the submodels under the model directory will be tested
+
+# if a specific submodel in the environment variable is not specified, all the submodels under the model directory will be tested
 parameters = []
 if submodel_name != "*":
     parameters = [submodel_name]
@@ -56,10 +58,11 @@ def common_run_flags_generation(input_list, output_list):
                 flags_list.append(f"--expected_output={value}=@{path}")
     
     return flags_list
+    
 
 @pytest.mark.parametrize("submodel_name", parameters)
 class TestModelThreshold:
-    @pytest.fixture(autouse = True)
+    @pytest.fixture(autouse = True, scope = "class")
     @classmethod
     def setup_class(self, submodel_name):
         self.model_name = model_name

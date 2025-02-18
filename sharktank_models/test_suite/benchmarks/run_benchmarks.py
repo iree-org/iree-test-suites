@@ -27,11 +27,9 @@ os.environ['ROCM_CHIP'] = rocm_chip
 
 command = [
     "pytest",
-    f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/test_model_threshold.py",
-    "-rpFe",
+    f"{Path.cwd()}/sharktank_models/test_suite/benchmarks/test_model_benchmark.py",
     "--log-cli-level=info",
-    "--capture=no",
     "--timeout=600",
-    "--durations=0"
+    "--retries=7"
 ]
 subprocess.run(command)
