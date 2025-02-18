@@ -25,9 +25,11 @@ os.environ['THRESHOLD_SUBMODEL'] = submodel
 os.environ['SKU'] = sku
 os.environ['ROCM_CHIP'] = rocm_chip
 
+THIS_DIR = Path(__file__).parent 
+
 command = [
     "pytest",
-    f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/test_model_threshold.py",
+    THIS_DIR / "test_model_threshold.py",
     "-rpFe",
     "--log-cli-level=info",
     "--capture=no",

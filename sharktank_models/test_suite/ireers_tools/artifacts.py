@@ -16,7 +16,7 @@ import mmap
 import re
 import logging
 
-THIS_DIR = Path(__file__).parent
+THIS_DIR = str(Path(__file__).parent)
 logger = logging.getLogger(__name__)
 # Adjust logging levels.
 logging.basicConfig(level=logging.INFO)

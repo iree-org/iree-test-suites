@@ -17,7 +17,7 @@
         "--iree-opt-outer-dim-concat=true",
         "--iree-llvmgpu-enable-prefetch"
     ],
-    "mlir_file_path": "sharktank_models/test_suite/build_tools/external_test_files/sdxl_pipeline_bench_f16.mlir",
+    "mlir_file_path": "external_test_files/sdxl_pipeline_bench_f16.mlir",
     "modules": [
         "sdxl_clip",
         "sdxl_unet_fp16",

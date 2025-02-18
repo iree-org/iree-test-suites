@@ -13,19 +13,20 @@ import subprocess
 import json 
 
 THIS_DIR = Path(__file__).parent
-vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=THIS_DIR) 
+vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(THIS_DIR))
 rocm_chip = os.getenv("ROCM_CHIP", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
 model_name = os.getenv("THRESHOLD_MODEL", default="sdxl")
 submodel_name = os.getenv("THRESHOLD_SUBMODEL", default="*")
 
+SUBMODEL_FOLDER_PATH = THIS_DIR / f"{model_name}"
 
 # if a specific submodel in the environment variable is not specified, all the submodels under the model directory will be tested
 parameters = []
 if submodel_name != "*":
     parameters = [submodel_name]
 else:
-    for filename in os.listdir(f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/{model_name}"):
+    for filename in os.listdir(SUBMODEL_FOLDER_PATH):
         if ".json" in filename:
             parameters.append(filename.split(".")[0])
 
@@ -62,15 +63,15 @@ def common_run_flags_generation(input_list, output_list):
 
 @pytest.mark.parametrize("submodel_name", parameters)
 class TestModelThreshold:
-    @pytest.fixture(autouse = True, scope = "class")
+    @pytest.fixture(autouse = True)
     @classmethod
     def setup_class(self, submodel_name):
         self.model_name = model_name
         self.submodel_name = submodel_name
 
-        file_name = f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/{self.model_name}/{self.submodel_name}.json"
+        SUBMODEL_FILE_PATH = THIS_DIR / f"{model_name}/{self.submodel_name}.json"
 
-        with open(file_name ,'r') as file:
+        with open(SUBMODEL_FILE_PATH ,'r') as file:
             data = json.load(file)
 
             # retrieving source fixtures if available in JSON file
@@ -104,7 +105,8 @@ class TestModelThreshold:
             # Custom configuration for a tuner file
             self.tuner_file = data.get("tuner_file", {})
             if sku in self.tuner_file:
-                self.rocm_compiler_flags.append(f"--iree-codegen-transform-dialect-library={Path.cwd()}/{self.tuner_file.get(sku)}")
+                TUNER_FILE_PATH = THIS_DIR / self.tuner_file.get(sku)
+                self.rocm_compiler_flags.append(f"--iree-codegen-transform-dialect-library={str(TUNER_FILE_PATH)}")
 
             # Custom configuration to fp16 and adding secondary pipeline mlir
             self.rocm_pipeline_compiler_flags = data.get("rocm_pipeline_compiler_flags", [])

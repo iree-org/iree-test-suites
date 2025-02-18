@@ -25,11 +25,13 @@ os.environ['THRESHOLD_SUBMODEL'] = submodel
 os.environ['SKU'] = sku
 os.environ['ROCM_CHIP'] = rocm_chip
 
+THIS_DIR = Path(__file__).parent 
+
 command = [
     "pytest",
-    f"{Path.cwd()}/sharktank_models/test_suite/benchmarks/test_model_benchmark.py",
+    THIS_DIR / "test_model_benchmark.py",
     "--log-cli-level=info",
-    "--timeout=600",
+    "--timeout=600"
     "--retries=7"
 ]
 subprocess.run(command)

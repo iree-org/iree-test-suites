@@ -19,21 +19,22 @@ import pytest
 logger = logging.getLogger(__name__)
 
 THIS_DIR = Path(__file__).parent
-vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=THIS_DIR)
-artifacts_dir = f"{os.getenv('IREE_TEST_FILES', default=THIS_DIR)}/artifacts"
+vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(THIS_DIR))
+artifacts_dir = f"{os.getenv('IREE_TEST_FILES', default=str(THIS_DIR))}/artifacts"
 artifacts_dir = Path(os.path.expanduser(artifacts_dir)).resolve()
 rocm_chip = os.getenv("ROCM_CHIP", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
 model_name = os.getenv("THRESHOLD_MODEL", default="sdxl")
 submodel_name = os.getenv("THRESHOLD_SUBMODEL", default="*")
 
+SUBMODEL_FOLDER_PATH = THIS_DIR / f"{model_name}"
 
 # if a specific submodel in the environment variable is not specified, all the submodels under the model directory will be tested
 parameters = []
 if submodel_name != "*":
     parameters = [submodel_name]
 else:
-    for filename in os.listdir(f"{Path.cwd()}/sharktank_models/test_suite/regression_tests/{model_name}"):
+    for filename in os.listdir(SUBMODEL_FOLDER_PATH):
         if ".json" in filename:
             parameters.append(filename.split(".")[0])
 
@@ -84,9 +85,10 @@ def decode_output(bench_lines):
 # iree-compile helper method, allowing custom file path, compile flags and output compiled file name
 def compile_iree_method(mlir_file_path, compile_flags, compiled_file_name):
     # Adding all the compiler arguments together
+    MLIR_COMPLETE_FILE_PATH = str(THIS_DIR / mlir_file_path)
     exec_args = [
         "iree-compile",
-        f"{THIS_DIR}/{mlir_file_path}",
+        f"{MLIR_COMPLETE_FILE_PATH}"
         "--iree-hal-target-backends=rocm",
         f"--iree-hip-target={rocm_chip}",
     ] + compile_flags + [
@@ -121,9 +123,9 @@ class TestModelBenchmark:
         self.model_name = model_name
         self.submodel_name = submodel_name
 
-        file_name = f"{Path.cwd()}/sharktank_models/test_suite/benchmarks/{self.model_name}/{self.submodel_name}.json"
+        SUBMODEL_FILE_PATH = THIS_DIR / f"{model_name}/{self.submodel_name}.json"
 
-        with open(file_name, 'r') as file:
+        with open(SUBMODEL_FILE_PATH, 'r') as file:
             data = json.load(file)
 
             self.inputs = data.get("inputs", [])
