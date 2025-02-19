@@ -8,7 +8,7 @@
         "1x64xi64"
     ],
     "compilation_required": true,
-    "compiled_file_name": "sdxl_full_pipeline_fp16",
+    "compiled_file_name": "sdxl_full_pipeline_fp16_rocm",
     "compile_flags": [
         "--iree-global-opt-propagate-transposes=true",
         "--iree-codegen-llvmgpu-use-vector-distribution",
@@ -17,7 +17,7 @@
         "--iree-opt-outer-dim-concat=true",
         "--iree-llvmgpu-enable-prefetch"
     ],
-    "mlir_file_path": "sharktank_models/test_suite/build_tools/external_test_files/sdxl_pipeline_bench_f16.mlir",
+    "mlir_file_path": "external_test_files/sdxl_pipeline_bench_f16.mlir",
     "modules": [
         "sdxl_clip",
         "sdxl_unet_fp16",
@@ -31,7 +31,7 @@
         "mi300": 1.1,
         "mi308": 1.1
     },
-    "golden_time": {
+    "golden_time_ms": {
         "mi250": 1100,
         "mi300": 325,
         "mi308": 800

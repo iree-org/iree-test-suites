@@ -10,3 +10,7 @@ from .fixtures import (
     iree_benchmark_module,
     iree_run_module,
 )
+
+from .artifacts import (
+    Artifact
+)

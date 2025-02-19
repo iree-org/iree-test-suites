@@ -7,7 +7,6 @@
 from typing import Any, Callable, Collection, Dict, Union
 import functools
 from pathlib import Path
-from tqdm import tqdm
 import urllib.parse
 import urllib.request
 import os
@@ -17,6 +16,7 @@ import mmap
 import re
 import logging
 
+THIS_DIR = str(Path(__file__).parent.parent)
 logger = logging.getLogger(__name__)
 # Adjust logging levels.
 logging.basicConfig(level=logging.INFO)
@@ -39,7 +39,7 @@ def show_progress(t):
 
 @functools.cache
 def get_artifact_root_dir() -> Path:
-    root_path = os.getenv("IREE_TEST_FILES", default=str(Path.cwd())) + "/artifacts"
+    root_path = os.getenv("IREE_TEST_FILES", default=THIS_DIR) + "/artifacts"
     return Path(os.path.expanduser(root_path)).resolve()
 
 
