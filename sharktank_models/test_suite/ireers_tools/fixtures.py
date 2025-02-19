@@ -80,4 +80,5 @@ def iree_benchmark_module(vmfb: Path, *, device, function, args: Sequence[str] =
     exec_args.extend(args)
     print("**************************************************************")
     print("Exec:", " ".join(exec_args))
-    subprocess.check_call(exec_args, cwd=vmfb.parent)
+    proc = subprocess.check_call(exec_args, cwd=vmfb.parent)
+    return proc.returncode, proc.stdout

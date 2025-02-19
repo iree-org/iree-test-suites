@@ -2,14 +2,14 @@
 
 ### Adding your own model
 
-- To add your own model, create a directory under `benchmarks` and add JSON files that correspond to the submodels. Please follow the [JSON file schema in this README file](#required-and-optional-fields-for-the-json-model-file)
+- To add your own model, create a directory under `benchmarks` and add JSON files that correspond to the submodels and chip. Please follow the [JSON file schema in this README file](#required-and-optional-fields-for-the-json-model-file)
 
 ### How to run
 
 ```
-python sharktank_models/test_suite/benchmarks/run_benchmarks.py --model sdxl --submodel *
+python sharktank_models/test_suite/benchmarks/run_benchmarks.py --model=sdxl --filename=*
 
-python sharktank_models/test_suite/benchmarks/run_benchmarks.py --model sdxl --submodel clip
+python sharktank_models/test_suite/benchmarks/run_benchmarks.py --model=sdxl --filename=clip
 ```
 
 Argument options for the script
@@ -17,7 +17,7 @@ Argument options for the script
 | Argument Name | Default value | Description                                                                                                                                      |
 | ------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | --model       | sdxl          | Runs benchmark tests for a specific model                                                                                                        |
-| --submodel    | \*            | If specified, the benchmark tests will run for a specific submodel (ex: `--submodel clip`). If not specified, it will run tests on all submodels |
+| --filename    | \*            | If specified, the benchmark tests will run for a specific filename (ex: `--filename clip`). If not specified, it will run tests on all filenames |
 | --sku         | mi300         | The benchmark tests will run on this sku and retrieve golden values from the specified sku                                                       |
 | --rocm-chip   | gfx942        | The benchmark tests will run on this ROCM chip                                                                                                   |
 
@@ -38,7 +38,7 @@ Argument options for the script
 | golden_time_ms                   | optional | object  | An object of golden times, where the key is the sku and the value is the golden time in ms, (ex: `{"mi250": 100}`)           |
 | golden_dispatch                  | optional | object  | An object of golden dispatches, where the key is the sku and the value is the golden dispatch count, (ex: `{"mi250": 1602}`) |
 | golden_size                      | optional | object  | An object of golden sizes, where the key is the sku and the value is the golden size in bytes, (ex: `{"mi250": 2000000}`)    |
-| specific_rocm_chip_to_ignore     | optional | array   | An array of chip values, where the benchmark tests will ignore the chips specified                                           |
+| specific_chip_to_ignore     | optional | array   | An array of chip values, where the benchmark tests will ignore the chips specified                                           |
 | real_weights_file_name           | optional | string  | If real weights is a different file name, specify it here in order to get the correct real weights file                      |
 
 Please feel free to look at any JSON examples under a model directory (ex: sdxl)

@@ -8,12 +8,13 @@ import pytest
 from ireers_tools import *
 import os
 from pathlib import Path
-from conftest import VmfbManager
 import subprocess
 import json 
 
 THIS_DIR = Path(__file__).parent
-vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(THIS_DIR))
+# compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
+PARENT_DIR = Path(__file__).parent.parent
+vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 rocm_chip = os.getenv("ROCM_CHIP", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
 model_name = os.getenv("THRESHOLD_MODEL", default="sdxl")
@@ -124,7 +125,8 @@ class TestModelThreshold:
             pytest.skip("Only ROCM tests are being run, skipping CPU tests...")
 
         vmfbs_path = f"{self.model_name}_{self.submodel_name}_vmfbs"
-        VmfbManager.cpu_vmfb = iree_compile(
+        vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_cpu_vmfb"
+        pytest.vmfb_manager[vmfb_manager_unique_key] = iree_compile(
             self.mlir,
             self.cpu_compiler_flags,
             Path(vmfb_dir)
@@ -133,7 +135,8 @@ class TestModelThreshold:
         )
 
         if self.pipeline_mlir:
-            VmfbManager.pipeline_cpu_vmfb = iree_compile(
+            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_cpu_vmfb"
+            pytest.vmfb_manager[pipeline_vmfb_manager_unique_key] = iree_compile(
                 self.pipeline_mlir,
                 self.cpu_compiler_flags,
                 Path(vmfb_dir)
@@ -154,10 +157,13 @@ class TestModelThreshold:
             args.append(f"--parameters=model={self.real_weights.path}")
 
         if self.add_pipeline_module:
-            args.append(f"--module={VmfbManager.pipeline_cpu_vmfb}")
+            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_cpu_vmfb"
+            pipeline_module_name = pytest.vmfb_manager.get(pipeline_vmfb_manager_unique_key)
+            args.append(f"--module={pipeline_module_name}")
 
+        vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_cpu_vmfb"
         iree_run_module(
-            VmfbManager.cpu_vmfb,
+            pytest.vmfb_manager.get(vmfb_manager_unique_key),
             device="local-task",
             function=self.run_cpu_function,
             args=args
@@ -166,13 +172,13 @@ class TestModelThreshold:
     ###############################################################################
     # ROCM
     ###############################################################################
-
     def test_compile_rocm(self):
         if rocm_chip in self.rocm_compile_chip_expecting_to_fail:
             pytest.xfail(f"Expecting {rocm_chip} compilation to fail for {self.submodel_name}")
 
         vmfbs_path = f"{self.model_name}_{self.submodel_name}_vmfbs"
-        VmfbManager.rocm_vmfb = iree_compile(
+        vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_rocm_vmfb"
+        pytest.vmfb_manager[vmfb_manager_unique_key] = iree_compile(
             self.mlir,
             self.rocm_compiler_flags,
             Path(vmfb_dir)
@@ -181,7 +187,8 @@ class TestModelThreshold:
         )
 
         if self.pipeline_mlir:
-            VmfbManager.pipeline_rocm_vmfb = iree_compile(
+            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_rocm_vmfb"
+            pytest.vmfb_manager[pipeline_vmfb_manager_unique_key] = iree_compile(
                 self.pipeline_mlir,
                 self.rocm_pipeline_compiler_flags,
                 Path(vmfb_dir)
@@ -202,10 +209,13 @@ class TestModelThreshold:
             args.append(f"--parameters=model={self.real_weights.path}")
 
         if self.add_pipeline_module:
-            args.append(f"--module={VmfbManager.pipeline_rocm_vmfb}")
+            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_rocm_vmfb"
+            pipeline_module_name = pytest.vmfb_manager.get(pipeline_vmfb_manager_unique_key)
+            args.append(f"--module={pipeline_module_name}")
 
+        vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_rocm_vmfb"
         return iree_run_module(
-            VmfbManager.rocm_vmfb,
+            pytest.vmfb_manager.get(vmfb_manager_unique_key),
             device="hip",
             function=self.run_rocm_function,
             args=args

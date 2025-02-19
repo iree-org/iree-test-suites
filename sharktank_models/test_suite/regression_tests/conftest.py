@@ -6,8 +6,5 @@
 
 import pytest
 
-class VmfbManager:
-    cpu_vmfb = None
-    rocm_vmfb = None
-    pipeline_cpu_vmfb = None
-    pipeline_rocm_vmfb = None
+def pytest_configure():
+    pytest.vmfb_manager = {}
