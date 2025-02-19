@@ -52,7 +52,8 @@ def job_summary_process(ret_value, output, model_name):
     if ret_value == 1:
         # Output should have already been logged earlier.
         pytest.fail(f"Running {model_name} benchmark failed. Exiting.")
-    
+    logger.info(output)
+    logger.info(ret_value)
     output_json = json.loads(output)
     benchmark_mean_time = decode_output(output_json)
     if benchmark_mean_time == -1:
@@ -71,19 +72,20 @@ def decode_output(bench_lines):
 # iree-compile helper method, allowing custom file path, compile flags and output compiled file name
 def compile_iree_method(mlir_file_path, compile_flags, compiled_file_name):
     # Adding all the compiler arguments together
-    MLIR_COMPLETE_FILE_PATH = str(THIS_DIR / mlir_file_path)
-    iree_compile(
-        {"path": MLIR_COMPLETE_FILE_PATH},
+    artifact = Artifact(group = str(THIS_DIR), name = mlir_file_path)
+    return iree_compile(
+        artifact,
         compile_flags,
-        f"{vmfb_dir}/{compiled_file_name}.vmfb"
+        Path(f"{vmfb_dir}/{compiled_file_name}.vmfb")
     )
+
 # Specific to end to end tests, adding initial benchmark arguments and custom modules
-def e2e_iree_benchmark_module_args(modules):
+def e2e_iree_benchmark_module_args(modules, file_suffix):
     exec_args = []
     
     # for e2e tests, we are adding the submodel modules 
     for module in modules:
-        exec_args.append(f"--module={vmfb_dir}/{module}_vmfbs/model.{self.file_suffix}.vmfb")
+        exec_args.append(f"--module={vmfb_dir}/{module}_vmfbs/model.{file_suffix}.vmfb")
         exec_args.append(f"--parameters=model={artifacts_dir}/{module}/real_weights.irpa")
 
     return exec_args
@@ -152,7 +154,10 @@ class TestModelBenchmark:
 
         # if compilation is required, run this step
         if self.compilation_required:
-            compile_iree_method(self.mlir_file_path, self.compile_flags, self.compiled_file_name)
+            compiled_vmfb_path = compile_iree_method(self.mlir_file_path, self.compile_flags, self.compiled_file_name)
+            logger.info(compiled_vmfb_path)
+            if not compiled_vmfb_path:
+                pytest.fail(f"Failed to compile for {self.model_name} {self.submodel_name} during benchmark test. Skipping...")
             
         directory_compile = f"{vmfb_dir}/{self.model_name}_{self.submodel_name}_vmfbs"
         artifact_directory = f"{artifacts_dir}/{self.model_name}_{self.submodel_name}"
@@ -164,9 +169,8 @@ class TestModelBenchmark:
         
         # If there are modules for an e2e pipeline test, reset exec_args and directory_compile variables to custom variables
         if self.modules:
-            exec_args = e2e_iree_benchmark_module_args(self.modules)
+            exec_args = e2e_iree_benchmark_module_args(self.modules, self.file_suffix)
             vmfb_file_path = f"{vmfb_dir}/{self.compiled_file_name}.vmfb"
-            directory_compile = f"{vmfb_dir}/{self.compiled_file_name}.vmfb"
 
         exec_args += [
             f"--benchmark_repetitions={self.benchmark_repetitions}",
@@ -176,10 +180,10 @@ class TestModelBenchmark:
         
         # run iree benchmark command
         ret_value, output = iree_benchmark_module(
-            vmfb_file_path, 
-            self.device, 
-            self.function_run,
-            exec_args
+            vmfb = Path(vmfb_file_path), 
+            device = self.device, 
+            function = self.function_run,
+            args = exec_args
         )
         # parse the output and retrieve the benchmark mean time
         benchmark_mean_time = job_summary_process(ret_value, output, self.model_name)

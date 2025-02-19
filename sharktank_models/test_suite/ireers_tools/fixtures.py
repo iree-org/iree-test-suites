@@ -11,6 +11,9 @@ from pathlib import Path
 import subprocess
 import time
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .artifacts import (
     Artifact,
@@ -36,8 +39,8 @@ def iree_compile(source: Artifact, flags: Sequence[str], vmfb_path: Path):
     if not os.path.exists(vmfb_path.parent):
         os.makedirs(vmfb_path.parent)
     sep = "\n  "
-    print("**************************************************************")
-    print(f"  {sep.join(flags)}")
+    logger.info("**************************************************************")
+    logger.info(f"  {sep.join(flags)}")
     exec_args = (
         [
             "iree-compile",
@@ -48,12 +51,12 @@ def iree_compile(source: Artifact, flags: Sequence[str], vmfb_path: Path):
         + IREE_COMPILE_QOL_FLAGS
         + flags
     )
-    print("Exec:", " ".join(exec_args))
+    logger.info("Exec: " + str(exec_args))
     start_time = time.time()
     subprocess.run(exec_args, check=True, capture_output=True, cwd=vmfb_path.parent)
     run_time = time.time() - start_time
-    print(f"Compilation succeeded in {run_time}s")
-    print("**************************************************************")
+    logger.info(f"Compilation succeeded in {run_time}s")
+    logger.info("**************************************************************")
     return vmfb_path
 
 
@@ -65,8 +68,8 @@ def iree_run_module(vmfb: Path, *, device, function, args: Sequence[str] = ()):
         f"--function={function}",
     ]
     exec_args.extend(args)
-    print("**************************************************************")
-    print("Exec:", " ".join(exec_args))
+    logger.info("**************************************************************")
+    logger.info("Exec: " + str(exec_args))
     subprocess.run(exec_args, check=True, capture_output=True, cwd=vmfb.parent)
 
 
@@ -78,7 +81,7 @@ def iree_benchmark_module(vmfb: Path, *, device, function, args: Sequence[str] =
         f"--function={function}",
     ]
     exec_args.extend(args)
-    print("**************************************************************")
-    print("Exec:", " ".join(exec_args))
-    proc = subprocess.check_call(exec_args, cwd=vmfb.parent)
+    logger.info("**************************************************************")
+    logger.info("Exec: " + str(exec_args))
+    proc = subprocess.run(exec_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
     return proc.returncode, proc.stdout

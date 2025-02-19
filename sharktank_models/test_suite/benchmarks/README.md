@@ -9,7 +9,7 @@
 ```
 python sharktank_models/test_suite/benchmarks/run_benchmarks.py --model=sdxl --filename=*
 
-python sharktank_models/test_suite/benchmarks/run_benchmarks.py --model=sdxl --filename=clip
+python sharktank_models/test_suite/benchmarks/run_benchmarks.py --model=sdxl --filename=clip_rocm
 ```
 
 Argument options for the script
