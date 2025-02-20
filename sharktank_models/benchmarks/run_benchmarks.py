@@ -10,6 +10,7 @@ from pathlib import Path
 import argparse
 import sys
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="sdxl")
@@ -28,6 +29,9 @@ def main():
     os.environ["ROCM_CHIP"] = rocm_chip
 
     THIS_DIR = Path(__file__).parent
+    
+    with open("job_summary.md", "a") as job_summary:
+        print(f"{sku.upper()} {model.upper()} Complete Benchmark Summary:\n\n", file=job_summary)
 
     command = [
         "pytest",

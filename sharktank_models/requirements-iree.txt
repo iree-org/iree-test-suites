@@ -1,9 +1,0 @@
-# Requirements for using IREE from nightly packages.
-
-# Include base requirements.
--r requirements.txt
-
---find-links https://iree.dev/pip-release-links.html
---pre
-iree-base-compiler
-iree-base-runtime
