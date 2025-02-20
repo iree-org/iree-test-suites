@@ -6,7 +6,7 @@ ml_dtypes
 numpy
 pytest
 pytest-check
-pytest-depends
+pytest-dependency
 pytest-html
 pytest-reportlog
 pytest-retry

@@ -6,5 +6,6 @@
 
 import pytest
 
+
 def pytest_configure():
     pytest.vmfb_manager = {}

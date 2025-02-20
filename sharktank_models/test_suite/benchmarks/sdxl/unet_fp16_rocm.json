@@ -8,8 +8,12 @@
         "1xi64"
     ],
     "function_run": "run_forward", 
-    "benchmark_repetitions": 10,
-    "benchmark_min_warmup_time": 3.0,
+    "benchmark_flags": [
+        "--benchmark_repetitions=10",
+        "--benchmark_min_warmup_time=3.0",
+        "--device_allocator=caching"
+    ],
+    "device": "hip",
     "golden_time_tolerance_multiplier": {
         "mi250": 1.3,
         "mi300": 1.1,

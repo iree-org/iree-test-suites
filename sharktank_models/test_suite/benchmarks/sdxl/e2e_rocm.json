@@ -15,7 +15,8 @@
         "--iree-codegen-gpu-native-math-precision=true",
         "--iree-hip-waves-per-eu=2",
         "--iree-opt-outer-dim-concat=true",
-        "--iree-llvmgpu-enable-prefetch"
+        "--iree-llvmgpu-enable-prefetch",
+        "--iree-hal-target-backends=rocm"
     ],
     "mlir_file_path": "external_test_files/sdxl_pipeline_bench_f16.mlir",
     "modules": [
@@ -24,8 +25,12 @@
         "sdxl_vae"
     ],
     "function_run": "tokens_to_image", 
-    "benchmark_repetitions": 10,
-    "benchmark_min_warmup_time": 3.0,
+    "benchmark_flags": [
+        "--benchmark_repetitions=10",
+        "--benchmark_min_warmup_time=3.0",
+        "--device_allocator=caching"
+    ],
+    "device": "hip",
     "golden_time_tolerance_multiplier": {
         "mi250": 1.3,
         "mi300": 1.1,

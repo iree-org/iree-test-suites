@@ -8,8 +8,12 @@
         "1xf16"
     ],
     "function_run": "main", 
-    "benchmark_repetitions": 10,
-    "benchmark_min_warmup_time": 3.0,
+    "benchmark_flags": [
+        "--benchmark_repetitions=10",
+        "--benchmark_min_warmup_time=3.0",
+        "--device_allocator=caching"
+    ],
+    "device": "hip",
     "golden_time_tolerance_multiplier": {
         "mi300": 1.1,
         "mi308": 1.1

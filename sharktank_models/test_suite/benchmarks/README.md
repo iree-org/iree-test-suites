@@ -34,6 +34,7 @@ Argument options for the script
 | function_run                     | required | string  | The function that the `iree-benchmark-module` will run adnd benchmark                                                        |
 | benchmark_repetitions            | required | float   | The number of times the benchmark tests will repeat                                                                          |
 | benchmark_min_warmup_time        | required | float   | The minimum warm up time for the benchmark test                                                                              |
+| device                           | required | string  | The device that the benchmark tests are running                                                                              |
 | golden_time_tolerance_multiplier | optional | object  | An object of tolerance multipliers, where the key is the sku and the value is the multiplier, (ex: `{"mi250": 1.3}`)         |
 | golden_time_ms                   | optional | object  | An object of golden times, where the key is the sku and the value is the golden time in ms, (ex: `{"mi250": 100}`)           |
 | golden_dispatch                  | optional | object  | An object of golden dispatches, where the key is the sku and the value is the golden dispatch count, (ex: `{"mi250": 1602}`) |

@@ -9,7 +9,7 @@ from ireers_tools import *
 import os
 from pathlib import Path
 import subprocess
-import json 
+import json
 
 THIS_DIR = Path(__file__).parent
 # compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
@@ -31,17 +31,21 @@ else:
         if ".json" in filename:
             parameters.append(filename.split(".")[0])
 
+
 # Helper methods
 def fetch_source_fixtures_for_run_flags(inference_list, model_name, submodel_name):
     result = []
     for entry in inference_list:
         source = entry.get("source")
         value = entry.get("value")
-        source_fixture = fetch_source_fixture(source, group=f"{model_name}_{submodel_name}")
+        source_fixture = fetch_source_fixture(
+            source, group=f"{model_name}_{submodel_name}"
+        )
         result.append([source_fixture.path, value])
-    
+
     return result
-    
+
+
 def common_run_flags_generation(input_list, output_list):
     flags_list = []
 
@@ -58,13 +62,13 @@ def common_run_flags_generation(input_list, output_list):
                 flags_list.append(f"--expected_output=@{path}")
             else:
                 flags_list.append(f"--expected_output={value}=@{path}")
-    
+
     return flags_list
-    
+
 
 @pytest.mark.parametrize("submodel_name", parameters)
 class TestModelThreshold:
-    @pytest.fixture(autouse = True)
+    @pytest.fixture(autouse=True)
     @classmethod
     def setup_class(self, submodel_name):
         self.model_name = model_name
@@ -72,14 +76,39 @@ class TestModelThreshold:
 
         SUBMODEL_FILE_PATH = THIS_DIR / f"{model_name}/{self.submodel_name}.json"
 
-        with open(SUBMODEL_FILE_PATH ,'r') as file:
+        with open(SUBMODEL_FILE_PATH, "r") as file:
             data = json.load(file)
 
             # retrieving source fixtures if available in JSON file
-            self.inputs = fetch_source_fixtures_for_run_flags(data.get("inputs"), self.model_name, self.submodel_name) if data.get("inputs") else None
-            self.outputs = fetch_source_fixtures_for_run_flags(data.get("outputs"), self.model_name, self.submodel_name) if data.get("outputs") else None
-            self.real_weights = fetch_source_fixture(data.get("real_weights"), group=f"{self.model_name}_{self.submodel_name}") if data.get("real_weights") else None
-            self.mlir = fetch_source_fixture(data.get("mlir"), group=f"{self.model_name}_{self.submodel_name}") if data.get("mlir") else None
+            self.inputs = (
+                fetch_source_fixtures_for_run_flags(
+                    data.get("inputs"), self.model_name, self.submodel_name
+                )
+                if data.get("inputs")
+                else None
+            )
+            self.outputs = (
+                fetch_source_fixtures_for_run_flags(
+                    data.get("outputs"), self.model_name, self.submodel_name
+                )
+                if data.get("outputs")
+                else None
+            )
+            self.real_weights = (
+                fetch_source_fixture(
+                    data.get("real_weights"),
+                    group=f"{self.model_name}_{self.submodel_name}",
+                )
+                if data.get("real_weights")
+                else None
+            )
+            self.mlir = (
+                fetch_source_fixture(
+                    data.get("mlir"), group=f"{self.model_name}_{self.submodel_name}"
+                )
+                if data.get("mlir")
+                else None
+            )
 
             # setting compiler options for cpu and rocm
             self.cpu_compiler_flags = data.get("cpu_compiler_flags", [])
@@ -90,7 +119,9 @@ class TestModelThreshold:
             self.rocm_compiler_flags.append(f"--iree-hip-target={rocm_chip}")
 
             # Setting input, output, and function call arguments
-            self.common_rule_flags = common_run_flags_generation(self.inputs, self.outputs)
+            self.common_rule_flags = common_run_flags_generation(
+                self.inputs, self.outputs
+            )
             self.cpu_threshold_args = data.get("cpu_threshold_args", [])
             self.rocm_threshold_args = data.get("rocm_threshold_args", [])
             self.run_cpu_function = data.get("run_cpu_function")
@@ -98,28 +129,45 @@ class TestModelThreshold:
 
             # Custom configurations for selecting tests to fail or ignoring certain tests
             self.compile_only = data.get("compile_only", False)
-            self.cpu_run_test_expecting_to_fail = data.get("cpu_run_test_expecting_to_fail", False)
-            self.rocm_run_test_expecting_to_fail = data.get("rocm_run_test_expecting_to_fail", False)
-            self.rocm_compile_chip_expecting_to_fail = data.get("rocm_compile_chip_expecting_to_fail", [])
+            self.cpu_run_test_expecting_to_fail = data.get(
+                "cpu_run_test_expecting_to_fail", False
+            )
+            self.rocm_run_test_expecting_to_fail = data.get(
+                "rocm_run_test_expecting_to_fail", False
+            )
+            self.rocm_compile_chip_expecting_to_fail = data.get(
+                "rocm_compile_chip_expecting_to_fail", []
+            )
             self.rocm_tests_only = data.get("rocm_tests_only", False)
 
             # Custom configuration for a tuner file
             self.tuner_file = data.get("tuner_file", {})
             if sku in self.tuner_file:
                 TUNER_FILE_PATH = THIS_DIR / self.tuner_file.get(sku)
-                self.rocm_compiler_flags.append(f"--iree-codegen-transform-dialect-library={str(TUNER_FILE_PATH)}")
+                self.rocm_compiler_flags.append(
+                    f"--iree-codegen-transform-dialect-library={str(TUNER_FILE_PATH)}"
+                )
 
             # Custom configuration to fp16 and adding secondary pipeline mlir
-            self.rocm_pipeline_compiler_flags = data.get("rocm_pipeline_compiler_flags", [])
+            self.rocm_pipeline_compiler_flags = data.get(
+                "rocm_pipeline_compiler_flags", []
+            )
             self.rocm_pipeline_compiler_flags.append("--iree-hal-target-backends=rocm")
             self.rocm_pipeline_compiler_flags.append(f"--iree-hip-target={rocm_chip}")
-            self.pipeline_mlir = fetch_source_fixture(data.get("pipeline_mlir"), group=f"{self.model_name}_{self.submodel_name}") if data.get("pipeline_mlir") else None
+            self.pipeline_mlir = (
+                fetch_source_fixture(
+                    data.get("pipeline_mlir"),
+                    group=f"{self.model_name}_{self.submodel_name}",
+                )
+                if data.get("pipeline_mlir")
+                else None
+            )
             self.add_pipeline_module = data.get("add_pipeline_module", False)
-            
 
     ###############################################################################
     # CPU
     ###############################################################################
+    @pytest.mark.order(1)
     def test_compile_cpu(self):
         if self.rocm_tests_only:
             pytest.skip("Only ROCM tests are being run, skipping CPU tests...")
@@ -129,26 +177,31 @@ class TestModelThreshold:
         pytest.vmfb_manager[vmfb_manager_unique_key] = iree_compile(
             self.mlir,
             self.cpu_compiler_flags,
-            Path(vmfb_dir)
-            / Path(vmfbs_path)
-            / Path('model').with_suffix(f".cpu.vmfb"),
+            Path(vmfb_dir) / Path(vmfbs_path) / Path("model").with_suffix(f".cpu.vmfb"),
         )
 
         if self.pipeline_mlir:
-            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_cpu_vmfb"
+            pipeline_vmfb_manager_unique_key = (
+                f"{self.model_name}_{self.submodel_name}_pipeline_cpu_vmfb"
+            )
             pytest.vmfb_manager[pipeline_vmfb_manager_unique_key] = iree_compile(
                 self.pipeline_mlir,
                 self.cpu_compiler_flags,
                 Path(vmfb_dir)
                 / Path(vmfbs_path)
-                / Path('pipeline_model').with_suffix(f".cpu.vmfb"),
+                / Path("pipeline_model").with_suffix(f".cpu.vmfb"),
             )
 
-    @pytest.mark.depends(on=["test_compile_cpu"])
+    @pytest.mark.order(2)
     def test_run_cpu_threshold(self):
+        if self.rocm_tests_only:
+            pytest.skip("Only ROCM tests are being run, skipping CPU tests...")
+
         if self.compile_only:
-            pytest.skip("Only compilation tests are selected, skipping threshold test...")
-        
+            pytest.skip(
+                "Only compilation tests are selected, skipping threshold test..."
+            )
+
         if self.cpu_run_test_expecting_to_fail:
             pytest.xfail("Expected run to fail")
 
@@ -157,8 +210,12 @@ class TestModelThreshold:
             args.append(f"--parameters=model={self.real_weights.path}")
 
         if self.add_pipeline_module:
-            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_cpu_vmfb"
-            pipeline_module_name = pytest.vmfb_manager.get(pipeline_vmfb_manager_unique_key)
+            pipeline_vmfb_manager_unique_key = (
+                f"{self.model_name}_{self.submodel_name}_pipeline_cpu_vmfb"
+            )
+            pipeline_module_name = pytest.vmfb_manager.get(
+                pipeline_vmfb_manager_unique_key
+            )
             args.append(f"--module={pipeline_module_name}")
 
         vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_cpu_vmfb"
@@ -166,15 +223,18 @@ class TestModelThreshold:
             pytest.vmfb_manager.get(vmfb_manager_unique_key),
             device="local-task",
             function=self.run_cpu_function,
-            args=args
+            args=args,
         )
 
     ###############################################################################
     # ROCM
     ###############################################################################
+    @pytest.mark.order(1)
     def test_compile_rocm(self):
         if rocm_chip in self.rocm_compile_chip_expecting_to_fail:
-            pytest.xfail(f"Expecting {rocm_chip} compilation to fail for {self.submodel_name}")
+            pytest.xfail(
+                f"Expecting {rocm_chip} compilation to fail for {self.submodel_name}"
+            )
 
         vmfbs_path = f"{self.model_name}_{self.submodel_name}_vmfbs"
         vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_rocm_vmfb"
@@ -183,24 +243,28 @@ class TestModelThreshold:
             self.rocm_compiler_flags,
             Path(vmfb_dir)
             / Path(vmfbs_path)
-            / Path('model').with_suffix(f".rocm_{rocm_chip}.vmfb"),
+            / Path("model").with_suffix(f".rocm_{rocm_chip}.vmfb"),
         )
 
         if self.pipeline_mlir:
-            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_rocm_vmfb"
+            pipeline_vmfb_manager_unique_key = (
+                f"{self.model_name}_{self.submodel_name}_pipeline_rocm_vmfb"
+            )
             pytest.vmfb_manager[pipeline_vmfb_manager_unique_key] = iree_compile(
                 self.pipeline_mlir,
                 self.rocm_pipeline_compiler_flags,
                 Path(vmfb_dir)
                 / Path(vmfbs_path)
-                / Path('pipeline_model').with_suffix(f".rocm_{rocm_chip}.vmfb"),
+                / Path("pipeline_model").with_suffix(f".rocm_{rocm_chip}.vmfb"),
             )
 
-    @pytest.mark.depends(on=["test_compile_rocm"])
+    @pytest.mark.order(2)
     def test_run_rocm_threshold(self):
         if self.compile_only:
-            pytest.skip("Only compilation tests are selected, skipping threshold test...")
-        
+            pytest.skip(
+                "Only compilation tests are selected, skipping threshold test..."
+            )
+
         if self.rocm_run_test_expecting_to_fail:
             pytest.xfail("Expected run to fail")
 
@@ -209,14 +273,18 @@ class TestModelThreshold:
             args.append(f"--parameters=model={self.real_weights.path}")
 
         if self.add_pipeline_module:
-            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_rocm_vmfb"
-            pipeline_module_name = pytest.vmfb_manager.get(pipeline_vmfb_manager_unique_key)
+            pipeline_vmfb_manager_unique_key = (
+                f"{self.model_name}_{self.submodel_name}_pipeline_rocm_vmfb"
+            )
+            pipeline_module_name = pytest.vmfb_manager.get(
+                pipeline_vmfb_manager_unique_key
+            )
             args.append(f"--module={pipeline_module_name}")
 
         vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_rocm_vmfb"
         return iree_run_module(
-            pytest.vmfb_manager.get(vmfb_manager_unique_key),
+            Path(pytest.vmfb_manager.get(vmfb_manager_unique_key)),
             device="hip",
             function=self.run_rocm_function,
-            args=args
+            args=args,
         )

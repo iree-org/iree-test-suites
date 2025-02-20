@@ -28,11 +28,11 @@ IREE_COMPILE_QOL_FLAGS = [
     "--iree-consteval-jit-debug",
 ]
 
+
 def fetch_source_fixture(url: str, *, group: str):
     art = FetchedArtifact(url=url, group=group)
     art.start()
     return art
-
 
 
 def iree_compile(source: Artifact, flags: Sequence[str], vmfb_path: Path):
@@ -77,11 +77,18 @@ def iree_benchmark_module(vmfb: Path, *, device, function, args: Sequence[str] =
     exec_args = [
         "iree-benchmark-module",
         f"--device={device}",
-        f"--module={vmfb}",
         f"--function={function}",
     ]
     exec_args.extend(args)
+    # if a pipeline module is being benchmarked, the module dependencies need to be ordered before the pipeline module
+    exec_args.append(f"--module={vmfb}")
     logger.info("**************************************************************")
     logger.info("Exec: " + str(exec_args))
-    proc = subprocess.run(exec_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    proc = subprocess.run(
+        exec_args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+        cwd=vmfb.parent,
+    )
     return proc.returncode, proc.stdout

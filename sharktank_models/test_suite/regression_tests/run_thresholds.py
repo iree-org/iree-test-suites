@@ -8,22 +8,23 @@ import subprocess
 import os
 from pathlib import Path
 import argparse
+import sys
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="sdxl")
-    parser.add_argument("--filename", type=str, default="*")
+    parser.add_argument("--submodel", type=str, default="*")
     parser.add_argument("--sku", type=str, default="mi300")
     parser.add_argument("--rocm-chip", type=str, default="gfx942")
     args = parser.parse_args()
     model = args.model
-    filename = args.filename
+    submodel = args.submodel
     sku = args.sku
     rocm_chip = args.rocm_chip
 
-    os.environ["BENCHMARK_MODEL"] = model
-    os.environ["BENCHMARK_FILE_NAME"] = filename
+    os.environ["THRESHOLD_MODEL"] = model
+    os.environ["THRESHOLD_SUBMODEL"] = submodel
     os.environ["SKU"] = sku
     os.environ["ROCM_CHIP"] = rocm_chip
 
@@ -31,10 +32,12 @@ def main():
 
     command = [
         "pytest",
-        THIS_DIR / "test_model_benchmark.py",
+        THIS_DIR / "test_model_threshold.py",
+        "-rpFe",
         "--log-cli-level=info",
+        "--capture=no",
         "--timeout=600",
-        "--retries=7",
+        "--durations=0",
     ]
     subprocess.run(command)
     return 0
