@@ -17,46 +17,50 @@ import iree.compiler
 
 THIS_DIR = pathlib.Path(__file__).parent
 
+
 def load_tensor_from_irpa(path: PathLike) -> np.ndarray:
     index = iree.runtime.ParameterIndex()
     index.load(str(path))
     index_entry: iree.runtime.ParameterIndexEntry = index.items()[0][1]
     return iree.runtime.parameter_index_entry_as_numpy_ndarray(index_entry)
 
+
 @pytest.fixture(
-        params=[
-            pytest.param("local-task", marks=pytest.mark.target_cpu),
-            pytest.param("hip", marks=pytest.mark.target_hip),
-        ]
+    params=[
+        pytest.param("local-task", marks=pytest.mark.target_cpu),
+        pytest.param("hip", marks=pytest.mark.target_hip),
+    ]
 )
 def device_id(request: pytest.FixtureRequest) -> str:
     return request.param
 
 
-@pytest.fixture(
-        params=["bf16", "f32"]
-)
+@pytest.fixture(params=["bf16", "f32"])
 def model_variant(request: pytest.FixtureRequest) -> str:
     return request.param
 
 
 mlir_path = {
     "bf16": THIS_DIR / "assets/text_model/toy/bf16.mlir",
-    "f32": THIS_DIR / "assets/text_model/toy/f32.mlir"
+    "f32": THIS_DIR / "assets/text_model/toy/f32.mlir",
 }
 
 parameters_path = {
     "bf16": THIS_DIR / "assets/text_model/toy/bf16_parameters.irpa",
-    "f32": THIS_DIR / "assets/text_model/toy/f32_parameters.irpa"
+    "f32": THIS_DIR / "assets/text_model/toy/f32_parameters.irpa",
 }
 
 function_arg0_path = THIS_DIR / "assets/text_model/toy/forward_bs4_arg0_input_ids.irpa"
-function_expected_result0 = THIS_DIR / "assets/text_model/toy/forward_bs4_expected_result0_last_hidden_state_f32.irpa"
+function_expected_result0 = (
+    THIS_DIR
+    / "assets/text_model/toy/forward_bs4_expected_result0_last_hidden_state_f32.irpa"
+)
 
 absolute_tolerance = {
     "bf16": 1e-3,
-    "f32" : 1e-5,
+    "f32": 1e-5,
 }
+
 
 def compiler_args(device_id: str) -> list[str]:
     if device_id == "local-task":
@@ -70,15 +74,20 @@ def compiler_args(device_id: str) -> list[str]:
 
     raise KeyError(f"Compiler args for {device_id} not found")
 
-def compile_and_run(mlir_path: str, compiler_args: list[str], function: str, args: list[np.ndarray]) -> list[np.ndarray]:
+
+def compile_and_run(
+    mlir_path: str, compiler_args: list[str], function: str, args: list[np.ndarray]
+) -> list[np.ndarray]:
     iree.compiler.compile_file(
         mlir_path,
         extra_args=compiler_args,
     )
 
+
 @pytest.fixture(scope="session")
 def iree_module(model_variant, device_id) -> iree.runtime.VmModule:
     compiler_arguments = compiler_args(device_id)
+
 
 def device_array_to_host(device_array: iree.runtime.DeviceArray) -> np.ndarray:
     def reinterpret_hal_buffer_view_element_type(
@@ -157,11 +166,12 @@ def assert_text_encoder_state_close(
         rtol=0,
     )
 
+
 def test_results_close(model_variant, device_id):
     module_buffer = iree.compiler.compile_file(
-            str(mlir_path[model_variant]),
-            extra_args=compiler_args(device_id),
-        )
+        str(mlir_path[model_variant]),
+        extra_args=compiler_args(device_id),
+    )
 
     vm_instance = iree.runtime.VmInstance()
     paramIndex = iree.runtime.ParameterIndex()
@@ -173,13 +183,16 @@ def test_results_close(model_variant, device_id):
     device = iree.runtime.get_device(device_id)
     hal_module = iree.runtime.create_hal_module(instance=vm_instance, devices=[device])
     vm_module = iree.runtime.VmModule.from_buffer(vm_instance, module_buffer)
-    config=iree.runtime.Config(device=device)
-    bound_modules = iree.runtime.load_vm_modules(hal_module, parameters_module, vm_module,
-                                              config=config)
+    config = iree.runtime.Config(device=device)
+    bound_modules = iree.runtime.load_vm_modules(
+        hal_module, parameters_module, vm_module, config=config
+    )
     module = bound_modules[-1]
     result = module.forward_bs4(load_tensor_from_irpa(function_arg0_path))[0]
 
     expected_result = load_tensor_from_irpa(function_expected_result0)
     result = device_array_to_host(result).astype(dtype=expected_result.dtype)
 
-    assert_text_encoder_state_close(result, expected_result, absolute_tolerance[model_variant])
+    assert_text_encoder_state_close(
+        result, expected_result, absolute_tolerance[model_variant]
+    )
