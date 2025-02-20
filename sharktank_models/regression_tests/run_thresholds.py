@@ -10,6 +10,7 @@ from pathlib import Path
 import argparse
 import sys
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="sdxl")

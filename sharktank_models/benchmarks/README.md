@@ -7,9 +7,9 @@
 ### How to run
 
 ```
-python sharktank_models/test_suite/benchmarks/run_benchmarks.py --model=sdxl --filename=*
+python sharktank_models/benchmarks/run_benchmarks.py --model=sdxl --filename=*
 
-python sharktank_models/test_suite/benchmarks/run_benchmarks.py --model=sdxl --filename=clip_rocm
+python sharktank_models/benchmarks/run_benchmarks.py --model=sdxl --filename=clip_rocm
 ```
 
 Argument options for the script

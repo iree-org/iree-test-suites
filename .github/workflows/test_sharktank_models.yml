@@ -52,7 +52,7 @@ jobs:
       - name: Install IREE nightly release Python packages
         run: |
           source ${VENV_DIR}/bin/activate
-          python3 -m pip install -r sharktank_models/requirements-iree.txt
+          python3 -m pip install -e sharktank_models/
 
       # Run tests.
       - name: Run Sharktank models test suite
@@ -66,7 +66,8 @@ jobs:
             --log-cli-level=info \
             --html=${HTML_REPORT_PATH} \
             --self-contained-html \
-            --ignore=sharktank_models/test_suite
+            --ignore=sharktank_models/benchmarks
+            --ignore=sharktank_models/regression_tests
 
       - name: Upload HTML report
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0

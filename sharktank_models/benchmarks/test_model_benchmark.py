@@ -197,6 +197,8 @@ class TestModelBenchmark:
 
         # parse the output and retrieve the benchmark mean time
         benchmark_mean_time = job_summary_process(ret_value, output, self.model_name)
+        with open("job_summary.md", "a") as job_summary:
+            print(f"{self.submodel_name.upper()} Benchmark Summary\n", file=job_summary)
 
         """
         Golden value checks
@@ -204,6 +206,16 @@ class TestModelBenchmark:
         """
         # golden time check
         if self.golden_time:
+            # Writing to job summary
+            mean_time_header = ["Current time (ms)", "Expected/golden time (ms)"]
+            mean_time_row = [[str(benchmark_mean_time), self.golden_time]]
+            mean_time_table = tabulate.tabulate(
+                [mean_time_header] + mean_time_row, headers="firstrow", tablefmt="pipe"
+            )
+            with open("job_summary.md", "a") as job_summary:
+                print(mean_time_table, file=job_summary)
+                print("\n", file=job_summary)
+            
             logger.info(
                 (
                     f"{self.model_name} {self.submodel_name} benchmark time: {str(benchmark_mean_time)} ms"
@@ -224,6 +236,16 @@ class TestModelBenchmark:
             dispatch_count = int(
                 comp_stats["stream-aggregate"]["execution"]["dispatch-count"]
             )
+            
+            dispatch_count_header = ["Current dispatch count", "Expected/golden dispatch count"]
+            dispatch_count_row = [[dispatch_count, self.golden_dispatch]]
+            dispatch_count_table = tabulate.tabulate(
+                [dispatch_count_header] + dispatch_count_row, headers="firstrow", tablefmt="pipe"
+            )
+            with open("job_summary.md", "a") as job_summary:
+                print(dispatch_count_table, file=job_summary)
+                print("\n", file=job_summary)
+            
             logger.info(
                 (
                     f"{self.model_name} {self.submodel_name} dispatch count: {dispatch_count}"
@@ -240,6 +262,16 @@ class TestModelBenchmark:
         if self.golden_size:
             module_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
             binary_size = Path(module_path).stat().st_size
+            
+            binary_size_header = ["Current binary size (bytes)", "Expected/golden binary size (bytes)"]
+            binary_size_row = [[binary_size, self.golden_size]]
+            binary_size_table = tabulate.tabulate(
+                [binary_size_header] + binary_size_row, headers="firstrow", tablefmt="pipe"
+            )
+            with open("job_summary.md", "a") as job_summary:
+                print(binary_size_table, file=job_summary)
+                print("\n", file=job_summary)
+                
             logger.info(
                 (
                     f"{self.model_name} {self.submodel_name} binary size: {binary_size} bytes"

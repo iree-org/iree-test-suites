@@ -29,14 +29,8 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
     python -m venv .venv
     source .venv/bin/activate
-    python -m pip install -r requirements.txt
+    python -m pip install -e .
     ```
-
-    * To use IREE from nightly pre-release Python packages:
-
-        ```bash
-        python -m pip install -r requirements-iree.txt
-        ```
 
     * To use a custom version of IREE follow the instructions for
       [building the IREE Python packages from source](https://iree.dev/building-from-source/getting-started/#python-bindings).
@@ -97,3 +91,13 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
     See also
     https://docs.pytest.org/en/latest/how-to/output.html#creating-junitxml-format-files
+
+## Running threshold tests
+
+Please refer to [this file](regression_tests/README.md) to run threshold tests
+
+## Running benchmark tests
+
+Please refer to [this file](benchmarks/README.md) to run benchmark tests
+
+Note: for benchmark tests to run, you will need `vmfbs` files available

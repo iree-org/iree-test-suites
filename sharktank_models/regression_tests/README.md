@@ -9,9 +9,9 @@
 - Example command to run a specific submodel or all submodels for a specific model
 
 ```
-python sharktank_models/test_suite/regression_tests/run_thresholds.py --model=sdxl --submodel=*
+python sharktank_models/regression_tests/run_thresholds.py --model=sdxl --submodel=*
 
-python sharktank_models/test_suite/regression_tests/run_thresholds.py --model=sdxl --submodel=clip
+python sharktank_models/regression_tests/run_thresholds.py --model=sdxl --submodel=clip
 ```
 
 Argument options for the script
