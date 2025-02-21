@@ -66,7 +66,7 @@ jobs:
             --log-cli-level=info \
             --html=${HTML_REPORT_PATH} \
             --self-contained-html \
-            --ignore=sharktank_models/benchmarks
+            --ignore=sharktank_models/benchmarks \
             --ignore=sharktank_models/regression_tests
 
       - name: Upload HTML report
