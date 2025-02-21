@@ -16,17 +16,17 @@ def main():
     parser.add_argument("--model", type=str, default="sdxl")
     parser.add_argument("--submodel", type=str, default="*")
     parser.add_argument("--sku", type=str, default="mi300")
-    parser.add_argument("--rocm-chip", type=str, default="gfx942")
+    parser.add_argument("--backend", type=str, default="gfx942")
     args = parser.parse_args()
     model = args.model
     submodel = args.submodel
     sku = args.sku
-    rocm_chip = args.rocm_chip
+    backend = args.backend
 
     os.environ["THRESHOLD_MODEL"] = model
     os.environ["THRESHOLD_SUBMODEL"] = submodel
     os.environ["SKU"] = sku
-    os.environ["ROCM_CHIP"] = rocm_chip
+    os.environ["BACKEND"] = backend
 
     THIS_DIR = Path(__file__).parent
 
@@ -39,8 +39,8 @@ def main():
         "--timeout=600",
         "--durations=0",
     ]
-    subprocess.run(command)
-    return 0
+    ret_value = subprocess.run(command)
+    return ret_value.returncode
 
 
 if __name__ == "__main__":

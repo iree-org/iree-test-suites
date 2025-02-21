@@ -19,7 +19,7 @@ Argument options for the script
 | --model       | sdxl          | Runs benchmark tests for a specific model                                                                                                        |
 | --filename    | \*            | If specified, the benchmark tests will run for a specific filename (ex: `--filename clip`). If not specified, it will run tests on all filenames |
 | --sku         | mi300         | The benchmark tests will run on this sku and retrieve golden values from the specified sku                                                       |
-| --rocm-chip   | gfx942        | The benchmark tests will run on this ROCM chip                                                                                                   |
+| --backend   | gfx942        | The benchmark tests will run on this backend                                                                                                   |
 
 ### Required and optional fields for the JSON model file
 

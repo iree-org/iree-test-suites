@@ -15,7 +15,7 @@ THIS_DIR = Path(__file__).parent
 # compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
 PARENT_DIR = Path(__file__).parent.parent
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
-rocm_chip = os.getenv("ROCM_CHIP", default="gfx942")
+backend = os.getenv("BACKEND", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
 model_name = os.getenv("THRESHOLD_MODEL", default="sdxl")
 submodel_name = os.getenv("THRESHOLD_SUBMODEL", default="*")
@@ -116,7 +116,7 @@ class TestModelThreshold:
 
             self.rocm_compiler_flags = data.get("rocm_compiler_flags", [])
             self.rocm_compiler_flags.append("--iree-hal-target-backends=rocm")
-            self.rocm_compiler_flags.append(f"--iree-hip-target={rocm_chip}")
+            self.rocm_compiler_flags.append(f"--iree-hip-target={backend}")
 
             # Setting input, output, and function call arguments
             self.common_rule_flags = common_run_flags_generation(
@@ -153,7 +153,7 @@ class TestModelThreshold:
                 "rocm_pipeline_compiler_flags", []
             )
             self.rocm_pipeline_compiler_flags.append("--iree-hal-target-backends=rocm")
-            self.rocm_pipeline_compiler_flags.append(f"--iree-hip-target={rocm_chip}")
+            self.rocm_pipeline_compiler_flags.append(f"--iree-hip-target={backend}")
             self.pipeline_mlir = (
                 fetch_source_fixture(
                     data.get("pipeline_mlir"),
@@ -231,9 +231,9 @@ class TestModelThreshold:
     ###############################################################################
     @pytest.mark.order(1)
     def test_compile_rocm(self):
-        if rocm_chip in self.rocm_compile_chip_expecting_to_fail:
+        if backend in self.rocm_compile_chip_expecting_to_fail:
             pytest.xfail(
-                f"Expecting {rocm_chip} compilation to fail for {self.submodel_name}"
+                f"Expecting {backend} compilation to fail for {self.submodel_name}"
             )
 
         vmfbs_path = f"{self.model_name}_{self.submodel_name}_vmfbs"
@@ -243,7 +243,7 @@ class TestModelThreshold:
             self.rocm_compiler_flags,
             Path(vmfb_dir)
             / Path(vmfbs_path)
-            / Path("model").with_suffix(f".rocm_{rocm_chip}.vmfb"),
+            / Path("model").with_suffix(f".rocm_{backend}.vmfb"),
         )
 
         if self.pipeline_mlir:
@@ -255,7 +255,7 @@ class TestModelThreshold:
                 self.rocm_pipeline_compiler_flags,
                 Path(vmfb_dir)
                 / Path(vmfbs_path)
-                / Path("pipeline_model").with_suffix(f".rocm_{rocm_chip}.vmfb"),
+                / Path("pipeline_model").with_suffix(f".rocm_{backend}.vmfb"),
             )
 
     @pytest.mark.order(2)

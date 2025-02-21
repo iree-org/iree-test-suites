@@ -1,0 +1,59 @@
+# Copyright 2025 The IREE Authors
+#
+# Licensed under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+name: IREE Test Suite Regression Test
+
+inputs:
+  model:
+    description: "The model to run threshold and benchmark tests"
+    required: true
+  sku:
+    description: "Type of SKU to test"
+    required: true
+  backend:
+    description: "Type of backend to use"
+    required: true
+  run_benchmarks:
+    description: "If flag is set to true, benchmark tests will run"
+    type: boolean
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Install Python dependencies
+      shell: bash
+      run: pip install -e ${GITHUB_ACTION_PATH}/sharktank_models
+    
+    - name: Run compilation and threshold tests
+      shell: bash
+      run: |
+        python ${GITHUB_ACTION_PATH}/sharktank_models/regression_tests/run_thresholds.py \
+          --model=${{ inputs.model }} \
+          --sku=${{ inputs.sku }} \
+          --backend=${{ inputs.backend }}
+    
+      # Using bash case because ff statements in composite actions are not yet supported: https://github.com/actions/runner/blob/main/docs/adrs/0549-composite-run-steps.md#if-condition
+    - name: Run benchmark tests
+      shell: bash
+      run: |
+        case ${{ inputs.run_benchmarks }} in
+          (true)
+            echo "Benchmark flag selected, running benchmark tests..."
+            python ${GITHUB_ACTION_PATH}/sharktank_models/benchmarks/run_benchmarks.py \
+              --model=${{ inputs.model }} \
+              --sku=${{ inputs.sku }} \
+              --backend=${{ inputs.backend }}
+            echo "$(<job_summary.md )" >> $GITHUB_STEP_SUMMARY
+            rm job_summary.md
+            ;;
+          (false)
+            echo "Benchmark flag not selected, skipping benchmark tests..."
+            ;;
+        esac
