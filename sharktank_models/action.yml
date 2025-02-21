@@ -39,7 +39,7 @@ runs:
           --sku=${{ inputs.sku }} \
           --backend=${{ inputs.backend }}
     
-      # Using bash case because ff statements in composite actions are not yet supported: https://github.com/actions/runner/blob/main/docs/adrs/0549-composite-run-steps.md#if-condition
+      # Using bash conditionals because if statements in composite actions are not yet supported: https://github.com/actions/runner/blob/main/docs/adrs/0549-composite-run-steps.md#if-condition
     - name: Run benchmark tests
       shell: bash
       run: |
