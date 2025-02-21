@@ -51,7 +51,7 @@ runs:
               --sku=${{ inputs.sku }} \
               --backend=${{ inputs.backend }}
             echo "$(<job_summary.md )" >> $GITHUB_STEP_SUMMARY
-            rm job_summary.md
+            rm job_summary.md job_summary.json
             ;;
           (false)
             echo "Benchmark flag not selected, skipping benchmark tests..."
