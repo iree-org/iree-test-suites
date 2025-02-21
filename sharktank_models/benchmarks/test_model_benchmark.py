@@ -24,7 +24,7 @@ PARENT_DIR = Path(__file__).parent.parent
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 artifacts_dir = f"{os.getenv('IREE_TEST_FILES', default=str(PARENT_DIR))}/artifacts"
 artifacts_dir = Path(os.path.expanduser(artifacts_dir)).resolve()
-rocm_chip = os.getenv("ROCM_CHIP", default="gfx942")
+backend = os.getenv("BACKEND", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
 model_name = os.getenv("BENCHMARK_MODEL", default="sdxl")
 benchmark_file_name = os.getenv("BENCHMARK_FILE_NAME", default="*")
@@ -43,8 +43,6 @@ else:
 """
 Helper methods
 """
-
-
 # Converts a list of inputs into compiler friendly input arguments
 def get_input_list(input_list):
     return [f"--input={entry}" for entry in input_list]
@@ -141,9 +139,9 @@ class TestModelBenchmark:
             self.compile_flags = data.get("compile_flags", [])
             self.benchmark_flags = data.get("benchmark_flags", [])
             if type_of_backend == "rocm":
-                self.file_suffix = f"{type_of_backend}_{rocm_chip}"
+                self.file_suffix = f"{type_of_backend}_{backend}"
                 self.compile_flags += [
-                    f"--iree-hip-target={rocm_chip}",
+                    f"--iree-hip-target={backend}",
                 ]
 
             elif type_of_backend == "cpu":
@@ -151,9 +149,9 @@ class TestModelBenchmark:
 
     def test_benchmark(self):
         # if a rocm chip is designated to be ignored in JSON file, skip test
-        if rocm_chip in self.specific_chip_to_ignore:
+        if backend in self.specific_chip_to_ignore:
             pytest.skip(
-                f"Ignoring benchmark test for {self.model_name} {self.submodel_name} for chip {rocm_chip}"
+                f"Ignoring benchmark test for {self.model_name} {self.submodel_name} for chip {backend}"
             )
 
         # if compilation is required, run this step
