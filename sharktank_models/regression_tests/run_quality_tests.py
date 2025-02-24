@@ -23,8 +23,8 @@ def main():
     sku = args.sku
     backend = args.backend
 
-    os.environ["THRESHOLD_MODEL"] = model
-    os.environ["THRESHOLD_SUBMODEL"] = submodel
+    os.environ["MODEL_TO_TEST"] = model
+    os.environ["SUBMODEL_TO_TEST"] = submodel
     os.environ["SKU"] = sku
     os.environ["BACKEND"] = backend
 
@@ -32,7 +32,7 @@ def main():
 
     command = [
         "pytest",
-        THIS_DIR / "test_model_threshold.py",
+        THIS_DIR / "test_model_quality.py",
         "-rpFe",
         "--log-cli-level=info",
         "--capture=no",

@@ -17,8 +17,8 @@ PARENT_DIR = Path(__file__).parent.parent
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 backend = os.getenv("BACKEND", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
-model_name = os.getenv("THRESHOLD_MODEL", default="sdxl")
-submodel_name = os.getenv("THRESHOLD_SUBMODEL", default="*")
+model_name = os.getenv("MODEL_TO_TEST", default="sdxl")
+submodel_name = os.getenv("SUBMODEL_TO_TEST", default="*")
 
 SUBMODEL_FOLDER_PATH = THIS_DIR / f"{model_name}"
 
@@ -67,7 +67,7 @@ def common_run_flags_generation(input_list, output_list):
 
 
 @pytest.mark.parametrize("submodel_name", parameters)
-class TestModelThreshold:
+class TestModelQuality:
     @pytest.fixture(autouse=True)
     @classmethod
     def setup_class(self, submodel_name):

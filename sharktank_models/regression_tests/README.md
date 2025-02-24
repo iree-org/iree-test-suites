@@ -6,22 +6,22 @@
 
 ### How to run
 
-- Example command to run a specific submodel or all submodels for a specific model
+- Example command to run quality tests for a specific model
 
 ```
-python sharktank_models/regression_tests/run_thresholds.py --model=sdxl --submodel=*
+python sharktank_models/regression_tests/run_quality_tests.py --model=sdxl --submodel=*
 
-python sharktank_models/regression_tests/run_thresholds.py --model=sdxl --submodel=clip
+python sharktank_models/regression_tests/run_quality_tests.py --model=sdxl --submodel=clip
 ```
 
 Argument options for the script
 
 | Argument Name | Default value | Description                                                                                                                                      |
 | ------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| --model       | sdxl          | Runs threshold tests for a specific model                                                                                                        |
-| --submodel    | \*            | If specified, the threshold tests will run for a specific submodel (ex: `--submodel clip`). If not specified, it will run tests on all submodels |
-| --sku         | mi300         | The threshold tests will run on this sku and retrieve golden values from the specified sku                                                       |
-| --backend   | gfx942        | The threshold tests will run on this backend                                                                                                   |
+| --model       | sdxl          | Runs quality tests for a specific model                                                                                                        |
+| --submodel    | \*            | If specified, the quality tests will run for a specific submodel (ex: `--submodel clip`). If not specified, it will run tests on all submodels |
+| --sku         | mi300         | The quality tests will run on this sku and retrieve golden values from the specified sku                                                       |
+| --backend   | gfx942        | The quality tests will run on this backend                                                                                                   |
 
 ### Required and optional fields for the JSON model file
 

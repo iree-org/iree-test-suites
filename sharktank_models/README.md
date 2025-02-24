@@ -107,3 +107,25 @@ Please refer to [Quality tests README](regression_tests/README.md) to run tests
 Please refer to [Benchmark tests README](benchmarks/README.md) to run tests
 
 Note: for benchmark tests to run, you will need `vmfbs` files available
+
+## Generating model files using Shark AI
+
+In order to generate and compile MLIR files to compile, run quality tests and benchmarking tests, please run the following the following commands:
+
+This example generates IRPA and MLIR files for Llama, please look in [Shark AI Models](https://github.com/nod-ai/shark-ai/tree/main/sharktank/sharktank/models) to see which models you can generate
+
+```
+git clone https://github.com/nod-ai/shark-ai.git
+
+cd shark-ai/sharktank
+python3 -m pip install .
+
+cd ..
+
+# Generate the IRPA files:
+python3 -m sharktank.models.llama.toy_llama --output toy_llama.irpa
+
+# Generate the MLIR files:
+python3 -m sharktank.examples.export_paged_llm_v1 --bs=1 \
+    --irpa-file toy_llama.irpa --output-mlir toy_llama.mlir
+```

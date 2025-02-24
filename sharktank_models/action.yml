@@ -8,7 +8,7 @@ name: IREE Sharktank Models Regression Tests
 
 inputs:
   model:
-    description: "The model to run threshold and benchmark tests"
+    description: "The model to run quality and benchmark tests"
     required: true
   sku:
     description: "Type of SKU to test"
@@ -39,11 +39,11 @@ runs:
         pip install -e ${GITHUB_ACTION_PATH}/sharktank_models
         pip install -r ${GITHUB_ACTION_PATH}/sharktank_models/requirements-iree.txt
     
-    - name: Run compilation and threshold tests
+    - name: Run compilation and quality tests
       shell: bash
       run: |
         source ${GITHUB_WORKSPACE}/venv/bin/activate
-        python ${GITHUB_ACTION_PATH}/sharktank_models/regression_tests/run_thresholds.py \
+        python ${GITHUB_ACTION_PATH}/sharktank_models/regression_tests/run_quality_tests.py \
           --model=${{ inputs.model }} \
           --sku=${{ inputs.sku }} \
           --backend=${{ inputs.backend }}
