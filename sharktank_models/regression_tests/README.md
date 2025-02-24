@@ -9,9 +9,9 @@
 - Example command to run a specific submodel or all submodels for a specific model
 
 ```
-python sharktank_models/test_suite/regression_tests/run_thresholds.py --model=sdxl --submodel=*
+python sharktank_models/regression_tests/run_thresholds.py --model=sdxl --submodel=*
 
-python sharktank_models/test_suite/regression_tests/run_thresholds.py --model=sdxl --submodel=clip
+python sharktank_models/regression_tests/run_thresholds.py --model=sdxl --submodel=clip
 ```
 
 Argument options for the script
@@ -21,7 +21,7 @@ Argument options for the script
 | --model       | sdxl          | Runs threshold tests for a specific model                                                                                                        |
 | --submodel    | \*            | If specified, the threshold tests will run for a specific submodel (ex: `--submodel clip`). If not specified, it will run tests on all submodels |
 | --sku         | mi300         | The threshold tests will run on this sku and retrieve golden values from the specified sku                                                       |
-| --rocm-chip   | gfx942        | The threshold tests will run on this ROCM chip                                                                                                   |
+| --backend   | gfx942        | The threshold tests will run on this backend                                                                                                   |
 
 ### Required and optional fields for the JSON model file
 

@@ -29,13 +29,13 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
     python -m venv .venv
     source .venv/bin/activate
-    python -m pip install -r requirements.txt
+    python -m pip install -e sharktank_models/
     ```
 
     * To use IREE from nightly pre-release Python packages:
 
         ```bash
-        python -m pip install -r requirements-iree.txt
+        python -m pip install -r sharktank_models/requirements-iree.txt
         ```
 
     * To use a custom version of IREE follow the instructions for
@@ -97,3 +97,13 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
     See also
     https://docs.pytest.org/en/latest/how-to/output.html#creating-junitxml-format-files
+
+## Running quality tests
+
+Please refer to [Quality tests README](regression_tests/README.md) to run tests
+
+## Running benchmark tests
+
+Please refer to [Benchmark tests README](benchmarks/README.md) to run tests
+
+Note: for benchmark tests to run, you will need `vmfbs` files available
