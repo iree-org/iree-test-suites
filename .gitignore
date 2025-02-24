@@ -40,3 +40,7 @@ Testing/
 *.pt
 *.safetensors
 *.gguf
+
+# job summary files
+job_summary.json
+job_summary.md
