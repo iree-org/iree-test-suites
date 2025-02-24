@@ -16,8 +16,6 @@ setup(
     ),
     install_requires=[
         "azure-storage-blob",
-        "iree-base-compiler",
-        "iree-base-runtime",
         "ml_dtypes",
         "numpy",
         "pytest",
