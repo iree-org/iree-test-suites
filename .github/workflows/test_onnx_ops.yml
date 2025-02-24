@@ -43,7 +43,7 @@ jobs:
 
       # Install Python packages.
       - name: Setup Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: "3.11"
       - name: Setup Python venv
@@ -68,7 +68,7 @@ jobs:
             --report-log=/tmp/onnx_ops_cpu_logs.json \
             --config-files=${CONFIG_FILE_PATH}
       - name: Upload HTML report
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: onnx_ops_test_report_cpu_llvm_sync.html
           path: ${{ env.HTML_REPORT_PATH }}
@@ -80,7 +80,7 @@ jobs:
             --config-file=${CONFIG_FILE_PATH}
           cat ${CONFIG_FILE_PATH}
       - name: Upload new config file
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: onnx_ops_cpu_llvm_sync.json
           path: ${{ env.CONFIG_FILE_PATH }}
