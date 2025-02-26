@@ -5,7 +5,46 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import pytest
+from model_quality_run import ModelQualityRunItem
+from pathlib import Path
+import os
+import logging
+from dataclasses import dataclass
 
+THIS_DIR = Path(__file__).parent
+backend = os.getenv("BACKEND", default="gfx942")
+sku = os.getenv("SKU", default="mi300")
+
+logger = logging.getLogger(__name__)
 
 def pytest_configure():
     pytest.vmfb_manager = {}
+
+def pytest_sessionstart(session):
+    logger.info("Pytest quality test session is starting")
+
+def pytest_collect_file(parent, file_path):
+    if file_path.suffix == ".json" and "regression_tests" in str(THIS_DIR):
+        return SharkTankModelQualityTests.from_parent(parent, path=file_path)
+
+@dataclass(frozen = True)
+class QualityTestSpec:
+    model_name: str
+    quality_file_name: str
+    
+class SharkTankModelQualityTests(pytest.File):
+    
+    def collect(self):
+        path = str(self.path).split("/")
+        quality_file_name = path[-1].replace(".json", "")
+        model_name = path[-2]
+        
+        item_name = f"{model_name} :: {quality_file_name}"
+        
+        spec = QualityTestSpec(
+            model_name = model_name,
+            quality_file_name = quality_file_name
+        )
+        
+        yield ModelQualityRunItem.from_parent(self, name=item_name, spec=spec)
+    

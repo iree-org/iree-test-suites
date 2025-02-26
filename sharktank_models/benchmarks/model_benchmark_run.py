@@ -24,21 +24,8 @@ PARENT_DIR = Path(__file__).parent.parent
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 artifacts_dir = f"{os.getenv('IREE_TEST_FILES', default=str(PARENT_DIR))}/artifacts"
 artifacts_dir = Path(os.path.expanduser(artifacts_dir)).resolve()
-backend = os.getenv("BACKEND", default="gfx942")
+chip = os.getenv("ROCM_CHIP", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
-model_name = os.getenv("BENCHMARK_MODEL", default="sdxl")
-benchmark_file_name = os.getenv("BENCHMARK_FILE_NAME", default="*")
-
-SUBMODEL_FOLDER_PATH = THIS_DIR / f"{model_name}"
-
-# if a specific submodel in the environment variable is not specified, all the submodels under the model directory will be tested
-parameters = []
-if benchmark_file_name != "*":
-    parameters = [benchmark_file_name]
-else:
-    for filename in os.listdir(SUBMODEL_FOLDER_PATH):
-        if ".json" in filename:
-            parameters.append(filename.split(".")[0])
 
 """
 Helper methods
@@ -95,14 +82,15 @@ def e2e_iree_benchmark_module_args(modules, file_suffix):
     return exec_args
 
 
-@pytest.mark.parametrize("benchmark_file_name", parameters)
-class TestModelBenchmark:
-    @pytest.fixture(autouse=True)
-    @classmethod
-    def setup_class(self, benchmark_file_name):
-        self.model_name = model_name
-        SUBMODEL_FILE_PATH = THIS_DIR / f"{model_name}/{benchmark_file_name}.json"
-        split_file_name = benchmark_file_name.split("_")
+class ModelBenchmarkRunItem(pytest.Item):
+    
+    def __init__(self, spec, **kwargs):
+        super().__init__(**kwargs)
+        self.spec = spec
+        self.model_name = self.spec.model_name
+        self.benchmark_file_name = self.spec.benchmark_file_name
+        SUBMODEL_FILE_PATH = THIS_DIR / f"{self.model_name}/{self.benchmark_file_name}.json"
+        split_file_name = self.benchmark_file_name.split("_")
         self.submodel_name = "_".join(split_file_name[:-1])
         type_of_backend = split_file_name[-1]
 
@@ -139,19 +127,19 @@ class TestModelBenchmark:
             self.compile_flags = data.get("compile_flags", [])
             self.benchmark_flags = data.get("benchmark_flags", [])
             if type_of_backend == "rocm":
-                self.file_suffix = f"{type_of_backend}_{backend}"
+                self.file_suffix = f"{type_of_backend}_{chip}"
                 self.compile_flags += [
-                    f"--iree-hip-target={backend}",
+                    f"--iree-hip-target={chip}",
                 ]
 
             elif type_of_backend == "cpu":
                 self.file_suffix = "cpu"
 
-    def test_benchmark(self):
+    def runtest(self):
         # if a rocm chip is designated to be ignored in JSON file, skip test
-        if backend in self.specific_chip_to_ignore:
+        if chip in self.specific_chip_to_ignore:
             pytest.skip(
-                f"Ignoring benchmark test for {self.model_name} {self.submodel_name} for chip {backend}"
+                f"Ignoring benchmark test for {self.model_name} {self.submodel_name} for chip {chip}"
             )
 
         # if compilation is required, run this step
@@ -203,7 +191,7 @@ class TestModelBenchmark:
         # golden time check
         if self.golden_time:
             # Writing to time summary
-            mean_time_row = [self.submodel_name, str(benchmark_mean_time), self.golden_time]
+            mean_time_row = [self.model_name, self.submodel_name, str(benchmark_mean_time), self.golden_time]
             with open("job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
                 file_data["time_summary"] = file_data.get("time_summary", []) + [mean_time_row]
@@ -231,7 +219,7 @@ class TestModelBenchmark:
                 comp_stats["stream-aggregate"]["execution"]["dispatch-count"]
             )
 
-            dispatch_count_row = [self.submodel_name, dispatch_count, self.golden_dispatch]
+            dispatch_count_row = [self.model_name, self.submodel_name, dispatch_count, self.golden_dispatch]
             with open("job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
                 file_data["dispatch_summary"] = file_data.get("dispatch_summary", []) + [mean_time_row]
@@ -255,7 +243,7 @@ class TestModelBenchmark:
             module_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
             binary_size = Path(module_path).stat().st_size
 
-            binary_size_row = [self.submodel_name, binary_size, self.golden_size]
+            binary_size_row = [self.model_name, self.submodel_name, binary_size, self.golden_size]
             with open("job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
                 file_data["size_summary"] = file_data.get("size_summary", []) + [mean_time_row]
@@ -274,3 +262,9 @@ class TestModelBenchmark:
                 self.golden_size,
                 f"{self.model_name} {self.submodel_name} binary size should not get bigger",
             )
+            
+    def repr_failure(self, excinfo):
+        return super().repr_failure(excinfo)
+        
+    def reportinfo(self):
+        return self.path, 0, f"usecase: {self.name}"

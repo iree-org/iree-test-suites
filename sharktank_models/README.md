@@ -115,12 +115,10 @@ In order to generate and compile MLIR files to compile, run quality tests and be
 This example generates IRPA and MLIR files for Llama, please look in [Shark AI Models](https://github.com/nod-ai/shark-ai/tree/main/sharktank/sharktank/models) to see which models you can generate
 
 ```
-git clone https://github.com/nod-ai/shark-ai.git
+python3 -m pip install sharktank
 
-cd shark-ai/sharktank
-python3 -m pip install .
-
-cd ..
+# For Sharktank nightly releases, please use this installation command
+python3 -m pip install sharktank -f https://github.com/nod-ai/shark-ai/releases/expanded_assets/dev-wheels --pre
 
 # Generate the IRPA files:
 python3 -m sharktank.models.llama.toy_llama --output toy_llama.irpa

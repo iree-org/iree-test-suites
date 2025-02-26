@@ -4,22 +4,14 @@
 
 - To add your own model, create a directory under `benchmarks` and add JSON files that correspond to the submodels and chip. Please follow the [JSON file schema in this README file](#required-and-optional-fields-for-the-json-model-file)
 
-### How to run
+### How to run the benchmark tests
 
 ```
-python sharktank_models/benchmarks/run_benchmarks.py --model=sdxl --filename=*
-
-python sharktank_models/benchmarks/run_benchmarks.py --model=sdxl --filename=clip_rocm
+pytest sharktank_models/benchmarks/ \
+    --log-cli-level=info \
+    --timeout=600 \
+    --retries=7 
 ```
-
-Argument options for the script
-
-| Argument Name | Default value | Description                                                                                                                                      |
-| ------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| --model       | sdxl          | Runs benchmark tests for a specific model                                                                                                        |
-| --filename    | \*            | If specified, the benchmark tests will run for a specific filename (ex: `--filename clip`). If not specified, it will run tests on all filenames |
-| --sku         | mi300         | The benchmark tests will run on this sku and retrieve golden values from the specified sku                                                       |
-| --backend   | gfx942        | The benchmark tests will run on this backend                                                                                                   |
 
 ### Required and optional fields for the JSON model file
 

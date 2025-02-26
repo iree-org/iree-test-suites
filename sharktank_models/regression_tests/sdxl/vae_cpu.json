@@ -13,7 +13,9 @@
     ],
     "real_weights": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-vae-decode/real_weights.irpa",
     "mlir": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-vae-decode/model.mlir",
-    "cpu_compiler_flags": [
+    "device": "local-task",
+    "compiler_flags": [
+        "--iree-hal-target-backends=llvm-cpu",
         "--iree-llvmcpu-target-cpu-features=host",
         "--iree-llvmcpu-fail-on-out-of-bounds-stack-allocation=false",
         "--iree-llvmcpu-distribution-size=32",
@@ -22,26 +24,8 @@
         "--iree-llvmcpu-enable-ukernels=all",
         "--iree-global-opt-enable-quantized-matmul-reassociation"
     ],
-    "rocm_compiler_flags": [
-        "--iree-opt-const-eval=false",
-        "--iree-opt-strip-assertions=true",
-        "--iree-global-opt-propagate-transposes=true",
-        "--iree-opt-outer-dim-concat=true",
-        "--iree-llvmgpu-enable-prefetch=true",
-        "--iree-hip-waves-per-eu=2",
-        "--iree-dispatch-creation-enable-aggressive-fusion=true",
-        "--iree-codegen-llvmgpu-use-vector-distribution=true",
-        "--iree-execution-model=async-external",
-        "--iree-preprocessing-pass-pipeline=builtin.module(iree-preprocessing-transpose-convolution-pipeline,iree-preprocessing-pad-to-intrinsics)",
-        "--iree-scheduling-dump-statistics-format=json",
-        "--iree-scheduling-dump-statistics-file=compilation_info.json"
-    ],
-    "cpu_threshold_args": [
+    "threshold_args": [
         "--expected_f16_threshold=0.02f"
     ],
-    "rocm_threshold_args": [
-        "--expected_f16_threshold=0.4f"
-    ],
-    "run_cpu_function": "main",
-    "run_rocm_function": "main"
+    "run_function": "main"
 }
