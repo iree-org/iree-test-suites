@@ -33,16 +33,9 @@
     ],
     "real_weights": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-punet/punet_fp8_weights.irpa",
     "mlir": "https://sharkpublic.blob.core.windows.net/sharkpublic/stan/sdxl-punet/11-26-2024/punet_fp8.mlir",
-    "cpu_compiler_flags": [
-        "--iree-llvmcpu-target-cpu-features=host",
-        "--iree-llvmcpu-fail-on-out-of-bounds-stack-allocation=false",
-        "--iree-llvmcpu-distribution-size=32",
-        "--iree-opt-const-eval=false",
-        "--iree-opt-strip-assertions=true",
-        "--iree-llvmcpu-enable-ukernels=all",
-        "--iree-global-opt-enable-quantized-matmul-reassociation"
-    ],
-    "rocm_compiler_flags": [
+    "device": "hip",
+    "compiler_flags": [
+        "--iree-hal-target-backends=rocm",
         "--iree-opt-const-eval=false",
         "--iree-opt-strip-assertions=true",
         "--iree-global-opt-propagate-transposes=true",
@@ -62,9 +55,8 @@
         "--iree-scheduling-dump-statistics-file=compilation_info.json",
         "--iree-preprocessing-pass-pipeline=builtin.module(util.func(iree-flow-canonicalize), iree-preprocessing-transpose-convolution-pipeline, iree-preprocessing-pad-to-intrinsics)"
     ],
-    "run_rocm_function": "main",
-    "rocm_tests_only": true,
-    "rocm_compile_chip_expecting_to_fail": ["gfx90a"],
+    "run_function": "main",
+    "compile_chip_expecting_to_fail": ["gfx90a"],
     "tuner_file": {
         "mi300": "external_test_files/attention_and_matmul_spec_punet_mi300.mlir"
     }

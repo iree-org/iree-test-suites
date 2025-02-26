@@ -29,13 +29,13 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
     python -m venv .venv
     source .venv/bin/activate
-    python -m pip install -r requirements.txt
+    python -m pip install -e sharktank_models/
     ```
 
     * To use IREE from nightly pre-release Python packages:
 
         ```bash
-        python -m pip install -r requirements-iree.txt
+        python -m pip install -r sharktank_models/requirements-iree.txt
         ```
 
     * To use a custom version of IREE follow the instructions for
@@ -97,3 +97,33 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
     See also
     https://docs.pytest.org/en/latest/how-to/output.html#creating-junitxml-format-files
+
+## Running quality tests
+
+Please refer to [Quality tests README](quality_tests/README.md) to run tests
+
+## Running benchmark tests
+
+Please refer to [Benchmark tests README](benchmarks/README.md) to run tests
+
+Note: for benchmark tests to run, you will need `vmfbs` files available
+
+## Generating model files using Shark AI
+
+In order to generate and compile MLIR files to compile, run quality tests and benchmarking tests, please run the following the following commands:
+
+This example generates IRPA and MLIR files for Llama, please look in [Shark AI Models](https://github.com/nod-ai/shark-ai/tree/main/sharktank/sharktank/models) to see which models you can generate
+
+```
+python3 -m pip install sharktank
+
+# For Sharktank nightly releases, please use this installation command
+python3 -m pip install sharktank -f https://github.com/nod-ai/shark-ai/releases/expanded_assets/dev-wheels --pre
+
+# Generate the IRPA files:
+python3 -m sharktank.models.llama.toy_llama --output toy_llama.irpa
+
+# Generate the MLIR files:
+python3 -m sharktank.examples.export_paged_llm_v1 --bs=1 \
+    --irpa-file toy_llama.irpa --output-mlir toy_llama.mlir
+```
