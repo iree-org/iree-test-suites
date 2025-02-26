@@ -49,7 +49,7 @@ runs:
       if: contains(inputs.MATRIX_NAME, "model")
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
-        HIP_TARGET=${{ inputs.GPU }} pytest iree-test-suites/sharktank_models/ \
+        pytest iree-test-suites/sharktank_models/ \
             -rA \
             --log-cli-level=info \
             --override-ini=xfail_strict=false \
@@ -58,6 +58,8 @@ runs:
             --durations=0 \
             --ignore=sharktank_models/benchmarks \
             --ignore=sharktank_models/quality_tests
+      env:
+        HIP_TARGET: ${{ inputs.GPU }}
 
     - name: Run regression quality tests
       shell: bash
