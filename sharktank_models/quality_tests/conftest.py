@@ -12,9 +12,6 @@ import logging
 from dataclasses import dataclass
 
 THIS_DIR = Path(__file__).parent
-backend = os.getenv("BACKEND", default="gfx942")
-sku = os.getenv("SKU", default="mi300")
-
 logger = logging.getLogger(__name__)
 
 def pytest_configure():
@@ -24,7 +21,7 @@ def pytest_sessionstart(session):
     logger.info("Pytest quality test session is starting")
 
 def pytest_collect_file(parent, file_path):
-    if file_path.suffix == ".json" and "regression_tests" in str(THIS_DIR):
+    if file_path.suffix == ".json" and "quality_tests" in str(THIS_DIR):
         return SharkTankModelQualityTests.from_parent(parent, path=file_path)
 
 @dataclass(frozen = True)

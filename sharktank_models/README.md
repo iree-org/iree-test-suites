@@ -100,7 +100,7 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
 ## Running quality tests
 
-Please refer to [Quality tests README](regression_tests/README.md) to run tests
+Please refer to [Quality tests README](quality_tests/README.md) to run tests
 
 ## Running benchmark tests
 

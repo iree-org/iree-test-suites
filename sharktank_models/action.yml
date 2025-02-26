@@ -7,14 +7,23 @@
 name: IREE Sharktank Models Tests
 
 inputs:
+  MATRIX_NAME:
+    description: "Identifying name of the matrix variation"
+    required: true
   SKU:
     description: "Type of SKU to test"
     required: true
   CHIP:
-    description: "Type of chip to use"
+    description: "Type of chip to test"
     required: true
   VENV_DIR:
     description: "Path to the virtual environment"
+  TARGET:
+    description: "Type of target to test"
+    required: true
+  GPU:
+    description: "Type of GPU to test"
+    required: true
 
 runs:
   using: "composite"
@@ -35,31 +44,49 @@ runs:
         pip install -e ${GITHUB_ACTION_PATH}/sharktank_models
         pip install -r ${GITHUB_ACTION_PATH}/sharktank_models/requirements-iree.txt
     
-    - name: Run compilation and quality tests
+    - name: Run sharktank specific model tests
       shell: bash
+      if: contains(inputs.MATRIX_NAME, "model")
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
-        python ${GITHUB_ACTION_PATH}/sharktank_models/regression_tests/run_quality_tests.py \
-          --model=${{ inputs.model }} \
-          --sku=${{ inputs.sku }} \
-          --backend=${{ inputs.backend }}
-    
-      # Using bash conditionals because if statements in composite actions are not yet supported: https://github.com/actions/runner/blob/main/docs/adrs/0549-composite-run-steps.md#if-condition
-    - name: Run benchmark tests
+        HIP_TARGET=${{ inputs.GPU }} pytest iree-test-suites/sharktank_models/ \
+            -rA \
+            --log-cli-level=info \
+            --override-ini=xfail_strict=false \
+            -m ${{ inputs.TARGET }} \
+            --timeout=120 \
+            --durations=0 \
+            --ignore=sharktank_models/benchmarks \
+            --ignore=sharktank_models/quality_tests
+
+    - name: Run regression quality tests
       shell: bash
+      if: contains(inputs.MATRIX_NAME, "regression")
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
-        case ${{ inputs.run_benchmarks }} in
-          (true)
-            echo "Benchmark flag selected, running benchmark tests..."
-            python ${GITHUB_ACTION_PATH}/sharktank_models/benchmarks/run_benchmarks.py \
-              --model=${{ inputs.model }} \
-              --sku=${{ inputs.sku }} \
-              --backend=${{ inputs.backend }}
-            echo "$(<job_summary.md )" >> $GITHUB_STEP_SUMMARY
-            rm job_summary.md job_summary.json
-            ;;
-          (false)
-            echo "Benchmark flag not selected, skipping benchmark tests..."
-            ;;
-        esac
+        pytest \
+          ${GITHUB_ACTION_PATH}/sharktank_models/quality_tests \
+          -rpFe \
+          --log-cli-level=info \
+          --durations=0 \
+          --timeout=600 \
+          --capture=no
+      env:
+        ROCM_CHIP: ${{ inputs.CHIP }}
+        SKU: ${{ inputs.SKU }}
+
+    # Since the benchmark tests require compiled model files, this step must run after the quality tests
+    - name: Run regression benchmark tests
+      shell: bash
+      if: contains(inputs.MATRIX_NAME, "regression")
+      run: |
+        source ${{ inputs.VENV_DIR }}/bin/activate
+        pytest \
+          ${GITHUB_ACTION_PATH}/sharktank_models/benchmarks \
+          --log-cli-level=info \
+          --retries=7 \
+          --timeout=600 
+        echo "$(<${GITHUB_ACTION_PATH}/job_summary.md )" >> $GITHUB_STEP_SUMMARY
+      env:
+        ROCM_CHIP: ${{ inputs.CHIP }}
+        SKU: ${{ inputs.SKU }}

@@ -2,14 +2,14 @@
 
 ### Adding your own model
 
-- To add your own model, create a directory under `regression_tests` and add JSON files that correspond to the submodels. Please follow the [JSON file schema in this README file](#required-and-optional-fields-for-the-json-model-file)
+- To add your own model, create a directory under `quality_tests` and add JSON files that correspond to the submodels. Please follow the [JSON file schema in this README file](#required-and-optional-fields-for-the-json-model-file)
 
 ### How to run
 
 - Example command to run quality tests for a specific model
 
 ```
-python sharktank_models/regression_tests/ \
+python sharktank_models/quality_tests/ \
     -rpFe \
     --log-cli-level=info \
     --timeout=600 \

@@ -14,7 +14,6 @@ import json
 import tabulate
 
 THIS_DIR = Path(__file__).parent
-backend = os.getenv("BACKEND", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
 
 logger = logging.getLogger(__name__)
