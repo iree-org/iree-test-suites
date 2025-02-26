@@ -74,12 +74,14 @@ def e2e_iree_benchmark_module_args(modules, file_suffix):
 
     # for e2e tests, we are adding the submodel modules
     for module in modules:
+        if not Path(f"{vmfb_dir}/{module}_vmfbs/model.{file_suffix}.vmfb").is_file():
+            return (False, [])
         exec_args.append(f"--module={vmfb_dir}/{module}_vmfbs/model.{file_suffix}.vmfb")
         exec_args.append(
             f"--parameters=model={artifacts_dir}/{module}/real_weights.irpa"
         )
 
-    return exec_args
+    return (True, exec_args)
 
 
 class ModelBenchmarkRunItem(pytest.Item):
@@ -162,7 +164,9 @@ class ModelBenchmarkRunItem(pytest.Item):
 
         # If there are modules for an e2e pipeline test, reset exec_args and directory_compile variables to custom variables
         if self.modules:
-            exec_args = e2e_iree_benchmark_module_args(self.modules, self.file_suffix)
+            all_modules_found, exec_args = e2e_iree_benchmark_module_args(self.modules, self.file_suffix)
+            if not all_modules_found:
+                pytest.skip(f"Modules needed for {self.model_name} :: {self.submodel_name} not found, unable to run benchmark tests. Skipping...")
             vmfb_file_path = f"{vmfb_dir}/{self.compiled_file_name}.vmfb"
 
         exec_args += (
@@ -172,6 +176,9 @@ class ModelBenchmarkRunItem(pytest.Item):
             + get_input_list(self.inputs)
             + self.benchmark_flags
         )
+        
+        if not Path(vmfb_file_path).is_file():
+            pytest.skip(f"Vmfb file for {self.model_name} :: {self.submodel_name} was not found. Unable to run benchmark tests, skipping...")
 
         # run iree benchmark command
         ret_value, output = iree_benchmark_module(
