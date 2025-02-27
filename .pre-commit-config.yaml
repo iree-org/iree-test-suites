@@ -2,27 +2,11 @@
 #
 # See https://pre-commit.com/hooks.html for more hooks.
 
-exclude: "third_party/"
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.2.0
     hooks:
       - id: check-merge-conflict
-
-      - id: check-yaml
-        # * Extensions can't be included in the mkdocs schema, so skip checking
-        #   https://github.com/squidfunk/mkdocs-material/issues/6378
-        # * clang-format files use `---` to split for multiple languages,
-        #   resulting in errors like `expected a single document in the stream`
-        exclude: "mkdocs.yml|.clang-format"
-
-      - id: end-of-file-fixer
-        exclude_types: ["image", "jupyter"]
-        exclude: ".*\\.excalidraw"
-
-      - id: trailing-whitespace
-        exclude_types: ["image", "jupyter"]
 
   - repo: https://github.com/psf/black
     rev: 23.3.0
@@ -38,14 +22,3 @@ repos:
         args: ["--config", "docs/.markdownlint.yml"]
         files: "docs/website/.*.md"
         exclude: "mlir-dialects/!(index).md"
-
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
-    hooks:
-      - id: forbid-tabs
-        exclude: ".gitmodules|Makefile"
-
-  - repo: https://github.com/jlebar/pre-commit-hooks.git
-    rev: f2d115a052860b09b2888b4f104be614bf3b4779
-    hooks:
-      - id: do-not-submit
