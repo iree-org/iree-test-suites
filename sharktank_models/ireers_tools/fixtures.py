@@ -28,8 +28,10 @@ IREE_COMPILE_QOL_FLAGS = [
     "--iree-consteval-jit-debug",
 ]
 
+
 class IreeCompileException(RuntimeError):
     pass
+
 
 class IreeRuntimeException(RuntimeError):
     pass
