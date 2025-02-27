@@ -11,4 +11,4 @@ pytest-xdist
 # ai-edge-litert
 # tflite-runtime
 kagglehub
-tensorflow
+tensorflow<=2.18.0
