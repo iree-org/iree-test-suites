@@ -41,7 +41,7 @@ runs:
     
     - name: Run sharktank specific model tests
       shell: bash
-      if: contains(inputs.MATRIX_NAME, "model")
+      if: contains(inputs.MATRIX_NAME, 'model')
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
         pytest iree-test-suites/sharktank_models/ \
@@ -58,7 +58,7 @@ runs:
 
     - name: Run regression quality tests
       shell: bash
-      if: contains(inputs.MATRIX_NAME, "regression")
+      if: contains(inputs.MATRIX_NAME, 'regression')
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
         pytest \
@@ -75,7 +75,7 @@ runs:
     # Since the benchmark tests require compiled model files, this step must run after the quality tests
     - name: Run regression benchmark tests
       shell: bash
-      if: contains(inputs.MATRIX_NAME, "regression")
+      if: contains(inputs.MATRIX_NAME, 'regression')
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
         pytest \
