@@ -251,10 +251,7 @@ def compile_mlir_with_iree(
     compile_args.extend(compile_flags)
     compile_args.extend(["-o", iree_module_path.relative_to(cwd)])
     compile_cmd = subprocess.list2cmdline(compile_args)
-    logger.info(
-        f"Launching compile command:\n"  #
-        f"  cd {cwd} && {compile_cmd}"
-    )
+    logger.info(f"Launching compile command:\n" f"  cd {cwd} && {compile_cmd}")  #
     ret = subprocess.run(compile_cmd, shell=True, capture_output=True, cwd=cwd)
     if ret.returncode != 0:
         logger.error(f"Compilation of '{iree_module_path}' failed")
@@ -271,10 +268,7 @@ def run_iree_module(iree_module_path: Path, run_flags: list[str]):
     run_args = ["iree-run-module", f"--module={iree_module_path.relative_to(cwd)}"]
     run_args.extend(run_flags)
     run_cmd = subprocess.list2cmdline(run_args)
-    logger.info(
-        f"Launching run command:\n"  #
-        f"  cd {cwd} && {run_cmd}"
-    )
+    logger.info(f"Launching run command:\n" f"  cd {cwd} && {run_cmd}")  #
     ret = subprocess.run(run_cmd, shell=True, capture_output=True, cwd=cwd)
     if ret.returncode != 0:
         logger.error(f"Run of '{iree_module_path}' failed")

@@ -50,11 +50,13 @@ class ShapesId(enum.Enum):
     MEDIUM = "medium"
     LARGE = "large"
 
+
 # Enumerates ways to construct MLIR tensor types.
 @enum.unique
 class Dynamicity(enum.Enum):
     MIXED = "mixed"  # Randomly mix '?' and values. Example: tensor<?x4xf32>.
     STATIC = "static"  # Use fixed values everywhere. Example: tensor<4x6xf32>.
+
 
 # batch: Batch dimension
 # m: M dimension of first and second matmul
@@ -90,6 +92,7 @@ def get_test_shapes(shapes_id: ShapesId):
 
     raise ValueError(shapes_id)
 
+
 # A shape dimension value, i.e. a size value that could appear in a MLIR type
 # such as 'tensor<?x4xf32>'. None means a dynamic size, similar to '?' in MLIR.
 @dataclasses.dataclass
@@ -118,6 +121,7 @@ def int_or_question_mark(s: DimSize):
 def int_or_DYN(s: DimSize):
     return s.value or "DYN"
 
+
 # Determines the shape of input and kernel tensors.
 @dataclasses.dataclass
 class TestInputTensorShapes:
@@ -133,7 +137,6 @@ class TestInputTensorShapes:
 # converts from the runtime shape dimensions in TestShape and given dynamicity to
 # the set of shapes to be used in a test function's input tensors.
 def generate_shapes_and_scale(shape: TestShapeAndScale, dynamicity: Dynamicity):
-    
     m = shape_dim(shape.m, dynamicity)
     k2 = shape_dim(shape.k2, dynamicity)
     if dynamicity == Dynamicity.MIXED:
@@ -262,18 +265,23 @@ def generate_function(
     )
     if dynamicity == Dynamicity.MIXED:
         func_definition = func_definition + (
-             f"  %c1 = arith.constant 1 : index\n"
-             f"  %m_in = tensor.dim %query, %c1 : {query_tensor_type}\n"
-             f"  %k2_in = tensor.dim %key, %c1 : {key_tensor_type}\n"
-             f"  %m = util.assume.int %m_in<udiv = 16> : index\n"
-             f"  %k2 = util.assume.int %k2_in<udiv = 16> : index\n"
-             f"  %query_mixed = flow.tensor.tie_shape %query : {query_tensor_type}""{%m}\n"
-             f"  %key_mixed = flow.tensor.tie_shape %key : {key_tensor_type}""{%k2}\n"
-             f"  %value_mixed = flow.tensor.tie_shape %value : {value_tensor_type}""{%k2}\n"
-             f"  %result0 = tensor.empty(%m): {result_tensor_type}\n"
+            f"  %c1 = arith.constant 1 : index\n"
+            f"  %m_in = tensor.dim %query, %c1 : {query_tensor_type}\n"
+            f"  %k2_in = tensor.dim %key, %c1 : {key_tensor_type}\n"
+            f"  %m = util.assume.int %m_in<udiv = 16> : index\n"
+            f"  %k2 = util.assume.int %k2_in<udiv = 16> : index\n"
+            f"  %query_mixed = flow.tensor.tie_shape %query : {query_tensor_type}"
+            "{%m}\n"
+            f"  %key_mixed = flow.tensor.tie_shape %key : {key_tensor_type}"
+            "{%k2}\n"
+            f"  %value_mixed = flow.tensor.tie_shape %value : {value_tensor_type}"
+            "{%k2}\n"
+            f"  %result0 = tensor.empty(%m): {result_tensor_type}\n"
         )
     else:
-        func_definition = func_definition + ( f"  %result0 = tensor.empty(): {result_tensor_type}\n")
+        func_definition = func_definition + (
+            f"  %result0 = tensor.empty(): {result_tensor_type}\n"
+        )
 
     func_definition = func_definition + (
         f"  %scale_f16 = arith.truncf %scale : {F32} to {F16}\n"

@@ -9,6 +9,7 @@
 .python-version
 *.venv
 .venv
+venv
 
 # Python deployment artifacts
 *.whl
@@ -40,6 +41,9 @@ Testing/
 *.pt
 *.safetensors
 *.gguf
+artifacts/
+compilation_info.json
+*.vmfbs
 
 # job summary files
 job_summary.json

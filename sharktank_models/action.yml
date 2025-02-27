@@ -9,21 +9,16 @@ name: IREE Sharktank Models Tests
 inputs:
   MATRIX_NAME:
     description: "Identifying name of the matrix variation"
-    required: true
   SKU:
     description: "Type of SKU to test"
-    required: true
   CHIP:
     description: "Type of chip to test"
-    required: true
   VENV_DIR:
     description: "Path to the virtual environment"
   TARGET:
     description: "Type of target to test"
-    required: true
   GPU:
     description: "Type of GPU to test"
-    required: true
 
 runs:
   using: "composite"
