@@ -58,6 +58,6 @@
     "run_function": "main",
     "compile_chip_expecting_to_fail": ["gfx90a"],
     "tuner_file": {
-        "mi300": "external_test_files/attention_and_matmul_spec_punet_mi300.mlir"
+        "mi300": "https://raw.githubusercontent.com/iree-org/iree/refs/heads/main/build_tools/pkgci/external_test_suite/attention_and_matmul_spec_punet_mi300.mlir"
     }
 }

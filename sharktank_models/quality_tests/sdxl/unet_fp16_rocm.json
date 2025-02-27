@@ -59,6 +59,6 @@
     "run_function": "produce_image_latents",
     "add_pipeline_module": true,
     "tuner_file": {
-        "mi308": "external_test_files/attention_and_matmul_spec_unet_fp16_mi308.mlir"
+        "mi308": "https://raw.githubusercontent.com/iree-org/iree/refs/heads/main/build_tools/pkgci/external_test_suite/attention_and_matmul_spec_unet_fp16_mi308.mlir"
     }
 }

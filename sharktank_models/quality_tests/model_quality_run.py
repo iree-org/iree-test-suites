@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import subprocess
 import json
+import requests
 
 THIS_DIR = Path(__file__).parent
 # compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
@@ -122,7 +123,14 @@ class ModelQualityRunItem(pytest.Item):
             # Custom configuration for a tuner file
             self.tuner_file = data.get("tuner_file", {})
             if sku in self.tuner_file:
-                TUNER_FILE_PATH = THIS_DIR / self.tuner_file.get(sku)
+                github_url = self.tuner_file.get(sku)
+                response = requests.get(github_url)
+                
+                file_name = github_url.split("/")[-1]
+                TUNER_FILE_PATH = THIS_DIR / file_name
+                with open(TUNER_FILE_PATH, "w") as file:
+                    file.write(response.text)
+                
                 self.compiler_flags.append(
                     f"--iree-codegen-transform-dialect-library={str(TUNER_FILE_PATH)}"
                 )
