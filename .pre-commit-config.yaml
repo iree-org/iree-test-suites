@@ -13,12 +13,3 @@ repos:
     hooks:
       - id: black
         name: Run Black to format Python files
-
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.41.0
-    hooks:
-      - id: markdownlint
-        name: Run markdownlint on .md files
-        args: ["--config", "docs/.markdownlint.yml"]
-        files: "docs/website/.*.md"
-        exclude: "mlir-dialects/!(index).md"

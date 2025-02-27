@@ -9,7 +9,7 @@
 - Example command to run quality tests for a specific model
 
 ```
-python sharktank_models/quality_tests/ \
+pytest sharktank_models/quality_tests/ \
     -rpFe \
     --log-cli-level=info \
     --timeout=600 \
