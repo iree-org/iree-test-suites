@@ -12,12 +12,12 @@ from ....utils import *
 
 
 # https://www.kaggle.com/models/tensorflow/mobilenet-v1/tfLite/0-25-224
-@pytest.mark.xfail(raises=IreeCompileException)
+@pytest.mark.xfail(raises=IreeImportTfLiteException)
 def test_mobilenet_v1_0_25_224(tflite_import_and_iree_compile):
     tflite_import_and_iree_compile("tensorflow/mobilenet-v1/tfLite/0-25-224")
 
 
 # https://www.kaggle.com/models/tensorflow/mobilenet-v1/tfLite/0-25-224-quantized/
-@pytest.mark.xfail(raises=IreeCompileException)
+@pytest.mark.xfail(raises=IreeImportTfLiteException)
 def test_mobilenet_v1_0_25_224_quantized(tflite_import_and_iree_compile):
     tflite_import_and_iree_compile("tensorflow/mobilenet-v1/tfLite/0-25-224-quantized")
