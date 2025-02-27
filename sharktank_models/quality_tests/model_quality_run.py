@@ -125,12 +125,12 @@ class ModelQualityRunItem(pytest.Item):
             if sku in self.tuner_file:
                 github_url = self.tuner_file.get(sku)
                 response = requests.get(github_url)
-                
+
                 file_name = github_url.split("/")[-1]
                 TUNER_FILE_PATH = THIS_DIR / file_name
                 with open(TUNER_FILE_PATH, "w") as file:
                     file.write(response.text)
-                
+
                 self.compiler_flags.append(
                     f"--iree-codegen-transform-dialect-library={str(TUNER_FILE_PATH)}"
                 )

@@ -132,7 +132,7 @@ class ModelBenchmarkRunItem(pytest.Item):
                 TUNER_FILE_PATH = THIS_DIR / file_name
                 with open(TUNER_FILE_PATH, "w") as file:
                     file.write(response.text)
-                    
+
                 self.mlir_file_path = str(TUNER_FILE_PATH)
             self.modules = data.get("modules", [])
             self.device = data.get("device")
