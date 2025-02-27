@@ -18,6 +18,7 @@ vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 chip = os.getenv("ROCM_CHIP", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
 
+
 # Helper methods
 def fetch_source_fixtures_for_run_flags(inference_list, model_name, submodel_name):
     result = []
@@ -53,13 +54,14 @@ def common_run_flags_generation(input_list, output_list):
 
 
 class ModelQualityRunItem(pytest.Item):
-    
     def __init__(self, spec, **kwargs):
         super().__init__(**kwargs)
         self.spec = spec
         self.model_name = self.spec.model_name
         self.quality_file_name = self.spec.quality_file_name
-        SUBMODEL_FILE_PATH = THIS_DIR / f"{self.model_name}/{self.quality_file_name}.json"
+        SUBMODEL_FILE_PATH = (
+            THIS_DIR / f"{self.model_name}/{self.quality_file_name}.json"
+        )
         split_file_name = self.quality_file_name.split("_")
         self.submodel_name = "_".join(split_file_name[:-1])
         self.type_of_backend = split_file_name[-1]
@@ -97,8 +99,8 @@ class ModelQualityRunItem(pytest.Item):
                 if data.get("mlir")
                 else None
             )
-            
-            self.compiler_flags = data.get("compiler_flags", [])            
+
+            self.compiler_flags = data.get("compiler_flags", [])
             self.device = data.get("device")
 
             # Setting input, output, and function call arguments
@@ -126,9 +128,7 @@ class ModelQualityRunItem(pytest.Item):
                 )
 
             # Custom configuration to fp16 and adding secondary pipeline mlir
-            self.pipeline_compiler_flags = data.get(
-                "pipeline_compiler_flags", []
-            )
+            self.pipeline_compiler_flags = data.get("pipeline_compiler_flags", [])
             self.pipeline_mlir = (
                 fetch_source_fixture(
                     data.get("pipeline_mlir"),
@@ -138,21 +138,18 @@ class ModelQualityRunItem(pytest.Item):
                 else None
             )
             self.add_pipeline_module = data.get("add_pipeline_module", False)
-            
+
             if self.type_of_backend == "rocm":
                 self.file_suffix = f"{self.type_of_backend}_{chip}"
-                self.compiler_flags += [
-                    f"--iree-hip-target={chip}"
-                ]
+                self.compiler_flags += [f"--iree-hip-target={chip}"]
                 self.pipeline_compiler_flags.append(f"--iree-hip-target={chip}")
 
             elif self.type_of_backend == "cpu":
                 self.file_suffix = "cpu"
-            
+
     def runtest(self):
         self.test_compile()
         self.test_run_threshold()
-
 
     def test_compile(self):
         if chip in self.compile_chip_expecting_to_fail:
@@ -161,7 +158,9 @@ class ModelQualityRunItem(pytest.Item):
             )
 
         vmfbs_path = f"{self.model_name}_{self.submodel_name}_vmfbs"
-        vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_{self.type_of_backend}_vmfb"
+        vmfb_manager_unique_key = (
+            f"{self.model_name}_{self.submodel_name}_{self.type_of_backend}_vmfb"
+        )
         pytest.vmfb_manager[vmfb_manager_unique_key] = iree_compile(
             self.mlir,
             self.compiler_flags,
@@ -171,15 +170,15 @@ class ModelQualityRunItem(pytest.Item):
         )
 
         if self.pipeline_mlir:
-            pipeline_vmfb_manager_unique_key = (
-                f"{self.model_name}_{self.submodel_name}_pipeline_{self.type_of_backend}_vmfb"
-            )
+            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_{self.type_of_backend}_vmfb"
             pytest.vmfb_manager[pipeline_vmfb_manager_unique_key] = iree_compile(
                 self.pipeline_mlir,
                 self.pipeline_compiler_flags,
                 Path(vmfb_dir)
                 / Path(vmfbs_path)
-                / Path("pipeline_model").with_suffix(f".{self.type_of_backend}_{chip}.vmfb"),
+                / Path("pipeline_model").with_suffix(
+                    f".{self.type_of_backend}_{chip}.vmfb"
+                ),
             )
 
     def test_run_threshold(self):
@@ -196,15 +195,15 @@ class ModelQualityRunItem(pytest.Item):
             args.append(f"--parameters=model={self.real_weights.path}")
 
         if self.add_pipeline_module:
-            pipeline_vmfb_manager_unique_key = (
-                f"{self.model_name}_{self.submodel_name}_pipeline_{self.type_of_backend}_vmfb"
-            )
+            pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_{self.type_of_backend}_vmfb"
             pipeline_module_name = pytest.vmfb_manager.get(
                 pipeline_vmfb_manager_unique_key
             )
             args.append(f"--module={pipeline_module_name}")
 
-        vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_{self.type_of_backend}_vmfb"
+        vmfb_manager_unique_key = (
+            f"{self.model_name}_{self.submodel_name}_{self.type_of_backend}_vmfb"
+        )
         return iree_run_module(
             Path(pytest.vmfb_manager.get(vmfb_manager_unique_key)),
             device=self.device,
@@ -214,6 +213,6 @@ class ModelQualityRunItem(pytest.Item):
 
     def repr_failure(self, excinfo):
         return super().repr_failure(excinfo)
-        
+
     def reportinfo(self):
         return self.path, 0, f"usecase: {self.name}"

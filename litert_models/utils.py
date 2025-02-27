@@ -87,10 +87,7 @@ def compile_mlir_with_iree(
     compile_args.extend(compile_flags)
     compile_args.extend(["-o", iree_module_path])
     compile_cmd = subprocess.list2cmdline(compile_args)
-    logger.info(
-        f"Launching compile command:\n"  #
-        f"  cd {cwd} && {compile_cmd}"
-    )
+    logger.info(f"Launching compile command:\n" f"  cd {cwd} && {compile_cmd}")  #
     ret = subprocess.run(compile_cmd, shell=True, capture_output=True)
     if ret.returncode != 0:
         logger.error(f"Compilation of '{iree_module_path}' failed")

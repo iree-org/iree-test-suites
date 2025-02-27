@@ -30,6 +30,8 @@ sku = os.getenv("SKU", default="mi300")
 """
 Helper methods
 """
+
+
 # Converts a list of inputs into compiler friendly input arguments
 def get_input_list(input_list):
     return [f"--input={entry}" for entry in input_list]
@@ -85,13 +87,14 @@ def e2e_iree_benchmark_module_args(modules, file_suffix):
 
 
 class ModelBenchmarkRunItem(pytest.Item):
-    
     def __init__(self, spec, **kwargs):
         super().__init__(**kwargs)
         self.spec = spec
         self.model_name = self.spec.model_name
         self.benchmark_file_name = self.spec.benchmark_file_name
-        SUBMODEL_FILE_PATH = THIS_DIR / f"{self.model_name}/{self.benchmark_file_name}.json"
+        SUBMODEL_FILE_PATH = (
+            THIS_DIR / f"{self.model_name}/{self.benchmark_file_name}.json"
+        )
         split_file_name = self.benchmark_file_name.split("_")
         self.submodel_name = "_".join(split_file_name[:-1])
         type_of_backend = split_file_name[-1]
@@ -164,9 +167,13 @@ class ModelBenchmarkRunItem(pytest.Item):
 
         # If there are modules for an e2e pipeline test, reset exec_args and directory_compile variables to custom variables
         if self.modules:
-            all_modules_found, exec_args = e2e_iree_benchmark_module_args(self.modules, self.file_suffix)
+            all_modules_found, exec_args = e2e_iree_benchmark_module_args(
+                self.modules, self.file_suffix
+            )
             if not all_modules_found:
-                pytest.skip(f"Modules needed for {self.model_name} :: {self.submodel_name} not found, unable to run benchmark tests. Skipping...")
+                pytest.skip(
+                    f"Modules needed for {self.model_name} :: {self.submodel_name} not found, unable to run benchmark tests. Skipping..."
+                )
             vmfb_file_path = f"{vmfb_dir}/{self.compiled_file_name}.vmfb"
 
         exec_args += (
@@ -176,9 +183,11 @@ class ModelBenchmarkRunItem(pytest.Item):
             + get_input_list(self.inputs)
             + self.benchmark_flags
         )
-        
+
         if not Path(vmfb_file_path).is_file():
-            pytest.skip(f"Vmfb file for {self.model_name} :: {self.submodel_name} was not found. Unable to run benchmark tests, skipping...")
+            pytest.skip(
+                f"Vmfb file for {self.model_name} :: {self.submodel_name} was not found. Unable to run benchmark tests, skipping..."
+            )
 
         # run iree benchmark command
         ret_value, output = iree_benchmark_module(
@@ -198,10 +207,17 @@ class ModelBenchmarkRunItem(pytest.Item):
         # golden time check
         if self.golden_time:
             # Writing to time summary
-            mean_time_row = [self.model_name, self.submodel_name, str(benchmark_mean_time), self.golden_time]
+            mean_time_row = [
+                self.model_name,
+                self.submodel_name,
+                str(benchmark_mean_time),
+                self.golden_time,
+            ]
             with open("job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
-                file_data["time_summary"] = file_data.get("time_summary", []) + [mean_time_row]
+                file_data["time_summary"] = file_data.get("time_summary", []) + [
+                    mean_time_row
+                ]
                 job_summary.seek(0)
                 json.dump(file_data, job_summary)
 
@@ -226,10 +242,17 @@ class ModelBenchmarkRunItem(pytest.Item):
                 comp_stats["stream-aggregate"]["execution"]["dispatch-count"]
             )
 
-            dispatch_count_row = [self.model_name, self.submodel_name, dispatch_count, self.golden_dispatch]
+            dispatch_count_row = [
+                self.model_name,
+                self.submodel_name,
+                dispatch_count,
+                self.golden_dispatch,
+            ]
             with open("job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
-                file_data["dispatch_summary"] = file_data.get("dispatch_summary", []) + [mean_time_row]
+                file_data["dispatch_summary"] = file_data.get(
+                    "dispatch_summary", []
+                ) + [mean_time_row]
                 job_summary.seek(0)
                 json.dump(file_data, job_summary)
 
@@ -250,13 +273,20 @@ class ModelBenchmarkRunItem(pytest.Item):
             module_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
             binary_size = Path(module_path).stat().st_size
 
-            binary_size_row = [self.model_name, self.submodel_name, binary_size, self.golden_size]
+            binary_size_row = [
+                self.model_name,
+                self.submodel_name,
+                binary_size,
+                self.golden_size,
+            ]
             with open("job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
-                file_data["size_summary"] = file_data.get("size_summary", []) + [mean_time_row]
+                file_data["size_summary"] = file_data.get("size_summary", []) + [
+                    mean_time_row
+                ]
                 job_summary.seek(0)
                 json.dump(file_data, job_summary)
-                
+
             logger.info(
                 (
                     f"{self.model_name} {self.submodel_name} binary size: {binary_size} bytes"
@@ -269,9 +299,9 @@ class ModelBenchmarkRunItem(pytest.Item):
                 self.golden_size,
                 f"{self.model_name} {self.submodel_name} binary size should not get bigger",
             )
-            
+
     def repr_failure(self, excinfo):
         return super().repr_failure(excinfo)
-        
+
     def reportinfo(self):
         return self.path, 0, f"usecase: {self.name}"
