@@ -18,7 +18,7 @@
         "--iree-llvmgpu-enable-prefetch",
         "--iree-hal-target-backends=rocm"
     ],
-    "mlir_file_url": "https://raw.githubusercontent.com/iree-org/iree/refs/heads/main/build_tools/pkgci/external_test_suite/sdxl_pipeline_bench_f16.mlir",
+    "mlir_file_path": "external_test_files/sdxl_pipeline_bench_f16.mlir",
     "modules": [
         "sdxl_clip",
         "sdxl_unet_fp16",

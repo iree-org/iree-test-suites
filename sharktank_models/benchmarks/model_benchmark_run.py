@@ -15,7 +15,6 @@ import tabulate
 from ireers_tools import *
 from pytest_check import check
 import pytest
-import requests
 
 logger = logging.getLogger(__name__)
 
@@ -125,15 +124,7 @@ class ModelBenchmarkRunItem(pytest.Item):
             # custom configurations related to e2e testing
             self.compilation_required = data.get("compilation_required", False)
             self.compiled_file_name = data.get("compiled_file_name")
-            mlir_file_url = data.get("mlir_file_url", "")
-            if mlir_file_url:
-                response = requests.get(mlir_file_url)
-                file_name = mlir_file_url.split("/")[-1]
-                TUNER_FILE_PATH = THIS_DIR / file_name
-                with open(TUNER_FILE_PATH, "w") as file:
-                    file.write(response.text)
-
-                self.mlir_file_path = str(TUNER_FILE_PATH)
+            self.mlir_file_path = data.get("mlir_file_path", "")
             self.modules = data.get("modules", [])
             self.device = data.get("device")
 

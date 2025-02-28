@@ -25,7 +25,6 @@ setup(
         "pytest-retry",
         "pytest-timeout",
         "pytest-xdist",
-        "requests",
         "tabulate",
     ],
     extras_require={},
