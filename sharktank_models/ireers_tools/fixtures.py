@@ -29,6 +29,14 @@ IREE_COMPILE_QOL_FLAGS = [
 ]
 
 
+class IreeCompileException(RuntimeError):
+    pass
+
+
+class IreeRuntimeException(RuntimeError):
+    pass
+
+
 def fetch_source_fixture(url: str, *, group: str):
     art = FetchedArtifact(url=url, group=group)
     art.start()
@@ -53,7 +61,14 @@ def iree_compile(source: Artifact, flags: Sequence[str], vmfb_path: Path):
     )
     logger.info("Exec: " + str(exec_args))
     start_time = time.time()
-    subprocess.run(exec_args, check=True, capture_output=True, cwd=vmfb_path.parent)
+    ret = subprocess.run(exec_args, capture_output=True, cwd=vmfb_path.parent)
+    if ret.returncode != 0:
+        logger.error(f"Compilation of {str(source.path)} failed")
+        logger.error("iree-compile stdout:")
+        logger.error(ret.stdout.decode("utf-8"))
+        logger.error("iree-compile stderr:")
+        logger.error(ret.stderr.decode("utf-8"))
+        raise IreeCompileException(f"Compilation of {str(source.path)} failed")
     run_time = time.time() - start_time
     logger.info(f"Compilation succeeded in {run_time}s")
     logger.info("**************************************************************")
@@ -70,7 +85,14 @@ def iree_run_module(vmfb: Path, *, device, function, args: Sequence[str] = ()):
     exec_args.extend(args)
     logger.info("**************************************************************")
     logger.info("Exec: " + str(exec_args))
-    subprocess.run(exec_args, check=True, capture_output=True, cwd=vmfb.parent)
+    ret = subprocess.run(exec_args, capture_output=True, cwd=vmfb.parent)
+    if ret.returncode != 0:
+        logger.error(f"IREE run module of {str(vmfb)} failed")
+        logger.error("iree-compile stdout:")
+        logger.error(ret.stdout.decode("utf-8"))
+        logger.error("iree-compile stderr:")
+        logger.error(ret.stderr.decode("utf-8"))
+        raise IreeRuntimeException(f"IREE run module of {str(vmfb)} failed")
 
 
 def iree_benchmark_module(vmfb: Path, *, device, function, args: Sequence[str] = ()):
