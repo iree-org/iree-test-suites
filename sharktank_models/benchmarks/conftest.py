@@ -108,11 +108,13 @@ def pytest_collect_file(parent, file_path):
 class BenchmarkTestSpec:
     model_name: str
     benchmark_file_name: str
+    file_path: str
+    external_test_files: dict
 
 
 class SharkTankModelBenchmarkTests(pytest.File):
     def collect(self):
-        for file_path in session.config.benchmark_test_files:
+        for file_path in self.config.benchmark_test_files:
             path = file_path.split("/")
             benchmark_file_name = path[-1].replace(".json", "")
             model_name = path[-2]
@@ -123,7 +125,7 @@ class SharkTankModelBenchmarkTests(pytest.File):
                 model_name=model_name,
                 benchmark_file_name=benchmark_file_name,
                 file_path=file_path,
-                external_test_files=session.config.external_test_files,
+                external_test_files=self.config.external_test_files,
             )
 
             yield ModelBenchmarkRunItem.from_parent(self, name=item_name, spec=spec)

@@ -124,7 +124,8 @@ class ModelBenchmarkRunItem(pytest.Item):
             self.compiled_file_name = data.get("compiled_file_name")
             mlir_file_name = data.get("mlir_file_name", "")
             external_test_files = self.spec.external_test_files
-            self.mlir_file_path = external_test_files.get(mlir_file_name, "")
+            if mlir_file_name:
+                self.mlir_file_path = external_test_files.get(mlir_file_name, "")
             self.modules = data.get("modules", [])
             self.device = data.get("device")
 

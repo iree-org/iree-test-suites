@@ -73,7 +73,7 @@ class QualityTestSpec:
 
 class SharkTankModelQualityTests(pytest.File):
     def collect(self):
-        for file_path in session.config.quality_test_files:
+        for file_path in self.config.quality_test_files:
             path = file_path.split("/")
             quality_file_name = path[-1].replace(".json", "")
             model_name = path[-2]
@@ -84,7 +84,7 @@ class SharkTankModelQualityTests(pytest.File):
                 model_name=model_name,
                 quality_file_name=quality_file_name,
                 file_path=file_path,
-                external_test_files=session.config.external_test_files,
+                external_test_files=self.config.external_test_files,
             )
 
             yield ModelQualityRunItem.from_parent(self, name=item_name, spec=spec)

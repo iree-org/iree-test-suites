@@ -13,7 +13,9 @@ pytest sharktank_models/quality_tests/ \
     -rpFe \
     --log-cli-level=info \
     --timeout=600 \
-    --durations=0
+    --durations=0 \
+    --test-file-directory={PATH_TO_TESTS} \
+    --external-file-directory={PATH_TO_EXTERNAL_FILES}
 ```
 
 ### Required and optional fields for the JSON model file
@@ -34,6 +36,6 @@ pytest sharktank_models/quality_tests/ \
 | compile_chip_expecting_to_fail | optional | array   | If an array is passed in, the compilation tests will fail on the specified chip, ex: `["gfx90a"]`                                                |
 | compile_only                   | optional | boolean | If true, only the compilation tests will run                                                                                                     |
 | add_pipeline_module            | optional | boolean | If true, the <b>pipeline mlir</b> module will be added to the `iree_run_module` as an argument                                                   |
-| tuner_file                     | optional | dict    | Adds a `iree-codegen-transform-dialect-library` compiler flag for a SKU-specific tuner file (ex: `{"mi308": "{path_to_tuner_file}"}`)            |
+| tuner_file                     | optional | dict    | Adds a `iree-codegen-transform-dialect-library` compiler flag for a SKU-specific tuner file (ex: `{"mi308": "{tuner_file_name}"}`)            |
 
 Please feel free to look at any JSON examples under a model directory (ex: sd3, sdxl)

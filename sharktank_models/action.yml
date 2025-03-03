@@ -93,6 +93,7 @@ runs:
           --timeout=600 \
           --test-file-directory=${{ inputs.BENCHMARK_TEST_DIRECTORY }} \
           --external-file-directory=${{ inputs.EXTERNAL_TEST_FILE_DIRECTORY }}
+          
         echo "$(<${GITHUB_ACTION_PATH}/job_summary.md )" >> $GITHUB_STEP_SUMMARY
       env:
         ROCM_CHIP: ${{ inputs.CHIP }}
