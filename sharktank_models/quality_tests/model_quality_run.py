@@ -58,15 +58,13 @@ class ModelQualityRunItem(pytest.Item):
         super().__init__(**kwargs)
         self.spec = spec
         self.model_name = self.spec.model_name
+        self.file_path = self.spec.file_path
         self.quality_file_name = self.spec.quality_file_name
-        SUBMODEL_FILE_PATH = (
-            THIS_DIR / f"{self.model_name}/{self.quality_file_name}.json"
-        )
         split_file_name = self.quality_file_name.split("_")
         self.submodel_name = "_".join(split_file_name[:-1])
         self.type_of_backend = split_file_name[-1]
 
-        with open(SUBMODEL_FILE_PATH, "r") as file:
+        with open(self.file_path, "r") as file:
             data = json.load(file)
 
             # retrieving source fixtures if available in JSON file
@@ -121,10 +119,12 @@ class ModelQualityRunItem(pytest.Item):
 
             # Custom configuration for a tuner file
             self.tuner_file = data.get("tuner_file", {})
+            self.external_test_files = self.spec.external_test_files
             if sku in self.tuner_file:
-                TUNER_FILE_PATH = THIS_DIR / self.tuner_file.get(sku)
+                # from conftest.py, collecting full file path
+                FILE_PATH = self.external_test_files.get(self.tuner_file.get(sku))
                 self.compiler_flags.append(
-                    f"--iree-codegen-transform-dialect-library={str(TUNER_FILE_PATH)}"
+                    f"--iree-codegen-transform-dialect-library={FILE_PATH}"
                 )
 
             # Custom configuration to fp16 and adding secondary pipeline mlir

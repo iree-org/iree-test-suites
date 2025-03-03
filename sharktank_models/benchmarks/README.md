@@ -21,7 +21,7 @@ pytest sharktank_models/benchmarks/ \
 | compilation_required             | optional | boolean | If true, this will let the benchmark test know that it needs to compile a file                                               |
 | compiled_file_name               | optional | string  | When the compilation occurs, this will be the file name                                                                      |
 | compile_flags                    | optional | array   | An array of compiler flag options                                                                                            |
-| mlir_file_path                   | optional | string  | Path to where the mlir file to compile is                                                                                    |
+| mlir_file_name                   | optional | string  | The name of the MLIR file                                                                                                    |
 | modules                          | optional | array   | Specific to e2e, add modules here to include in the benchmarking test                                                        |
 | function_run                     | required | string  | The function that the `iree-benchmark-module` will run adnd benchmark                                                        |
 | benchmark_repetitions            | required | float   | The number of times the benchmark tests will repeat                                                                          |
@@ -31,7 +31,7 @@ pytest sharktank_models/benchmarks/ \
 | golden_time_ms                   | optional | object  | An object of golden times, where the key is the sku and the value is the golden time in ms, (ex: `{"mi250": 100}`)           |
 | golden_dispatch                  | optional | object  | An object of golden dispatches, where the key is the sku and the value is the golden dispatch count, (ex: `{"mi250": 1602}`) |
 | golden_size                      | optional | object  | An object of golden sizes, where the key is the sku and the value is the golden size in bytes, (ex: `{"mi250": 2000000}`)    |
-| specific_chip_to_ignore     | optional | array   | An array of chip values, where the benchmark tests will ignore the chips specified                                           |
+| specific_chip_to_ignore          | optional | array   | An array of chip values, where the benchmark tests will ignore the chips specified                                           |
 | real_weights_file_name           | optional | string  | If real weights is a different file name, specify it here in order to get the correct real weights file                      |
 
 Please feel free to look at any JSON examples under a model directory (ex: sdxl)
