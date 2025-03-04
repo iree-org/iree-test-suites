@@ -38,23 +38,17 @@ def pytest_sessionstart(session):
 
     # Collect all .json files for quality tests
     session.config.quality_test_files = []
-    path_of_quality_tests = session.config.getoption("test_file_directory")
-    if path_of_quality_tests:
-        for root, dirs, files in os.walk(path_of_quality_tests):
-            for file in files:
-                path_of_file = str(os.path.join(root, file))
-                if ".json" in path_of_file:
-                    session.config.quality_test_files.append(path_of_file)
+    path_of_quality_tests = Path(session.config.getoption("test_file_directory"))
+    test_files = sorted(path_of_quality_tests.glob("**/*.json"))
+    session.config.quality_test_files.extend(test_files)
 
     # Keeping track of all external test files and their paths
     session.config.external_test_files = {}
-    path_of_external_test_files = session.config.getoption("external_file_directory")
-    if path_of_external_test_files:
-        for root, dirs, files in os.walk(path_of_external_test_files):
-            for file in files:
-                path_of_file = str(os.path.join(root, file))
-                file_name = path_of_file.split("/")[-1]
-                session.config.external_test_files[file_name] = path_of_file
+    path_of_external_test_files = Path(session.config.getoption("external_file_directory"))
+    external_files = sorted(path_of_external_test_files.glob("*"))
+    for external_file in external_files:
+        file_name = external_file.name
+        session.config.external_test_files[file_name] = external_file
 
 
 def pytest_collect_file(parent, file_path):
@@ -67,16 +61,15 @@ def pytest_collect_file(parent, file_path):
 class QualityTestSpec:
     model_name: str
     quality_file_name: str
-    file_path: str
+    file_path: Path
     external_test_files: dict
 
 
 class SharkTankModelQualityTests(pytest.File):
     def collect(self):
         for file_path in self.config.quality_test_files:
-            path = file_path.split("/")
-            quality_file_name = path[-1].replace(".json", "")
-            model_name = path[-2]
+            quality_file_name = file_path.stem
+            model_name = str(file_path.parent)
 
             item_name = f"{model_name} :: {quality_file_name}"
 

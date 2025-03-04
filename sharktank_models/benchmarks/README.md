@@ -3,16 +3,24 @@
 ### Adding your own model
 
 - To add your own model, create a directory under `benchmarks` and add JSON files that correspond to the submodels and chip. Please follow the [JSON file schema in this README file](#required-and-optional-fields-for-the-json-model-file)
+- Please refer to the sample file `sdxl/clip_rocm.json`
 
 ### How to run the benchmark tests
 
 ```
+# Retrieving test files and external test files
+git clone https://github.com/iree-org/iree.git
+export PATH_TO_TESTS=iree/tests/external/iree-test-suites/sharktank_models/benchmarks
+export PATH_TO_EXTERNAL_FILES=iree/build_tools/pkgci/external_test_suite
+
+# running benchmark tests
+git clone https://github.com/iree-org/iree-test-suites.git
 pytest sharktank_models/benchmarks/ \
     --log-cli-level=info \
     --timeout=600 \
     --retries=7 \
-    --test-file-directory={PATH_TO_TESTS} \
-    --external-file-directory={PATH_TO_EXTERNAL_FILES}
+    --test-file-directory=$PATH_TO_TESTS
+    --external-file-directory=$PATH_TO_EXTERNAL_FILES
 ```
 
 ### Required and optional fields for the JSON model file
