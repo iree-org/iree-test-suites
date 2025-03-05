@@ -19,8 +19,8 @@ pytest sharktank_models/benchmarks/ \
     --log-cli-level=info \
     --timeout=600 \
     --retries=7 \
-    --test-file-directory=$PATH_TO_TESTS
-    --external-file-directory=$PATH_TO_EXTERNAL_FILES
+    --test-file-directory=${PATH_TO_TESTS} \
+    --external-file-directory=${PATH_TO_EXTERNAL_FILES}
 ```
 
 ### Required and optional fields for the JSON model file

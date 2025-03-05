@@ -23,8 +23,8 @@ pytest iree-test-suites/sharktank_models/quality_tests/ \
     --log-cli-level=info \
     --timeout=600 \
     --durations=0 \
-    --test-file-directory=$PATH_TO_TESTS
-    --external-file-directory=$PATH_TO_EXTERNAL_FILES
+    --test-file-directory=${PATH_TO_TESTS} \
+    --external-file-directory=${PATH_TO_EXTERNAL_FILES}
 ```
 
 ### Required and optional fields for the JSON model file
