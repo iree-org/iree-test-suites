@@ -91,15 +91,13 @@ class ModelBenchmarkRunItem(pytest.Item):
         super().__init__(**kwargs)
         self.spec = spec
         self.model_name = self.spec.model_name
+        self.file_path = self.spec.file_path
         self.benchmark_file_name = self.spec.benchmark_file_name
-        SUBMODEL_FILE_PATH = (
-            THIS_DIR / f"{self.model_name}/{self.benchmark_file_name}.json"
-        )
         split_file_name = self.benchmark_file_name.split("_")
         self.submodel_name = "_".join(split_file_name[:-1])
         type_of_backend = split_file_name[-1]
 
-        with open(SUBMODEL_FILE_PATH, "r") as file:
+        with open(self.file_path, "r") as file:
             data = json.load(file)
 
             self.inputs = data.get("inputs", [])
@@ -124,7 +122,10 @@ class ModelBenchmarkRunItem(pytest.Item):
             # custom configurations related to e2e testing
             self.compilation_required = data.get("compilation_required", False)
             self.compiled_file_name = data.get("compiled_file_name")
-            self.mlir_file_path = data.get("mlir_file_path", "")
+            mlir_file_name = data.get("mlir_file_name", "")
+            external_test_files = self.spec.external_test_files
+            if mlir_file_name:
+                self.mlir_file_path = external_test_files.get(mlir_file_name, "")
             self.modules = data.get("modules", [])
             self.device = data.get("device")
 

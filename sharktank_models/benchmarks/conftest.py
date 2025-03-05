@@ -19,14 +19,43 @@ sku = os.getenv("SKU", default="mi300")
 logger = logging.getLogger(__name__)
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--test-file-directory",
+        action="store",
+        help="The directory of benchmark test JSON files to build and run test cases",
+    )
+
+    parser.addoption(
+        "--external-file-directory",
+        action="store",
+        help="The directory of external test files (ex: E2E MLIR, tuner files)",
+    )
+
+
 def pytest_sessionstart(session):
+    logger.info("Pytest benchmark test session is starting")
     with open("job_summary.md", "a") as job_summary, open(
         "job_summary.json", "w+"
     ) as content:
         print(f"{sku.upper()} Complete Benchmark Summary:\n", file=job_summary)
         json.dump({}, content)
 
-    logger.info("Pytest benchmark test session is starting")
+    # Collect all .json files for benchmark tests
+    session.config.benchmark_test_files = []
+    path_of_benchmark_tests = Path(session.config.getoption("test_file_directory"))
+    test_files = sorted(path_of_benchmark_tests.glob("**/*.json"))
+    session.config.benchmark_test_files.extend(test_files)
+
+    # Keeping track of all external test files and their paths
+    session.config.external_test_files = {}
+    path_of_external_test_files = Path(
+        session.config.getoption("external_file_directory")
+    )
+    external_files = sorted(path_of_external_test_files.glob("*"))
+    for external_file in external_files:
+        file_name = external_file.name
+        session.config.external_test_files[file_name] = external_file
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -66,11 +95,8 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 def pytest_collect_file(parent, file_path):
-    if (
-        file_path.suffix == ".json"
-        and "job_summary" not in file_path.name
-        and "benchmarks" in str(THIS_DIR)
-    ):
+    # Run only the benchmark test for this directory
+    if "model_benchmark_run" in str(file_path):
         return SharkTankModelBenchmarkTests.from_parent(parent, path=file_path)
 
 
@@ -78,18 +104,23 @@ def pytest_collect_file(parent, file_path):
 class BenchmarkTestSpec:
     model_name: str
     benchmark_file_name: str
+    file_path: Path
+    external_test_files: dict
 
 
 class SharkTankModelBenchmarkTests(pytest.File):
     def collect(self):
-        path = str(self.path).split("/")
-        benchmark_file_name = path[-1].replace(".json", "")
-        model_name = path[-2]
+        for file_path in self.config.benchmark_test_files:
+            benchmark_file_name = file_path.stem
+            model_name = str(file_path.parent)
 
-        item_name = f"{model_name} :: {benchmark_file_name}"
+            item_name = f"{model_name} :: {benchmark_file_name}"
 
-        spec = BenchmarkTestSpec(
-            model_name=model_name, benchmark_file_name=benchmark_file_name
-        )
+            spec = BenchmarkTestSpec(
+                model_name=model_name,
+                benchmark_file_name=benchmark_file_name,
+                file_path=file_path,
+                external_test_files=self.config.external_test_files,
+            )
 
-        yield ModelBenchmarkRunItem.from_parent(self, name=item_name, spec=spec)
+            yield ModelBenchmarkRunItem.from_parent(self, name=item_name, spec=spec)

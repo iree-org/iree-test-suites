@@ -19,6 +19,12 @@ inputs:
     description: "Type of target to test"
   GPU:
     description: "Type of GPU to test"
+  EXTERNAL_TEST_FILE_DIRECTORY:
+    description: "The directory of test files and configurations"
+  QUALITY_TEST_DIRECTORY:
+    description: "The directory of quality tests"
+  BENCHMARK_TEST_DIRECTORY:
+    description: "The directory of benchmark tests"
 
 runs:
   using: "composite"
@@ -67,7 +73,9 @@ runs:
           --log-cli-level=info \
           --durations=0 \
           --timeout=1200 \
-          --capture=no
+          --capture=no \
+          --test-file-directory=${{ inputs.QUALITY_TEST_DIRECTORY }} \
+          --external-file-directory=${{ inputs.EXTERNAL_TEST_FILE_DIRECTORY }}
       env:
         ROCM_CHIP: ${{ inputs.CHIP }}
         SKU: ${{ inputs.SKU }}
@@ -82,7 +90,10 @@ runs:
           ${GITHUB_ACTION_PATH}/sharktank_models/benchmarks \
           --log-cli-level=info \
           --retries=7 \
-          --timeout=600 
+          --timeout=600 \
+          --test-file-directory=${{ inputs.BENCHMARK_TEST_DIRECTORY }} \
+          --external-file-directory=${{ inputs.EXTERNAL_TEST_FILE_DIRECTORY }}
+          
         echo "$(<${GITHUB_ACTION_PATH}/job_summary.md )" >> $GITHUB_STEP_SUMMARY
       env:
         ROCM_CHIP: ${{ inputs.CHIP }}

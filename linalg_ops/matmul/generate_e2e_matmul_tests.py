@@ -4,8 +4,7 @@
 # Licensed under the Apache License v2.0 with LLVM Exceptions.
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-"""iree_generated_e2e_matmul_test generator for e2e matmul tests.
-"""
+"""iree_generated_e2e_matmul_test generator for e2e matmul tests."""
 
 import argparse
 import enum
