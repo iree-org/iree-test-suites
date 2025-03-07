@@ -42,15 +42,15 @@ runs:
       shell: bash
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
-        pip install -e ${GITHUB_ACTION_PATH}/sharktank_models
-        pip install -r ${GITHUB_ACTION_PATH}/sharktank_models/requirements-iree.txt
+        pip install -e ${GITHUB_ACTION_PATH}
+        pip install -r ${GITHUB_ACTION_PATH}/requirements-iree.txt
     
     - name: Run sharktank specific model tests
       shell: bash
       if: contains(inputs.MATRIX_NAME, 'model')
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
-        pytest iree-test-suites/sharktank_models/ \
+        pytest ${GITHUB_ACTION_PATH} \
             -rA \
             --log-cli-level=info \
             --override-ini=xfail_strict=false \
@@ -68,7 +68,7 @@ runs:
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
         pytest \
-          ${GITHUB_ACTION_PATH}/sharktank_models/quality_tests \
+          ${GITHUB_ACTION_PATH}/quality_tests \
           -rpFe \
           --log-cli-level=info \
           --durations=0 \
@@ -87,7 +87,7 @@ runs:
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
         pytest \
-          ${GITHUB_ACTION_PATH}/sharktank_models/benchmarks \
+          ${GITHUB_ACTION_PATH}/benchmarks \
           --log-cli-level=info \
           --retries=7 \
           --timeout=600 \
