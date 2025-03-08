@@ -57,8 +57,8 @@ runs:
             -m ${{ inputs.TARGET }} \
             --timeout=120 \
             --durations=0 \
-            --ignore=sharktank_models/benchmarks \
-            --ignore=sharktank_models/quality_tests
+            --ignore=${GITHUB_ACTION_PATH}/benchmarks \
+            --ignore=${GITHUB_ACTION_PATH}/quality_tests
       env:
         HIP_TARGET: ${{ inputs.GPU }}
 
