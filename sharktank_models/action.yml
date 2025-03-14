@@ -46,6 +46,8 @@ runs:
         source ${{ inputs.VENV_DIR }}/bin/activate
         pip install -e ${GITHUB_ACTION_PATH}
         pip install -r ${GITHUB_ACTION_PATH}/requirements-iree.txt
+      env:
+        IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
     
     - name: Run sharktank specific model tests
       shell: bash
