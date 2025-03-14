@@ -25,6 +25,8 @@ inputs:
     description: "The directory of quality tests"
   BENCHMARK_TEST_DIRECTORY:
     description: "The directory of benchmark tests"
+  IREE_TEST_FILES:
+    description: "Directory of the iree test files"
 
 runs:
   using: "composite"
@@ -79,6 +81,7 @@ runs:
       env:
         ROCM_CHIP: ${{ inputs.CHIP }}
         SKU: ${{ inputs.SKU }}
+        IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
 
     # Since the benchmark tests require compiled model files, this step must run after the quality tests
     - name: Run regression benchmark tests
@@ -98,3 +101,4 @@ runs:
       env:
         ROCM_CHIP: ${{ inputs.CHIP }}
         SKU: ${{ inputs.SKU }}
+        IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
