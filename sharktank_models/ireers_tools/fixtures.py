@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 from .artifacts import (
     Artifact,
+    ArtifactGroup,
     FetchedArtifact,
     ProducedArtifact,
 )
