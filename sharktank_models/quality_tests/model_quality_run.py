@@ -26,9 +26,7 @@ def fetch_source_fixtures_for_run_flags(inference_list, model_name, submodel_nam
         source = entry.get("source")
         value = entry.get("value")
         artifact_group = ArtifactGroup(f"{model_name}_{submodel_name}")
-        source_fixture = fetch_source_fixture(
-            source, group=artifact_group
-        )
+        source_fixture = fetch_source_fixture(source, group=artifact_group)
         result.append([source_fixture.path, value])
 
     return result
@@ -177,9 +175,7 @@ class ModelQualityRunItem(pytest.Item):
                 self.pipeline_compiler_flags,
                 Path(vmfb_dir)
                 / Path(vmfbs_path)
-                / Path("pipeline_model").with_suffix(
-                    f".{self.file_suffix}.vmfb"
-                ),
+                / Path("pipeline_model").with_suffix(f".{self.file_suffix}.vmfb"),
             )
 
     def test_run_threshold(self):
