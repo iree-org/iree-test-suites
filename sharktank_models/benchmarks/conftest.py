@@ -112,7 +112,7 @@ class SharkTankModelBenchmarkTests(pytest.File):
     def collect(self):
         for file_path in self.config.benchmark_test_files:
             benchmark_file_name = file_path.stem
-            model_name = str(file_path.parent)
+            model_name = str(file_path.parent.stem)
 
             item_name = f"{model_name} :: {benchmark_file_name}"
 

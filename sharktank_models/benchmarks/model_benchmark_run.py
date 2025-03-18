@@ -30,8 +30,6 @@ sku = os.getenv("SKU", default="mi300")
 """
 Helper methods
 """
-
-
 # Converts a list of inputs into compiler friendly input arguments
 def get_input_list(input_list):
     return [f"--input={entry}" for entry in input_list]

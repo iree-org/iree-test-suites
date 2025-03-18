@@ -25,8 +25,7 @@ def fetch_source_fixtures_for_run_flags(inference_list, model_name, submodel_nam
     for entry in inference_list:
         source = entry.get("source")
         value = entry.get("value")
-        artifact_group = ArtifactGroup(f"{model_name}_{submodel_name}")
-        source_fixture = fetch_source_fixture(source, group=artifact_group)
+        source_fixture = fetch_source_fixture(source, group=f"{model_name}_{submodel_name}")
         result.append([source_fixture.path, value])
 
     return result
@@ -81,18 +80,17 @@ class ModelQualityRunItem(pytest.Item):
                 if data.get("outputs")
                 else None
             )
-            artifact_group = ArtifactGroup(f"{self.model_name}_{self.submodel_name}")
             self.real_weights = (
                 fetch_source_fixture(
                     data.get("real_weights"),
-                    group=artifact_group,
+                    group=f"{self.model_name}_{self.submodel_name}",
                 )
                 if data.get("real_weights")
                 else None
             )
             self.mlir = (
                 fetch_source_fixture(
-                    data.get("mlir"), group=artifact_group
+                    data.get("mlir"), group=f"{self.model_name}_{self.submodel_name}"
                 )
                 if data.get("mlir")
                 else None

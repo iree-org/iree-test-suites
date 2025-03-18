@@ -71,7 +71,7 @@ class SharkTankModelQualityTests(pytest.File):
     def collect(self):
         for file_path in self.config.quality_test_files:
             quality_file_name = file_path.stem
-            model_name = str(file_path.parent)
+            model_name = str(file_path.parent.stem)
 
             item_name = f"{model_name} :: {quality_file_name}"
 

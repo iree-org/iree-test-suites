@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 from .artifacts import (
     Artifact,
-    ArtifactGroup,
     FetchedArtifact,
     ProducedArtifact,
 )
@@ -38,7 +37,7 @@ class IreeRuntimeException(RuntimeError):
     pass
 
 
-def fetch_source_fixture(url: str, *, group: Union[ArtifactGroup, str]):
+def fetch_source_fixture(url: str, *, group: str):
     art = FetchedArtifact(url=url, group=group)
     art.start()
     return art
