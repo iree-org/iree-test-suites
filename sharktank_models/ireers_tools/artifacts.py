@@ -128,6 +128,8 @@ class FetchedArtifact(ProducedArtifact):
             self.path = get_artifact_root_dir() / group.group_name / name
         else:
             self.path = get_artifact_root_dir() / name
+        logger.info(f"HERE IS THE PATH {self.path}")
+        logger.info(f"HERE IS THE GROUP NAME {self.group_name}")
         
 
     def human_readable_size(self, size, decimal_places=2):
@@ -190,7 +192,14 @@ class FetchedArtifact(ProducedArtifact):
             blob_properties = blob_client.get_blob_properties()
             blob_size_str = self.human_readable_size(blob_properties.size)
             azure_md5 = self.get_azure_md5(self.url, blob_properties)
-
+            logger.info(f"HERE IS THE PATH WHEN CALLING DOWNLOAD BEFFORE {self.path}")
+            logger.info(f"HERE IS THE GROUP NAME CALLING DOWNLOAD {self.group_name}")
+            logger.info(f"HERE IS THE NAME CALLING DOWNLOAD {self.name}")
+            if self.group_name:
+                self.path = get_artifact_root_dir() / self.group_name / self.name
+            else:
+                self.path = get_artifact_root_dir() / self.name
+            logger.info(f"HERE IS THE PATH WHEN CALLING DOWNLOAD AFTER {self.path}")
             local_md5 = self.get_local_md5(self.path)
 
             if azure_md5 and azure_md5 == local_md5:
