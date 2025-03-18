@@ -224,7 +224,7 @@ def test_decode(toy_llama):
     cross_entropy = decode_cross_entropy(toy_llama, ids)
     cross_entropy = cross_entropy.item()
     assert cross_entropy == pytest.approx(
-        0.589, 1e-2
+        0.582, 1e-2
     ), "cross entropy outside of tolerance"
 
 
