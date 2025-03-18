@@ -82,9 +82,9 @@ class Artifact:
         self.name = name
         self.depends = tuple(depends)
 
-    # @property
-    # def path(self) -> Path:
-    #     return self.group.directory / self.name
+    @property
+    def path(self) -> Path:
+        return self.group.directory / self.name
 
     def join(self):
         """Waits for the artifact to become available."""
@@ -129,6 +129,8 @@ class FetchedArtifact(ProducedArtifact):
         else:
             self.path = get_artifact_root_dir() / name
         logger.info(f"HERE IS THE PATH {self.path}")
+        self.group_name = group.group_name
+        self.name = name
         logger.info(f"HERE IS THE GROUP NAME {self.group_name}")
         
 
