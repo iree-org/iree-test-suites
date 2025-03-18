@@ -82,16 +82,18 @@ class ModelQualityRunItem(pytest.Item):
                 else None
             )
             self.real_weights = (
+                artifact_group = ArtifactGroup(f"{self.model_name}_{self.submodel_name}")
                 fetch_source_fixture(
                     data.get("real_weights"),
-                    group=f"{self.model_name}_{self.submodel_name}",
+                    group=artifact_group,
                 )
                 if data.get("real_weights")
                 else None
             )
             self.mlir = (
+                artifact_group = ArtifactGroup(f"{self.model_name}_{self.submodel_name}")
                 fetch_source_fixture(
-                    data.get("mlir"), group=f"{self.model_name}_{self.submodel_name}"
+                    data.get("mlir"), group=artifact_group
                 )
                 if data.get("mlir")
                 else None

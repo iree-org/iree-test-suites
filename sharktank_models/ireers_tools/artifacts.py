@@ -37,9 +37,10 @@ def show_progress(t):
     return update_to
 
 
-@functools.cache
+# @functools.cache
 def get_artifact_root_dir() -> Path:
     root_path = os.getenv("IREE_TEST_FILES", default=THIS_DIR) + "/artifacts"
+    logger.info(f"HERE IS THE ROOT PATH {root_path}")
     return Path(os.path.expanduser(root_path)).resolve()
 
 
@@ -81,9 +82,9 @@ class Artifact:
         self.name = name
         self.depends = tuple(depends)
 
-    @property
-    def path(self) -> Path:
-        return self.group.directory / self.name
+    # @property
+    # def path(self) -> Path:
+    #     return self.group.directory / self.name
 
     def join(self):
         """Waits for the artifact to become available."""
@@ -123,6 +124,11 @@ class FetchedArtifact(ProducedArtifact):
         name = Path(urllib.parse.urlparse(url).path).name
         super().__init__(group, name, FetchedArtifact._callback)
         self.url = url
+        if group.group_name:
+            self.path = get_artifact_root_dir() / group.group_name / name
+        else:
+            self.path = get_artifact_root_dir() / name
+        
 
     def human_readable_size(self, size, decimal_places=2):
         for unit in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
