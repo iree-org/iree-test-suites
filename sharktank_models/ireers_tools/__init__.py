@@ -11,4 +11,7 @@ from .fixtures import (
     iree_run_module,
 )
 
-from .artifacts import Artifact
+from .artifacts import (
+    Artifact,
+    ArtifactGroup
+)

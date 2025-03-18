@@ -37,7 +37,7 @@ class IreeRuntimeException(RuntimeError):
     pass
 
 
-def fetch_source_fixture(url: str, *, group: str):
+def fetch_source_fixture(url: str, *, group: Union[ArtifactGroup, str]):
     art = FetchedArtifact(url=url, group=group)
     art.start()
     return art

@@ -25,8 +25,9 @@ def fetch_source_fixtures_for_run_flags(inference_list, model_name, submodel_nam
     for entry in inference_list:
         source = entry.get("source")
         value = entry.get("value")
+        artifact_group = ArtifactGroup(f"{model_name}_{submodel_name}")
         source_fixture = fetch_source_fixture(
-            source, group=f"{model_name}_{submodel_name}"
+            source, group=artifact_group
         )
         result.append([source_fixture.path, value])
 
@@ -166,7 +167,7 @@ class ModelQualityRunItem(pytest.Item):
             self.compiler_flags,
             Path(vmfb_dir)
             / Path(vmfbs_path)
-            / Path("model").with_suffix(f".{self.type_of_backend}_{chip}.vmfb"),
+            / Path("model").with_suffix(f".{self.file_suffix}.vmfb"),
         )
 
         if self.pipeline_mlir:
@@ -177,7 +178,7 @@ class ModelQualityRunItem(pytest.Item):
                 Path(vmfb_dir)
                 / Path(vmfbs_path)
                 / Path("pipeline_model").with_suffix(
-                    f".{self.type_of_backend}_{chip}.vmfb"
+                    f".{self.file_suffix}.vmfb"
                 ),
             )
 
