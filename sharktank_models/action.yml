@@ -42,7 +42,7 @@ runs:
     - name: Pull Git LFS objects
       shell: bash
       run: |
-        apt install git-lfs -y
+        sudo apt install git-lfs -y
         git lfs install
         git lfs fetch --all
     
