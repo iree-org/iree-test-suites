@@ -17,7 +17,6 @@ PARENT_DIR = Path(__file__).parent.parent
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 chip = os.getenv("ROCM_CHIP", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
-backend = os.getenv("BACKEND", default="rocm")
 
 # Helper methods
 def fetch_source_fixtures_for_run_flags(inference_list, model_name, submodel_name):
@@ -63,9 +62,7 @@ class ModelQualityRunItem(pytest.Item):
         split_file_name = self.quality_file_name.split("_")
         self.submodel_name = "_".join(split_file_name[:-1])
         self.type_of_backend = split_file_name[-1]
-        if self.type_of_backend != backend:
-            pytest.skip(f"Only running tests for {backend}, skipping these tests")
-
+            
         with open(self.file_path, "r") as file:
             data = json.load(file)
 

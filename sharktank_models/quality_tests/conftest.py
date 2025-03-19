@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 THIS_DIR = Path(__file__).parent
 logger = logging.getLogger(__name__)
-
+backend = os.getenv("BACKEND", default="rocm")
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -40,7 +40,9 @@ def pytest_sessionstart(session):
     session.config.quality_test_files = []
     path_of_quality_tests = Path(session.config.getoption("test_file_directory"))
     test_files = sorted(path_of_quality_tests.glob("**/*.json"))
-    session.config.quality_test_files.extend(test_files)
+    for test_file in test_files:
+        if backend in str(test_file.name):
+            session.config.quality_test_files.append(test_file)
 
     # Keeping track of all external test files and their paths
     session.config.external_test_files = {}
@@ -57,7 +59,6 @@ def pytest_collect_file(parent, file_path):
     # Run only the quality test for this directory
     if "model_quality_run" in str(file_path):
         return SharkTankModelQualityTests.from_parent(parent, path=file_path)
-
 
 @dataclass(frozen=True)
 class QualityTestSpec:
