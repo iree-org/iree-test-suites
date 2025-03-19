@@ -19,6 +19,8 @@ inputs:
     description: "Type of target to test"
   GPU:
     description: "Type of GPU to test"
+  BACKEND:
+    description: "Type of backend to test"
   EXTERNAL_TEST_FILE_DIRECTORY:
     description: "The directory of test files and configurations"
   QUALITY_TEST_DIRECTORY:
@@ -39,8 +41,9 @@ runs:
     - name: Pull Git LFS objects
       shell: bash
       run: |
+        sudo apt install git-lfs -y
         git lfs install
-        git lfs pull --include="*"
+        git lfs fetch --all
     
     - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
@@ -90,6 +93,7 @@ runs:
         ROCM_CHIP: ${{ inputs.CHIP }}
         SKU: ${{ inputs.SKU }}
         IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
+        BACKEND: ${{ inputs.BACKEND }}
 
     # Since the benchmark tests require compiled model files, this step must run after the quality tests
     - name: Run regression benchmark tests
