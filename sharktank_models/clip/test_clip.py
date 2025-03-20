@@ -64,7 +64,11 @@ absolute_tolerance = {
 
 def compiler_args(device_id: str) -> list[str]:
     if device_id == "local-task":
-        return ["--iree-hal-target-device=llvm-cpu", "--iree-llvmcpu-target-cpu=host"]
+        return [
+            "--iree-hal-target-device=local",
+            "--iree-hal-local-target-device-backends=llvm-cpu",
+            "--iree-llvmcpu-target-cpu=host",
+        ]
     if device_id == "hip":
         if "HIP_TARGET" not in os.environ:
             raise RuntimeError("HIP_TARGET environment variable not set")
