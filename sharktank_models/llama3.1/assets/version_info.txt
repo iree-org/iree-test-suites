@@ -1,8 +1,8 @@
 # Environment Information
-Date: Wed Mar 19 01:04:05 PM PDT 2025
-Shark-AI Commit: 45fab28305edeab2b57b0eae571bcdfb858a21d2
-IREE Base Compiler: iree-base-compiler==3.2.0
-IREE Turbine: iree-turbine==3.2.0
+Date: Wed Mar 19 11:37:32 PM PDT 2025
+Shark-AI Commit: 8667b8a1cb253a3fbcf3c53ea1ae9ea133bb4429
+IREE Base Compiler: iree-base-compiler==3.3.0rc20250311
+IREE Turbine: iree-turbine==3.3.0rc20250311
 Python Version: Python 3.12.8
 IREE Compile Path: /home/xidaren2/iree-test-suites/sharktank_models/llama3.1/assets.venv/bin/iree-compile
 IREE Compile Version: IREE (https://iree.dev):
