@@ -110,8 +110,9 @@ class ToyLlama:
 
 
 def cpu_flags(sharding):
-    return [f"--iree-hal-target-device=llvm-cpu[{i}]" for i in range(sharding)] + [
-        "--iree-llvmcpu-target-cpu=host"
+    return [f"--iree-hal-target-device=local[{i}]" for i in range(sharding)] + [
+        "--iree-hal-local-target-device-backends=llvm-cpu",
+        "--iree-llvmcpu-target-cpu=host",
     ]
 
 
