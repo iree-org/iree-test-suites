@@ -25,9 +25,28 @@ python3 -m sharktank.examples.sharding.shard_llm_dataset \
 
 
 # Generate the MLIR files:
-python3 -m sharktank.examples.export_paged_llm_v1 --bs=1 \
+python3 -m sharktank.examples.export_paged_llm_v1 \
+    --bs-prefill=1 \
+    --bs-decode=1 \
     --irpa-file toy_llama.irpa --output-mlir toy_llama.mlir
-python3 -m sharktank.examples.export_paged_llm_v1 --bs=1 \
+python3 -m sharktank.examples.export_paged_llm_v1 \
+    --bs-prefill=1 \
+    --bs-decode=1 \
     --irpa-file toy_llama_tp2.irpa --output-mlir toy_llama_tp2.mlir
 
+# Generate the MLIR files for the batched tests
+python3 -m sharktank.examples.export_paged_llm_v1 \
+    --bs-prefill=1 \
+    --bs-decode=1 \
+    --irpa-file toy_llama.irpa --output-mlir asssets/bs1/toy_llama_bs1.mlir
+
+python3 -m sharktank.examples.export_paged_llm_v1 \
+    --bs-prefill=4 \
+    --bs-decode=4 \
+    --irpa-file toy_llama.irpa --output-mlir asssets/bs1/toy_llama_bs4.mlir
+
+python3 -m sharktank.examples.export_paged_llm_v1 \
+    --bs-prefill=32 \
+    --bs-decode=32 \
+    --irpa-file toy_llama.irpa --output-mlir asssets/bs1/toy_llama_bs32.mlir
 ```
