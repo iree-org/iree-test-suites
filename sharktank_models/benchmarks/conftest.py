@@ -16,6 +16,7 @@ import tabulate
 THIS_DIR = Path(__file__).parent
 sku = os.getenv("SKU", default="mi300")
 github_action_path = os.getenv("GITHUB_ACTION_PATH", str(THIS_DIR))
+backend = os.getenv("BACKEND", default="rocm")
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,9 @@ def pytest_sessionstart(session):
     session.config.benchmark_test_files = []
     path_of_benchmark_tests = Path(session.config.getoption("test_file_directory"))
     test_files = sorted(path_of_benchmark_tests.glob("**/*.json"))
-    session.config.benchmark_test_files.extend(test_files)
+    for test_file in test_files:
+        if backend in str(test_file.name):
+            session.config.benchmark_test_files.append(test_file)
 
     # Keeping track of all external test files and their paths
     session.config.external_test_files = {}

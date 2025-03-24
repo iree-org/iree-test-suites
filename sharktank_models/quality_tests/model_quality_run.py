@@ -81,10 +81,14 @@ class ModelQualityRunItem(pytest.Item):
                 if data.get("outputs")
                 else None
             )
+            # Scenario where the weights group name is customized
+            real_weights_group_name = f"{self.model_name}_{self.submodel_name}"
+            if data.get("custom_real_weights_group"):
+                real_weights_group_name = data.get("custom_real_weights_group")
             self.real_weights = (
                 fetch_source_fixture(
                     data.get("real_weights"),
-                    group=f"{self.model_name}_{self.submodel_name}",
+                    group=real_weights_group_name,
                 )
                 if data.get("real_weights")
                 else None

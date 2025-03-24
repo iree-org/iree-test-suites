@@ -114,3 +114,4 @@ runs:
         ROCM_CHIP: ${{ inputs.CHIP }}
         SKU: ${{ inputs.SKU }}
         IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
+        BACKEND: ${{ inputs.BACKEND }}
