@@ -14,6 +14,8 @@ from dataclasses import dataclass
 THIS_DIR = Path(__file__).parent
 logger = logging.getLogger(__name__)
 backend = os.getenv("BACKEND", default="rocm")
+NO_TESTS_COLLECTED = 5
+TEST_SUCCESS = 0
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -53,7 +55,11 @@ def pytest_sessionstart(session):
     for external_file in external_files:
         file_name = external_file.name
         session.config.external_test_files[file_name] = external_file
-
+        
+def pytest_sessionfinish(session, exitstatus):
+    # on default, if no tests are collected, it exits with error. Instead, return with success status
+    if exitstatus == NO_TESTS_COLLECTED:
+        session.exitstatus = TEST_SUCCESS
 
 def pytest_collect_file(parent, file_path):
     # Run only the quality test for this directory
