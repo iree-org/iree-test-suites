@@ -38,15 +38,16 @@ runs:
       with:
         clean: false # doesn't clean up the venv created before this composite action
         lfs: true
-    
+
     - name: Pull Git LFS objects
       shell: bash
       run: |
         git lfs install
-        git lfs fetch
-        git lfs checkout
+        git lfs fetch --all
         git lfs pull
-    
+        git lfs checkout
+        git lfs logs last
+
     - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
         python-version: "3.11"
