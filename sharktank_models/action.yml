@@ -33,20 +33,24 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout repository 
+    - name: Checkout repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2 
       with:
+        repository: geomin12/iree-test-suites
         clean: false # doesn't clean up the venv created before this composite action
         lfs: true
 
     - name: Pull Git LFS objects
       shell: bash
       run: |
+        echo ${{ github.repository }}
+        ls ${GITHUB_ACTION_PATH}
+        echo "Toy ls"
+        ls -l ${GITHUB_ACTION_PATH}/clip/assets/text_model/toy/
         git lfs install
-        git lfs fetch --all
         git lfs pull
-        git lfs checkout
-        git lfs logs last
+        echo "post lfs toy ls"
+        ls -l ${GITHUB_ACTION_PATH}/clip/assets/text_model/toy/
 
     - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
