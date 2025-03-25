@@ -50,6 +50,8 @@ runs:
         ls -l ${GITHUB_ACTION_PATH}/clip/assets/text_model/toy/
         git lfs install
         GIT_TRACE=1 git lfs pull
+        echo "trying with -c"
+        GIT_TRACE=1 git -C ${GITHUB_ACTION_PATH} lfs pull
         echo "post lfs toy ls"
         ls -l ${GITHUB_ACTION_PATH}/clip/assets/text_model/toy/
         echo "lfs ls"
