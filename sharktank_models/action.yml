@@ -33,27 +33,35 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout repository
+    - name: Checkout IREE repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2 
       with:
-        # repository: geomin12/iree-test-suites
         clean: false # doesn't clean up the venv created before this composite action
+    
+    - name: Checkout IREE Test Suites repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2 
+      with:
+        repository: iree/iree-test-suites
+        path: iree-test-suites
         lfs: true
 
     - name: Pull Git LFS objects
       shell: bash
       run: |
-        echo ${{ github.repository }}
+        echo "main ls"
         ls
+        echo "github action path ls"
         ls ${GITHUB_ACTION_PATH}
         echo "Toy ls"
         ls -l ${GITHUB_ACTION_PATH}/clip/assets/text_model/toy/
+        echo "toy ls local"
+        ls -l iree-test-suites/sharktakn_models/clip/assets/text_model/toy/
         git lfs install
-        GIT_TRACE=1 git lfs pull
-        echo "trying with -c"
-        GIT_TRACE=1 git -C ${GITHUB_ACTION_PATH} lfs pull
+        GIT_TRACE=1 git lfs pull --include=iree-test-suites --include=${GITHUB_ACTION_PATH}
         echo "post lfs toy ls"
         ls -l ${GITHUB_ACTION_PATH}/clip/assets/text_model/toy/
+        echo "toy ls local"
+        ls -l iree-test-suites/sharktakn_models/clip/assets/text_model/toy/
         echo "lfs ls"
         git lfs ls-files
 
