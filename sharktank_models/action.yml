@@ -81,7 +81,7 @@ runs:
             --ignore=${GITHUB_ACTION_PATH}/quality_tests
       env:
         HIP_TARGET: ${{ inputs.GPU }}
-        ASSET_PATH: ${{ github.workspace }}/iree-test-suites
+        ASSET_PATH: ${{ github.workspace }}/iree-test-suites/sharktank_models
 
     - name: Run regression quality tests
       shell: bash
