@@ -18,6 +18,7 @@ vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 chip = os.getenv("ROCM_CHIP", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
 
+
 # Helper methods
 def fetch_source_fixtures_for_run_flags(inference_list, model_name, submodel_name):
     result = []
@@ -62,7 +63,7 @@ class ModelQualityRunItem(pytest.Item):
         split_file_name = self.quality_file_name.split("_")
         self.submodel_name = "_".join(split_file_name[:-1])
         self.type_of_backend = split_file_name[-1]
-            
+
         with open(self.file_path, "r") as file:
             data = json.load(file)
 

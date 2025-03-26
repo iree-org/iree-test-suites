@@ -18,6 +18,7 @@ import iree.compiler
 THIS_DIR = pathlib.Path(__file__).parent
 ASSET_PATH = os.getenv("ASSET_PATH", default=str(THIS_DIR)) + "/clip"
 
+
 def load_tensor_from_irpa(path: PathLike) -> np.ndarray:
     index = iree.runtime.ParameterIndex()
     index.load(str(path))
@@ -50,10 +51,10 @@ parameters_path = {
     "f32": f"{ASSET_PATH}/assets/text_model/toy/f32_parameters.irpa",
 }
 
-function_arg0_path = f"{ASSET_PATH}/assets/text_model/toy/forward_bs4_arg0_input_ids.irpa"
-function_expected_result0 = (
-    f"{ASSET_PATH}/assets/text_model/toy/forward_bs4_expected_result0_last_hidden_state_f32.irpa"
+function_arg0_path = (
+    f"{ASSET_PATH}/assets/text_model/toy/forward_bs4_arg0_input_ids.irpa"
 )
+function_expected_result0 = f"{ASSET_PATH}/assets/text_model/toy/forward_bs4_expected_result0_last_hidden_state_f32.irpa"
 
 absolute_tolerance = {
     "bf16": 1e-3,

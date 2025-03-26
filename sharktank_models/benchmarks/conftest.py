@@ -96,11 +96,11 @@ def pytest_sessionfinish(session, exitstatus):
                     summary_data.get(key), headers=value, tablefmt="pipe"
                 )
                 print("\n" + table_data, file=job_summary)
-                
+
     # on default, if no tests are collected, it exits with error. Instead, return with success status
     if exitstatus == NO_TESTS_COLLECTED:
         session.exitstatus = TEST_SUCCESS
-        
+
     logger.info("Pytest benchmark test session has finished")
 
 
