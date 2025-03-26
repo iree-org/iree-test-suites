@@ -37,7 +37,8 @@ runs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2 
       with:
         clean: false # doesn't clean up the venv created before this composite action
-    
+
+    # Pulling IREE Test Suites specifically for Git LFS files
     - name: Checkout IREE Test Suites repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2 
       with:
@@ -48,22 +49,8 @@ runs:
     - name: Pull Git LFS objects
       shell: bash
       run: |
-        echo "main ls"
-        ls
-        echo "github action path ls"
-        ls ${GITHUB_ACTION_PATH}
-        echo "Toy ls"
-        ls -l ${GITHUB_ACTION_PATH}/clip/assets/text_model/toy/
-        echo "toy ls local"
-        ls -l iree-test-suites/sharktakn_models/clip/assets/text_model/toy/
         git lfs install
-        GIT_TRACE=1 git lfs pull --include=iree-test-suites --include=${GITHUB_ACTION_PATH}
-        echo "post lfs toy ls"
-        ls -l ${GITHUB_ACTION_PATH}/clip/assets/text_model/toy/
-        echo "toy ls local"
-        ls -l iree-test-suites/sharktakn_models/clip/assets/text_model/toy/
-        echo "lfs ls"
-        git lfs ls-files
+        git lfs pull
 
     - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
@@ -94,6 +81,7 @@ runs:
             --ignore=${GITHUB_ACTION_PATH}/quality_tests
       env:
         HIP_TARGET: ${{ inputs.GPU }}
+        ASSET_PATH: ${{ github.workspace }}/iree-test-suites
 
     - name: Run regression quality tests
       shell: bash
