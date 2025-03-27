@@ -18,7 +18,7 @@ page_size = kv_size * block_size
 THIS_DIR = pathlib.Path(__file__).parent
 ASSET_PATH = os.getenv("ASSET_PATH", default=str(THIS_DIR)) + "/llama3.1"
 
-BS1_DIR =  f"{ASSET_PATH}/assets/bs1"
+BS1_DIR = f"{ASSET_PATH}/assets/bs1"
 BS4_DIR = f"{ASSET_PATH}/assets/bs4"
 BS32_DIR = f"{ASSET_PATH}/assets/bs32"
 
@@ -184,8 +184,9 @@ class ToyLlama:
 
 
 def cpu_flags(sharding):
-    return [f"--iree-hal-target-device=llvm-cpu[{i}]" for i in range(sharding)] + [
-        "--iree-llvmcpu-target-cpu=host"
+    return [f"--iree-hal-target-device=local[{i}]" for i in range(sharding)] + [
+        "--iree-hal-local-target-device-backends=llvm-cpu",
+        "--iree-llvmcpu-target-cpu=host",
     ]
 
 
