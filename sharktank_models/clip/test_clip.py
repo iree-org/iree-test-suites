@@ -15,7 +15,7 @@ import ml_dtypes
 import iree.runtime
 import iree.compiler
 
-THIS_DIR = pathlib.Path(__file__).parent
+THIS_DIR = pathlib.Path(__file__).parent.parent
 ASSET_PATH = os.getenv("ASSET_PATH", default=str(THIS_DIR)) + "/clip"
 
 
