@@ -15,6 +15,8 @@ import tabulate
 
 THIS_DIR = Path(__file__).parent
 sku = os.getenv("SKU", default="mi300")
+job_summary_path = os.getenv("JOB_SUMMARY_PATH", str(THIS_DIR))
+backend = os.getenv("BACKEND", default="cpu")
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +37,8 @@ def pytest_addoption(parser):
 
 def pytest_sessionstart(session):
     logger.info("Pytest benchmark test session is starting")
-    with open("job_summary.md", "a") as job_summary, open(
-        "job_summary.json", "w+"
+    with open(f"{job_summary_path}/job_summary.md", "a") as job_summary, open(
+        f"{job_summary_path}/job_summary.json", "w+"
     ) as content:
         print(f"{sku.upper()} Complete Benchmark Summary:\n", file=job_summary)
         json.dump({}, content)
@@ -45,7 +47,9 @@ def pytest_sessionstart(session):
     session.config.benchmark_test_files = []
     path_of_benchmark_tests = Path(session.config.getoption("test_file_directory"))
     test_files = sorted(path_of_benchmark_tests.glob("**/*.json"))
-    session.config.benchmark_test_files.extend(test_files)
+    for test_file in test_files:
+        if backend in str(test_file.name):
+            session.config.benchmark_test_files.append(test_file)
 
     # Keeping track of all external test files and their paths
     session.config.external_test_files = {}
@@ -80,8 +84,8 @@ def pytest_sessionfinish(session, exitstatus):
         ],
     }
 
-    with open("job_summary.md", "a") as job_summary, open(
-        "job_summary.json", "r"
+    with open(f"{job_summary_path}/job_summary.md", "a") as job_summary, open(
+        f"{job_summary_path}/job_summary.json", "r"
     ) as content:
         summary_data = json.loads(content.read())
         for key, value in markdown_data.items():
@@ -112,7 +116,7 @@ class SharkTankModelBenchmarkTests(pytest.File):
     def collect(self):
         for file_path in self.config.benchmark_test_files:
             benchmark_file_name = file_path.stem
-            model_name = str(file_path.parent)
+            model_name = str(file_path.parent.stem)
 
             item_name = f"{model_name} :: {benchmark_file_name}"
 

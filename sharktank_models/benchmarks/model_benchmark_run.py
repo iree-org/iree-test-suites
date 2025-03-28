@@ -19,6 +19,7 @@ import pytest
 logger = logging.getLogger(__name__)
 
 THIS_DIR = Path(__file__).parent
+github_action_path = os.getenv("GITHUB_ACTION_PATH", str(THIS_DIR))
 # compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
 PARENT_DIR = Path(__file__).parent.parent
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
@@ -214,7 +215,7 @@ class ModelBenchmarkRunItem(pytest.Item):
                 str(benchmark_mean_time),
                 self.golden_time,
             ]
-            with open("job_summary.json", "r+") as job_summary:
+            with open(f"{github_action_path}/job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
                 file_data["time_summary"] = file_data.get("time_summary", []) + [
                     mean_time_row
@@ -249,7 +250,7 @@ class ModelBenchmarkRunItem(pytest.Item):
                 dispatch_count,
                 self.golden_dispatch,
             ]
-            with open("job_summary.json", "r+") as job_summary:
+            with open(f"{github_action_path}/job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
                 file_data["dispatch_summary"] = file_data.get(
                     "dispatch_summary", []
@@ -280,7 +281,7 @@ class ModelBenchmarkRunItem(pytest.Item):
                 binary_size,
                 self.golden_size,
             ]
-            with open("job_summary.json", "r+") as job_summary:
+            with open(f"{github_action_path}/job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
                 file_data["size_summary"] = file_data.get("size_summary", []) + [
                     mean_time_row

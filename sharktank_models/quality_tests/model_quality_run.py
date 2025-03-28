@@ -82,10 +82,14 @@ class ModelQualityRunItem(pytest.Item):
                 if data.get("outputs")
                 else None
             )
+            # Scenario where the weights group name is customized
+            real_weights_group_name = f"{self.model_name}_{self.submodel_name}"
+            if data.get("custom_real_weights_group"):
+                real_weights_group_name = data.get("custom_real_weights_group")
             self.real_weights = (
                 fetch_source_fixture(
                     data.get("real_weights"),
-                    group=f"{self.model_name}_{self.submodel_name}",
+                    group=real_weights_group_name,
                 )
                 if data.get("real_weights")
                 else None
@@ -166,7 +170,7 @@ class ModelQualityRunItem(pytest.Item):
             self.compiler_flags,
             Path(vmfb_dir)
             / Path(vmfbs_path)
-            / Path("model").with_suffix(f".{self.type_of_backend}_{chip}.vmfb"),
+            / Path("model").with_suffix(f".{self.file_suffix}.vmfb"),
         )
 
         if self.pipeline_mlir:
@@ -176,9 +180,7 @@ class ModelQualityRunItem(pytest.Item):
                 self.pipeline_compiler_flags,
                 Path(vmfb_dir)
                 / Path(vmfbs_path)
-                / Path("pipeline_model").with_suffix(
-                    f".{self.type_of_backend}_{chip}.vmfb"
-                ),
+                / Path("pipeline_model").with_suffix(f".{self.file_suffix}.vmfb"),
             )
 
     def test_run_threshold(self):

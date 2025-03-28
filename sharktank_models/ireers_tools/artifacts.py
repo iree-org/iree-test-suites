@@ -184,7 +184,6 @@ class FetchedArtifact(ProducedArtifact):
             blob_properties = blob_client.get_blob_properties()
             blob_size_str = self.human_readable_size(blob_properties.size)
             azure_md5 = self.get_azure_md5(self.url, blob_properties)
-
             local_md5 = self.get_local_md5(self.path)
 
             if azure_md5 and azure_md5 == local_md5:

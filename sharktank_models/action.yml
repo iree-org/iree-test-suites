@@ -8,32 +8,49 @@ name: IREE Sharktank Models Tests
 
 inputs:
   MATRIX_NAME:
-    description: "Identifying name of the matrix variation"
+    description: "Unique identifier for matrix run name" # (ex: amdgpu_rocm_mi300_gfx942_regression)
   SKU:
-    description: "Type of SKU to test"
+    description: "SKU target for the quality and benchmark tests" # (ex: mi300)
   CHIP:
-    description: "Type of chip to test"
+    description: "The rocm chip for the quality and benchmark tests" # (ex: gfx942)
   VENV_DIR:
-    description: "Path to the virtual environment"
+    description: "Path to the Python virtual environment directory" # (ex: /home/venv)
   TARGET:
-    description: "Type of target to test"
+    description: "Target type for the sharktank model tests" # (ex: target_gpu)
   GPU:
-    description: "Type of GPU to test"
+    description: "Type of GPU for the sharktank model tests" # (ex: gfx1100)
+  BACKEND:
+    description: "Type of backend for the quality and benchmark tests" # (ex: rocm)
   EXTERNAL_TEST_FILE_DIRECTORY:
-    description: "The directory of test files and configurations"
+    # Any additional external files needed for testing can be added in this directory (ex: attention_spec.mlir)
+    description: "(Optional) The directory of external test configurations for quality and benchmark tests" # (ex: /files/external_test_files/)
   QUALITY_TEST_DIRECTORY:
-    description: "The directory of quality tests"
+    # Model JSON configurations are placed in this directory. For an example, see /sharktank_models/quality_tests/sdxl/clip_rocm.json
+    description: "The directory of JSON test configurations for quality tests" # (ex: /quality_test_files/sdxl)
   BENCHMARK_TEST_DIRECTORY:
-    description: "The directory of benchmark tests"
+    # Model JSON configurations are placed in this directory. For an example, see /sharktank_models/benchmarks/sdxl/clip_rocm.json
+    description: "The directory of JSON test configurations for benchmark tests" # (ex: /benchmark_files/sdxl)
+  IREE_TEST_FILES:
+    # Existing inputs, outputs, weights and mlir files are placed in this directory, to speed up test runs with caching
+    description: "(Optional) Directory of the iree test files for quality and benchmark tests" # (ex: /iree_test_files)
 
 runs:
   using: "composite"
   steps:
-    - name: Checkout repository 
+    # Pulling IREE Test Suites specifically for Git LFS files
+    - name: Checkout IREE Test Suites repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2 
       with:
-        clean: false # doesn't clean up the venv created before this composite action
-    
+        repository: iree-org/iree-test-suites
+        path: iree-test-suites
+        lfs: true
+
+    - name: Pull Git LFS objects
+      shell: bash
+      run: |
+        git lfs install
+        git lfs pull
+
     - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
         python-version: "3.11"
@@ -44,6 +61,8 @@ runs:
         source ${{ inputs.VENV_DIR }}/bin/activate
         pip install -e ${GITHUB_ACTION_PATH}
         pip install -r ${GITHUB_ACTION_PATH}/requirements-iree.txt
+      env:
+        IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
     
     - name: Run sharktank specific model tests
       shell: bash
@@ -57,10 +76,11 @@ runs:
             -m ${{ inputs.TARGET }} \
             --timeout=120 \
             --durations=0 \
-            --ignore=sharktank_models/benchmarks \
-            --ignore=sharktank_models/quality_tests
+            --ignore=${GITHUB_ACTION_PATH}/benchmarks \
+            --ignore=${GITHUB_ACTION_PATH}/quality_tests
       env:
         HIP_TARGET: ${{ inputs.GPU }}
+        ASSET_PATH: ${{ github.workspace }}/iree-test-suites/sharktank_models
 
     - name: Run regression quality tests
       shell: bash
@@ -79,6 +99,8 @@ runs:
       env:
         ROCM_CHIP: ${{ inputs.CHIP }}
         SKU: ${{ inputs.SKU }}
+        IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
+        BACKEND: ${{ inputs.BACKEND }}
 
     # Since the benchmark tests require compiled model files, this step must run after the quality tests
     - name: Run regression benchmark tests
@@ -98,3 +120,6 @@ runs:
       env:
         ROCM_CHIP: ${{ inputs.CHIP }}
         SKU: ${{ inputs.SKU }}
+        IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
+        BACKEND: ${{ inputs.BACKEND }}
+        JOB_SUMMARY_PATH: ${GITHUB_ACTION_PATH}
