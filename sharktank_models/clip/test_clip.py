@@ -11,12 +11,14 @@ from os import PathLike
 import os
 import numpy as np
 import ml_dtypes
-
+from pathlib import Path
 import iree.runtime
 import iree.compiler
 
 THIS_DIR = pathlib.Path(__file__).parent.parent
-ASSET_PATH = os.getenv("ASSET_PATH", default=str(THIS_DIR)) + "/clip"
+ASSET_PATH = pathlib.Path(
+    os.getenv("ASSET_PATH", default=str(THIS_DIR)) + "/clip"
+).resolve()
 
 
 def load_tensor_from_irpa(path: PathLike) -> np.ndarray:
@@ -42,19 +44,22 @@ def model_variant(request: pytest.FixtureRequest) -> str:
 
 
 mlir_path = {
-    "bf16": f"{ASSET_PATH}/assets/text_model/toy/bf16.mlir",
-    "f32": f"{ASSET_PATH}/assets/text_model/toy/f32.mlir",
+    "bf16": str(ASSET_PATH / "assets/text_model/toy/bf16.mlir"),
+    "f32": str(ASSET_PATH / "assets/text_model/toy/f32.mlir"),
 }
 
 parameters_path = {
-    "bf16": f"{ASSET_PATH}/assets/text_model/toy/bf16_parameters.irpa",
-    "f32": f"{ASSET_PATH}/assets/text_model/toy/f32_parameters.irpa",
+    "bf16": str(ASSET_PATH / "assets/text_model/toy/bf16_parameters.irpa"),
+    "f32": str(ASSET_PATH / "assets/text_model/toy/f32_parameters.irpa"),
 }
 
-function_arg0_path = (
-    f"{ASSET_PATH}/assets/text_model/toy/forward_bs4_arg0_input_ids.irpa"
+function_arg0_path = str(
+    ASSET_PATH / "assets/text_model/toy/forward_bs4_arg0_input_ids.irpa"
 )
-function_expected_result0 = f"{ASSET_PATH}/assets/text_model/toy/forward_bs4_expected_result0_last_hidden_state_f32.irpa"
+function_expected_result0 = str(
+    ASSET_PATH
+    / "assets/text_model/toy/forward_bs4_expected_result0_last_hidden_state_f32.irpa"
+)
 
 absolute_tolerance = {
     "bf16": 1e-3,

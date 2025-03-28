@@ -15,10 +15,8 @@ import tabulate
 
 THIS_DIR = Path(__file__).parent
 sku = os.getenv("SKU", default="mi300")
-github_action_path = os.getenv("GITHUB_ACTION_PATH", str(THIS_DIR))
-backend = os.getenv("BACKEND", default="rocm")
-NO_TESTS_COLLECTED = 5
-TEST_SUCCESS = 0
+job_summary_path = os.getenv("JOB_SUMMARY_PATH", str(THIS_DIR))
+backend = os.getenv("BACKEND", default="cpu")
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +37,8 @@ def pytest_addoption(parser):
 
 def pytest_sessionstart(session):
     logger.info("Pytest benchmark test session is starting")
-    with open(f"{github_action_path}/job_summary.md", "a") as job_summary, open(
-        f"{github_action_path}/job_summary.json", "w+"
+    with open(f"{job_summary_path}/job_summary.md", "a") as job_summary, open(
+        f"{job_summary_path}/job_summary.json", "w+"
     ) as content:
         print(f"{sku.upper()} Complete Benchmark Summary:\n", file=job_summary)
         json.dump({}, content)
@@ -86,8 +84,8 @@ def pytest_sessionfinish(session, exitstatus):
         ],
     }
 
-    with open(f"{github_action_path}/job_summary.md", "a") as job_summary, open(
-        f"{github_action_path}/job_summary.json", "r"
+    with open(f"{job_summary_path}/job_summary.md", "a") as job_summary, open(
+        f"{job_summary_path}/job_summary.json", "r"
     ) as content:
         summary_data = json.loads(content.read())
         for key, value in markdown_data.items():
@@ -96,10 +94,6 @@ def pytest_sessionfinish(session, exitstatus):
                     summary_data.get(key), headers=value, tablefmt="pipe"
                 )
                 print("\n" + table_data, file=job_summary)
-
-    # on default, if no tests are collected, it exits with error. Instead, return with success status
-    if exitstatus == NO_TESTS_COLLECTED:
-        session.exitstatus = TEST_SUCCESS
 
     logger.info("Pytest benchmark test session has finished")
 

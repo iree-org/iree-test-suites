@@ -16,15 +16,17 @@ block_size = 32
 page_size = kv_size * block_size
 
 THIS_DIR = pathlib.Path(__file__).parent.parent
-ASSET_PATH = os.getenv("ASSET_PATH", default=str(THIS_DIR)) + "/llama3.1"
+ASSET_PATH = pathlib.Path(
+    os.getenv("ASSET_PATH", default=str(THIS_DIR)) + "/llama3.1"
+).resolve()
 
-BS1_DIR = f"{ASSET_PATH}/assets/bs1"
-BS4_DIR = f"{ASSET_PATH}/assets/bs4"
-BS32_DIR = f"{ASSET_PATH}/assets/bs32"
+BS1_DIR = str(ASSET_PATH / "assets/bs1")
+BS4_DIR = str(ASSET_PATH / "assets/bs4")
+BS32_DIR = str(ASSET_PATH / "assets/bs32")
 
-llama_mlir_bs1 = f"{BS1_DIR}/toy_llama_bs1.mlir"
-llama_mlir_bs4 = f"{BS4_DIR}/toy_llama_bs4.mlir"
-llama_mlir_bs32 = f"{BS32_DIR}/toy_llama_bs32.mlir"
+llama_mlir_bs1 = str(ASSET_PATH / "toy_llama_bs1.mlir")
+llama_mlir_bs4 = str(ASSET_PATH / "toy_llama_bs4.mlir")
+llama_mlir_bs32 = str(ASSET_PATH / "toy_llama_bs32.mlir")
 
 # irpa files.
 # this is a list because sharding would have multiple irpa files
