@@ -52,14 +52,15 @@ def pytest_sessionstart(session):
             session.config.benchmark_test_files.append(test_file)
 
     # Keeping track of all external test files and their paths
-    session.config.external_test_files = {}
-    path_of_external_test_files = Path(
-        session.config.getoption("external_file_directory")
-    )
-    external_files = sorted(path_of_external_test_files.glob("*"))
-    for external_file in external_files:
-        file_name = external_file.name
-        session.config.external_test_files[file_name] = external_file
+    if session.config.getoption("external_file_directory"):
+        session.config.external_test_files = {}
+        path_of_external_test_files = Path(
+            session.config.getoption("external_file_directory")
+        )
+        external_files = sorted(path_of_external_test_files.glob("*"))
+        for external_file in external_files:
+            file_name = external_file.name
+            session.config.external_test_files[file_name] = external_file
 
 
 def pytest_sessionfinish(session, exitstatus):

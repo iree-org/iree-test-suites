@@ -33,16 +33,6 @@ jobs:
   test-sharktank-models:
     if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
     runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # CPU
-          - name: cpu_task_model
-            target: target_cpu
-            gpu: none
-          - name: cpu_llvm_task_regression
-            backend: cpu
     env:
       VENV_DIR: ${{ github.workspace }}/.venv
       HTML_REPORT_PATH: sharktank_models/sharktank_models_test_report_cpu_llvm_task.html
@@ -66,13 +56,41 @@ jobs:
           python3 -m pip install -r sharktank_models/requirements-iree.txt
 
       # Run tests.
-      - name: Run Sharktank models composite action
-        uses: './sharktank_models'
-        with:
-          MATRIX_NAME: ${{ matrix.name }}
-          VENV_DIR: ${{ env.VENV_DIR }}
-          TARGET: ${{ matrix.target }}
-          GPU: ${{ matrix.gpu }}
-          BACKEND: ${{ matrix.backend }}
-          QUALITY_TEST_DIRECTORY: ./sharktank_models/quality_tests
-          BENCHMARK_TEST_DIRECTORY: ./sharktank_models/benchmarks
+      - name: Run Sharktank models test suite
+        run: |
+          source ${VENV_DIR}/bin/activate
+          pytest sharktank_models/ \
+            -rA \
+            -m "target_cpu" \
+            --timeout=300 \
+            --durations=0 \
+            --log-cli-level=info \
+            --ignore=sharktank_models/benchmarks \
+            --ignore=sharktank_models/quality_tests
+      
+      - name: Run regression quality tests
+        run: |
+          source ${VENV_DIR}/bin/activate
+          pytest \
+            sharktank_models/quality_tests \
+            -rpFe \
+            --log-cli-level=info \
+            --durations=0 \
+            --timeout=1200 \
+            --capture=no \
+            --test-file-directory=sharktank_models/quality_tests
+        env:
+          BACKEND: "cpu"
+
+      # Since the benchmark tests require compiled model files, this step must run after the quality tests
+      - name: Run regression benchmark tests
+        run: |
+          source ${VENV_DIR}/bin/activate
+          pytest \
+            sharktank_models/benchmarks \
+            --log-cli-level=info \
+            --retries=7 \
+            --timeout=600 \
+            --test-file-directory=sharktank_models/benchmarks
+        env:
+          BACKEND: "cpu"
