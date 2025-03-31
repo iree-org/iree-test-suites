@@ -33,6 +33,9 @@ inputs:
   IREE_TEST_FILES:
     # Existing inputs, outputs, weights and mlir files are placed in this directory, to speed up test runs with caching
     description: "(Optional) Directory of the iree test files for quality and benchmark tests" # (ex: /iree_test_files)
+  IREE_TEST_SUITE_REF:
+    description: "(Optional) The branch or SHA to checkout for IREE test suites"
+    default: main
 
 runs:
   using: "composite"
@@ -43,13 +46,14 @@ runs:
       with:
         repository: iree-org/iree-test-suites
         path: iree-test-suites
+        ref: ${{ inputs.IREE_TEST_SUITE_REF }}
         lfs: true
 
     - name: Pull Git LFS objects
       shell: bash
       run: |
         git lfs install
-        git lfs pull
+        git lfs pull --include=${{ github.workspace }}/iree-test-suites/sharktank_models/
 
     - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
       with:
@@ -60,9 +64,6 @@ runs:
       run: |
         source ${{ inputs.VENV_DIR }}/bin/activate
         pip install -e ${GITHUB_ACTION_PATH}
-        pip install -r ${GITHUB_ACTION_PATH}/requirements-iree.txt
-      env:
-        IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
     
     - name: Run sharktank specific model tests
       shell: bash
@@ -122,4 +123,4 @@ runs:
         SKU: ${{ inputs.SKU }}
         IREE_TEST_FILES: ${{ inputs.IREE_TEST_FILES }}
         BACKEND: ${{ inputs.BACKEND }}
-        JOB_SUMMARY_PATH: ${GITHUB_ACTION_PATH}
+        JOB_SUMMARY_PATH: ${{ env.GITHUB_ACTION_PATH }}

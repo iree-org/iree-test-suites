@@ -15,9 +15,10 @@ from pathlib import Path
 import iree.runtime
 import iree.compiler
 
-THIS_DIR = pathlib.Path(__file__).parent.parent
+THIS_DIR = pathlib.Path(__file__).parent
+PARENT_DIR = THIS_DIR.parent
 ASSET_PATH = pathlib.Path(
-    os.getenv("ASSET_PATH", default=str(THIS_DIR)) + "/clip"
+    os.getenv("ASSET_PATH", default=str(PARENT_DIR)) + "/clip"
 ).resolve()
 
 

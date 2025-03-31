@@ -15,9 +15,10 @@ kv_size = 768
 block_size = 32
 page_size = kv_size * block_size
 
-THIS_DIR = pathlib.Path(__file__).parent.parent
+THIS_DIR = pathlib.Path(__file__).parent
+PARENT_DIR = THIS_DIR.parent
 ASSET_PATH = pathlib.Path(
-    os.getenv("ASSET_PATH", default=str(THIS_DIR)) + "/llama3.1"
+    os.getenv("ASSET_PATH", default=str(PARENT_DIR)) + "/llama3.1"
 ).resolve()
 
 BS1_DIR = str(ASSET_PATH / "assets/bs1")
