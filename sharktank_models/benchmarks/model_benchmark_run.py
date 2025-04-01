@@ -254,7 +254,7 @@ class ModelBenchmarkRunItem(pytest.Item):
                 file_data = json.loads(job_summary.read())
                 file_data["dispatch_summary"] = file_data.get(
                     "dispatch_summary", []
-                ) + [mean_time_row]
+                ) + [dispatch_count_row]
                 job_summary.seek(0)
                 json.dump(file_data, job_summary)
 
@@ -284,7 +284,7 @@ class ModelBenchmarkRunItem(pytest.Item):
             with open(f"{job_summary_path}/job_summary.json", "r+") as job_summary:
                 file_data = json.loads(job_summary.read())
                 file_data["size_summary"] = file_data.get("size_summary", []) + [
-                    mean_time_row
+                    binary_size_row
                 ]
                 job_summary.seek(0)
                 json.dump(file_data, job_summary)
