@@ -16,14 +16,18 @@ block_size = 32
 page_size = kv_size * block_size
 
 THIS_DIR = pathlib.Path(__file__).parent
-llama_mlir = str(THIS_DIR / "assets/toy_llama.mlir")
-llama_irpa = [str(THIS_DIR / "assets/toy_llama.irpa")]
+PARENT_DIR = THIS_DIR.parent
+ASSET_PATH = pathlib.Path(
+    os.getenv("ASSET_PATH", default=str(PARENT_DIR)) + "/llama3.1"
+).resolve()
+llama_mlir = str(ASSET_PATH / "assets/toy_llama.mlir")
+llama_irpa = [str(ASSET_PATH / "assets/toy_llama.irpa")]
 
-llama_tp2_mlir = str(THIS_DIR / "assets/toy_llama_tp2.mlir")
+llama_tp2_mlir = str(ASSET_PATH / "assets/toy_llama_tp2.mlir")
 llama_tp2_irpa = [
-    str(THIS_DIR / "assets/toy_llama_tp2.irpa"),
-    str(THIS_DIR / "assets/toy_llama_tp2.rank0.irpa"),
-    str(THIS_DIR / "assets/toy_llama_tp2.rank1.irpa"),
+    str(ASSET_PATH / "assets/toy_llama_tp2.irpa"),
+    str(ASSET_PATH / "assets/toy_llama_tp2.rank0.irpa"),
+    str(ASSET_PATH / "assets/toy_llama_tp2.rank1.irpa"),
 ]
 
 

@@ -16,18 +16,22 @@ block_size = 32
 page_size = kv_size * block_size
 
 THIS_DIR = pathlib.Path(__file__).parent
+PARENT_DIR = THIS_DIR.parent
+ASSET_PATH = pathlib.Path(
+    os.getenv("ASSET_PATH", default=str(PARENT_DIR)) + "/llama3.1"
+).resolve()
 
-BS1_DIR = THIS_DIR / "assets/bs1"
-BS4_DIR = THIS_DIR / "assets/bs4"
-BS32_DIR = THIS_DIR / "assets/bs32"
+BS1_DIR = str(ASSET_PATH / "assets/bs1")
+BS4_DIR = str(ASSET_PATH / "assets/bs4")
+BS32_DIR = str(ASSET_PATH / "assets/bs32")
 
-llama_mlir_bs1 = str(BS1_DIR / "toy_llama_bs1.mlir")
-llama_mlir_bs4 = str(BS4_DIR / "toy_llama_bs4.mlir")
-llama_mlir_bs32 = str(BS32_DIR / "toy_llama_bs32.mlir")
+llama_mlir_bs1 = f"{BS1_DIR}/toy_llama_bs1.mlir"
+llama_mlir_bs4 = f"{BS4_DIR}/toy_llama_bs4.mlir"
+llama_mlir_bs32 = f"{BS32_DIR}/toy_llama_bs32.mlir"
 
 # irpa files.
 # this is a list because sharding would have multiple irpa files
-llama_irpa = [str(THIS_DIR / "assets/toy_llama.irpa")]
+llama_irpa = [str(ASSET_PATH / "assets/toy_llama.irpa")]
 
 
 class ToyLlama:
@@ -183,8 +187,9 @@ class ToyLlama:
 
 
 def cpu_flags(sharding):
-    return [f"--iree-hal-target-device=llvm-cpu[{i}]" for i in range(sharding)] + [
-        "--iree-llvmcpu-target-cpu=host"
+    return [f"--iree-hal-target-device=local[{i}]" for i in range(sharding)] + [
+        "--iree-hal-local-target-device-backends=llvm-cpu",
+        "--iree-llvmcpu-target-cpu=host",
     ]
 
 
