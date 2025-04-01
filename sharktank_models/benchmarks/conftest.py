@@ -52,8 +52,8 @@ def pytest_sessionstart(session):
             session.config.benchmark_test_files.append(test_file)
 
     # Keeping track of all external test files and their paths
+    session.config.external_test_files = {}
     if session.config.getoption("external_file_directory"):
-        session.config.external_test_files = {}
         path_of_external_test_files = Path(
             session.config.getoption("external_file_directory")
         )
