@@ -1,16 +1,16 @@
 {
     "inputs": [
         {
-            "source": "https://sharkpublic.blob.core.windows.net/sharkpublic/halo-models/llm-dev/llama3_8b_random/toy_llama_inputs/prefill_token_ids.npy",
+            "source": "https://sharkpublic.blob.core.windows.net/sharkpublic/halo-models/llm-dev/llama3_8b_random/toy_llama_inputs/prefill_token_ids.npy"
         },
         {
-            "source": "https://sharkpublic.blob.core.windows.net/sharkpublic/halo-models/llm-dev/llama3_8b_random/toy_llama_inputs/prefill_seq_lens.npy",
+            "source": "https://sharkpublic.blob.core.windows.net/sharkpublic/halo-models/llm-dev/llama3_8b_random/toy_llama_inputs/prefill_seq_lens.npy"
         },
         {
-            "source": "https://sharkpublic.blob.core.windows.net/sharkpublic/halo-models/llm-dev/llama3_8b_random/toy_llama_inputs/prefill_seq_block_ids.npy",
+            "source": "https://sharkpublic.blob.core.windows.net/sharkpublic/halo-models/llm-dev/llama3_8b_random/toy_llama_inputs/prefill_seq_block_ids.npy"
         },
         {
-            "source": "https://sharkpublic.blob.core.windows.net/sharkpublic/halo-models/llm-dev/llama3_8b_random/toy_llama_inputs/prefill_cache_state.npy",
+            "source": "https://sharkpublic.blob.core.windows.net/sharkpublic/halo-models/llm-dev/llama3_8b_random/toy_llama_inputs/prefill_cache_state.npy"
         }
     ],
     "device": "hip",
