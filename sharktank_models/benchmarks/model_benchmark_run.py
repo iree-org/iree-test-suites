@@ -307,3 +307,7 @@ class ModelBenchmarkRunItem(pytest.Item):
 
     def reportinfo(self):
         return self.path, 0, f"usecase: {self.name}"
+
+    # Defining this for pytest-retry to avoid an AttributeError.
+    def _initrequest(self):
+        pass
