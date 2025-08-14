@@ -152,10 +152,14 @@ class ModelQualityRunItem(pytest.Item):
                 self.file_suffix = "cpu"
 
             if not self.real_weights:
-                self.fake_weights = Artifact(group=real_weights_group_name, name="fake_weights.irpa")
+                self.fake_weights = Artifact(
+                    group=real_weights_group_name, name="fake_weights.irpa"
+                )
                 # If no real weights are provided, create a splat parameter
                 # archive to ensure we can still run the model.
-                self.compiler_flags += [f'--iree-opt-splat-parameters={self.fake_weights.path}']
+                self.compiler_flags += [
+                    f"--iree-opt-splat-parameters={self.fake_weights.path}"
+                ]
 
     def runtest(self):
         self.test_compile()
