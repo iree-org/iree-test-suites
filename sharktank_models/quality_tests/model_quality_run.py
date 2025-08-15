@@ -151,6 +151,16 @@ class ModelQualityRunItem(pytest.Item):
             elif self.type_of_backend == "cpu":
                 self.file_suffix = "cpu"
 
+            if not self.real_weights:
+                self.fake_weights = Artifact(
+                    group=real_weights_group_name, name="fake_weights.irpa"
+                )
+                # If no real weights are provided, create a splat parameter
+                # archive to ensure we can still run the model.
+                self.compiler_flags += [
+                    f"--iree-opt-splat-parameters={self.fake_weights.path}"
+                ]
+
     def runtest(self):
         self.test_compile()
         self.test_run_threshold()
@@ -195,6 +205,8 @@ class ModelQualityRunItem(pytest.Item):
         args = self.threshold_args + self.common_rule_flags
         if self.real_weights:
             args.append(f"--parameters=model={self.real_weights.path}")
+        else:
+            args.append(f"--parameters=model={self.fake_weights.path}")
 
         if self.add_pipeline_module:
             pipeline_vmfb_manager_unique_key = f"{self.model_name}_{self.submodel_name}_pipeline_{self.type_of_backend}_vmfb"

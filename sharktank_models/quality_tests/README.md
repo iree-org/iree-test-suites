@@ -33,7 +33,7 @@ pytest iree-test-suites/sharktank_models/quality_tests/ \
 | ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | inputs                         | optional | array   | An array of objects that provides the input blob and the expected input value (ex: `{"source" :"", "value": ""}`, the value field is optional)   |
 | outputs                        | optional | array   | An array of objects that provides the output blob and the expected output value (ex: `{"source" :"", "value": ""}`, the value field is optional) |
-| real_weights                   | optional | string  | URL that provides the real weights blob                                                                                                          |
+| real_weights                   | optional | string  | URL that provides the real weights blob. If not provided, generates a `fake_weights.irpa` file with splat parameters to use.                     |
 | mlir                           | required | string  | URL that provides the MLIR blob                                                                                                                  |
 | pipeline_mlir                  | optional | string  | URL that provides the MLIR blob                                                                                                                  |
 | device                         | optional | string  | The device to run the threshold tests on                                                                                                         |
