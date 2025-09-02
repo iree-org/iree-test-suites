@@ -16,8 +16,11 @@ git clone https://github.com/iree-org/iree.git
 export PATH_TO_TESTS=iree/tests/external/iree-test-suites/sharktank_models/quality_tests
 export PATH_TO_EXTERNAL_FILES=iree/build_tools/pkgci/external_test_suite
 
-# running quality tests
+# Running quality tests
 git clone https://github.com/iree-org/iree-test-suites.git
+# Install the editable sharktank_models package
+cd iree-test-suites/sharktank_models && pip install -e . && cd -
+# Run the test
 pytest iree-test-suites/sharktank_models/quality_tests/ \
     -rpFe \
     --log-cli-level=info \
