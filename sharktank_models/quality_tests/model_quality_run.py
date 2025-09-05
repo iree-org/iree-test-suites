@@ -64,6 +64,12 @@ class ModelQualityRunItem(pytest.Item):
         self.submodel_name = "_".join(split_file_name[:-1])
         self.type_of_backend = split_file_name[-1]
 
+    def runtest(self):
+        self.initialize()
+        self.test_compile()
+        self.test_run_threshold()
+
+    def initialize(self):
         with open(self.file_path, "r") as file:
             data = json.load(file)
 
@@ -160,10 +166,6 @@ class ModelQualityRunItem(pytest.Item):
                 self.compiler_flags += [
                     f"--iree-opt-splat-parameters={self.fake_weights.path}"
                 ]
-
-    def runtest(self):
-        self.test_compile()
-        self.test_run_threshold()
 
     def test_compile(self):
         if chip in self.compile_chip_expecting_to_fail:
