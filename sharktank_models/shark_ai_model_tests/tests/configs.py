@@ -1,4 +1,7 @@
-##################### File For Model Configurations #########################
+'''
+File for Sharktank Model Configurations.
+
+'''
 
 MODELS = {
 

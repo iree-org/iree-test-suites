@@ -1,4 +1,7 @@
-# ##################### Compile Logic ######################
+'''
+Compiles The Exported MLIR from Sharktank To vmfb file
+
+'''
 import argparse
 import os
 import subprocess
@@ -54,13 +57,10 @@ def main():
 if __name__ == "__main__":
     main()
 
-# ####################### End of Compile Logic #########################
 
 
 
-
-
-# ############ Tests Results Through Prefill-Decode Time ################
+# ############ Test Results Through Prefill-Decode Time ################
 
 ISL = [2048]
 

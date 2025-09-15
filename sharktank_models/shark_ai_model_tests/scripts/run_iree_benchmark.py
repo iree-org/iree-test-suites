@@ -1,3 +1,9 @@
+'''
+Here We Run the IREE Benchmark Test and Then Test The Prefill and Decode Time.
+If Time is within the tolerance Then The Test is Passed
+
+Tolerance = 3% for Prefill and 6% for Decode
+'''
 import argparse
 import subprocess
 import sys
