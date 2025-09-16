@@ -2,10 +2,13 @@ import pytest
 import subprocess
 import os
 from pathlib import Path
-from configs import MODELS
+# from configs import MODELS
+import json
+from pathlib import Path
 
 OUTPUT_DIR = Path(os.getcwd()) / "output_artifacts"
 OUTPUT_DIR.mkdir(exist_ok=True)
+CONFIGS_DIR = Path(__file__).parent/"configs"
 
 
 ############# Run The Command and Generate Logs ##############
@@ -27,9 +30,11 @@ def run_cmd(cmd, log_file):
 @pytest.fixture(scope="session")
 def model_config(pytestconfig):
     model_name = pytestconfig.getoption("model")
-    if model_name not in MODELS:
-        raise ValueError(f"Unknown model: {model_name}")
-    return MODELS[model_name]
+    config_path = CONFIGS_DIR / f"{model_name}.json"
+    if not config_path.exits():
+        raise ValueError(f"Unknown Model : {model_name} | Existing Models in Sharktank : llama-70b-fp16, llama-70b-fp8, llama-8b-fp16, llama-8b-fp8, mistral")
+    with open(config_path, "r") as f: 
+        return json.load(f)
 
 
 ############### Export The MLIR Through Sharktank ################
@@ -37,7 +42,7 @@ def model_config(pytestconfig):
 def export_fixture(model_config):
     return run_cmd(
         f"python scripts/run_export.py --irpa {model_config['irpa']} "
-        f"--attention-kernel {model_config[attention_kernel]}"
+        f"--attention-kernel {model_config['attention_kernel']}"
         f"--dtype {model_config['dtype']} --bs-prefill {model_config['bs_prefill']} --bs-decode {model_config['bs_decode']}"
         f"--device-block-count {model_config['device_block_count']}",
         "export.log"
@@ -94,6 +99,7 @@ def serving_fixture(model_config, validate_vmfb_fixture):
         f"--port 8900",
         "serving.log"
     )
+
 
 #################### Model Name Option #########################
 def pytest_addoption(parser):

@@ -1,0 +1,13 @@
+{
+    "irpa": "/shark-dev/70b/fp8/attnf8/native_fp8_e4m3fnuz_llama3_70b.irpa",
+    "dtype": "fp8",
+    "tokenizer": "/shark-dev/70b/instruct/tokenizer.json",
+    "tokenizer_config": "/shark-dev/70b/instruct/tokenizer_config.json",
+    "kv_dtype": "float8_e4m3fnuz",
+    "benchmark_model": "llama-70B-FP8",
+    "device_block_count": "4096",
+    "gold_number": "x",
+    "bs_prefil": 4,
+    "bs_decode": 4,
+    "extra_export_flags_list": []
+}
