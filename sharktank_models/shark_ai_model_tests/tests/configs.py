@@ -1,5 +1,5 @@
 '''
-File for Sharktank Model Configurations.
+TO BE DELETED.
 
 '''
 
