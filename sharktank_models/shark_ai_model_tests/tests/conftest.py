@@ -10,6 +10,13 @@ OUTPUT_DIR = Path(os.getcwd()) / "output_artifacts"
 OUTPUT_DIR.mkdir(exist_ok=True)
 CONFIGS_DIR = Path(__file__).parent/"configs"
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--model",
+        action="store",
+        default="llama-8b-fp8",
+        help="Model name (e.g. llama-70b-fp16, llama-70b-fp8, llama-8b-fp16, llama-8b-fp8, mistral)",
+    )
 
 ############# Run The Command and Generate Logs ##############
 def run_cmd(cmd, log_file):
@@ -31,7 +38,8 @@ def run_cmd(cmd, log_file):
 def model_config(pytestconfig):
     model_name = pytestconfig.getoption("model")
     config_path = CONFIGS_DIR / f"{model_name}.json"
-    if not config_path.exits():
+
+    if not config_path.exists():
         raise ValueError(f"Unknown Model : {model_name} | Existing Models in Sharktank : llama-70b-fp16, llama-70b-fp8, llama-8b-fp16, llama-8b-fp8, mistral")
     with open(config_path, "r") as f: 
         return json.load(f)
@@ -42,19 +50,22 @@ def model_config(pytestconfig):
 def export_fixture(model_config):
     return run_cmd(
         f"python scripts/run_export.py --irpa {model_config['irpa']} "
-        f"--attention-kernel {model_config['attention_kernel']}"
-        f"--dtype {model_config['dtype']} --bs-prefill {model_config['bs_prefill']} --bs-decode {model_config['bs_decode']}"
-        f"--device-block-count {model_config['device_block_count']}",
+        f"--attention-kernel {model_config['attention_kernel']} "
+        f"--dtype {model_config['dtype']} --bs-prefill {model_config['bs_prefill']} --bs-decode {model_config['bs_decode']} "
+        f"--device-block-count {model_config['device_block_count']} " 
+        f"--extra-export-flags-list {model_config['extra_export_flags_list']} "
+        f"--output-dir {model_config['output_dir']}",
         "export.log"
     )
 
 
 ######## Compile MLIR(Generated from SharkTank) Through IREE #########
 @pytest.fixture(scope="session")
-def compile_fixture(export_fixture):
+#def compile_fixture(export_fixture):
+def compile_fixture(export_fixture, model_config):
     return run_cmd(
-        "python scripts/run_compile.py"
-        f"--gold_number {model_config['gold_number']}",
+        "python scripts/run_compile.py "
+        f"--gold_number {model_config['gold_number']} ",
         "compilation.log"
     )
 
@@ -99,9 +110,3 @@ def serving_fixture(model_config, validate_vmfb_fixture):
         f"--port 8900",
         "serving.log"
     )
-
-
-#################### Model Name Option #########################
-def pytest_addoption(parser):
-    parser.addoption("--model", action="store", default="llama-8b-fp8",
-                    help="Model name (e.g. llama-70b-fp16, llama-70b-fp8, llama-8b-fp16, llama-8b-fp8, mistral)")
