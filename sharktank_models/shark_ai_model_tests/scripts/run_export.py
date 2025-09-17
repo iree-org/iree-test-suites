@@ -13,7 +13,9 @@ import ast
 def run_command(cmd, **kwargs):
     print(f"Running: {' '.join(cmd)}")
     try:
+        start = time.time()
         subprocess.run(cmd, check=True, **kwargs)
+        print(f"Time taken for exporting: {int(time.time() - start)} seconds")
     except subprocess.CalledProcessError as e:
         print(f"Error occurred while running: {' '.join(cmd)}", file=sys.stderr)
         sys.exit(e.returncode)
@@ -51,7 +53,7 @@ def main():
 
     ### Starting Export ###
     print("Exporting IR ....")
-    start = time.time()
+
 
     export_cmd = [
         sys.executable, "-m", "sharktank.examples.export_paged_llm_v1",
@@ -75,15 +77,15 @@ def main():
             raise ValueError("Expected a list for --extra-export-flags-list")
     except Exception as e:
         raise ValueError(f"Invalid value for --extra-export-flags-list: {args.extra_export_flags_list}") from e
-    
-    
+
+
     if len(extra_flags) == 0:
         print("No Extra Export Flag is Passed")
     else:
         print("Appending Extra Export Flags...")
         export_cmd += extra_flags
         print("Command:", export_cmd)
-        print(f"Time taken for exporting: {int(time.time() - start)} seconds")
+
 
     run_command(export_cmd)
 

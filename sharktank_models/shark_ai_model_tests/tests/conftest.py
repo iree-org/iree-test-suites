@@ -41,18 +41,27 @@ def model_config(pytestconfig):
 
     if not config_path.exists():
         raise ValueError(f"Unknown Model : {model_name} | Existing Models in Sharktank : llama-70b-fp16, llama-70b-fp8, llama-8b-fp16, llama-8b-fp8, mistral")
-    with open(config_path, "r") as f: 
+    with open(config_path, "r") as f:
         return json.load(f)
 
 
 ############### Export The MLIR Through Sharktank ################
 @pytest.fixture(scope="session")
 def export_fixture(model_config):
+    gen_mlir_path=f"{model_config['output_dir']}/output.mlir"
+    gen_config_path=f"{model_config['output_dir']}/config_attn.json"
+
+    # check if the mlir file already exists
+    if os.path.exists(gen_mlir_path) and os.path.exists(gen_config_path):
+        print("File exists. Skipping Export... Moving to Compile...")
+        return
+    else:
+        print("Continuing With Export...")
     return run_cmd(
         f"python scripts/run_export.py --irpa {model_config['irpa']} "
         f"--attention-kernel {model_config['attention_kernel']} "
         f"--dtype {model_config['dtype']} --bs-prefill {model_config['bs_prefill']} --bs-decode {model_config['bs_decode']} "
-        f"--device-block-count {model_config['device_block_count']} " 
+        f"--device-block-count {model_config['device_block_count']} "
         f"--extra-export-flags-list {model_config['extra_export_flags_list']} "
         f"--output-dir {model_config['output_dir']}",
         "export.log"
@@ -65,7 +74,8 @@ def export_fixture(model_config):
 def compile_fixture(export_fixture, model_config):
     return run_cmd(
         "python scripts/run_compile.py "
-        f"--gold_number {model_config['gold_number']} ",
+        f"--output_dir {model_config['output_dir']} "
+        f"--extra-compile-flags-list {model_config['extra_compile_flags_list']} ",
         "compilation.log"
     )
 
