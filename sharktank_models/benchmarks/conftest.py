@@ -16,10 +16,9 @@ import tabulate
 THIS_DIR = Path(__file__).parent
 sku = os.getenv("SKU", default="mi300")
 job_summary_path = os.getenv("JOB_SUMMARY_PATH", str(THIS_DIR))
-backend = os.getenv("BACKEND", default="rocm")
+backend = os.getenv("BACKEND", default="cpu")
 
 logger = logging.getLogger(__name__)
-# print("c", )
 
 
 def pytest_addoption(parser):
@@ -34,6 +33,7 @@ def pytest_addoption(parser):
         action="store",
         help="The directory of external test files (ex: E2E MLIR, tuner files)",
     )
+
 
 def pytest_sessionstart(session):
     logger.info("Pytest benchmark test session is starting")
@@ -85,7 +85,6 @@ def pytest_sessionfinish(session, exitstatus):
             "Expected/golden binary size (bytes)",
         ],
     }
-
     with open(f"{job_summary_path}/job_summary.md", "a") as job_summary, open(
         f"{job_summary_path}/job_summary.json", "r"
     ) as content:
@@ -128,7 +127,5 @@ class SharkTankModelBenchmarkTests(pytest.File):
                 file_path=file_path,
                 external_test_files=self.config.external_test_files,
             )
-            print("*******************")
-            print(file_path)
 
             yield ModelBenchmarkRunItem.from_parent(self, name=item_name, spec=spec)

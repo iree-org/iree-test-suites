@@ -22,7 +22,6 @@ THIS_DIR = Path(__file__).parent
 job_summary_path = os.getenv("JOB_SUMMARY_PATH", str(THIS_DIR))
 # compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
 PARENT_DIR = Path(__file__).parent.parent
-# TEST_OUTPUT_ARTIFACTS=iree-test-suite
 
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 artifacts_dir = f"{os.getenv('IREE_TEST_FILES', default=str(PARENT_DIR))}/artifacts"

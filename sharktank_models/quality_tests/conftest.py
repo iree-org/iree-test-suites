@@ -45,7 +45,6 @@ def pytest_configure():
 def pytest_sessionstart(session):
     logger.info("Pytest quality test session is starting")
 
-
     # Export first from sharktank if flag is passed
     if session.config.getoption("export"):
         run_export_first()

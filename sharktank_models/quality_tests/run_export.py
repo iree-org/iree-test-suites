@@ -35,9 +35,7 @@ def main():
     default="[]",
     help="Extra flags to pass as a Python-style list, e.g. '[\"--x\", \"--f\", \"--g\"]' or '[]'"
 )
-    # parser.add_argument("--output-dir", default="output_artifacts/",
-    #                     help="Output directory for dumping artifacts")
-    # args = parser.parse_args()
+
     parser.add_argument("--output-dir", default="sharktank_models/artifacts/llama_8b-fp8",
                         help="Output directory for dumping artifacts")
     args = parser.parse_args()
@@ -55,9 +53,6 @@ def main():
         os.environ["ATTENTION_DTYPE"] = "float16"
         os.environ["ACTIVATION_DTYPE"] = "float16"
         os.environ["KV_CACHE_DTYPE"] = "float8_e4m3fnuz"
-
-
-    # PARENT_DIR = Path(__file__).parent.parent
 
 
     ### Starting Export ###
