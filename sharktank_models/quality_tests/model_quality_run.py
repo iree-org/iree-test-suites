@@ -14,6 +14,7 @@ import json
 THIS_DIR = Path(__file__).parent
 # compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
 PARENT_DIR = Path(__file__).parent.parent
+
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 chip = os.getenv("ROCM_CHIP", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
@@ -88,11 +89,6 @@ class ModelQualityRunItem(pytest.Item):
                 real_weights_group_name = data.get("custom_real_weights_group")
 
             s="https"
-
-
-            # import pdb
-            # pdb.set_trace()
-
             if data.get("real_weights"):
                 if s in data.get("real_weights"):
                     self.real_weights = (
@@ -106,16 +102,7 @@ class ModelQualityRunItem(pytest.Item):
                 else:
                     if os.path.exists(data.get("real_weights")):
                         self.real_weights = Artifact(real_weights_group_name, "real_weights.irpa")
-                        # self.real_weights = data.get("real_weights")
 
-
-
-
-            '''
-            Assumptions:
-                1. self.mlir file is present in the expected dir.
-                2.
-            '''
             if data.get("mlir"):
                 if s in data.get("mlir"):
                     self.mlir = (
@@ -129,8 +116,6 @@ class ModelQualityRunItem(pytest.Item):
                     if os.path.exists(data.get("mlir")):
                         group=f"{self.model_name}_{self.submodel_name}"
                         self.mlir = Artifact(group, "model.mlir")
-                        # self.mlir = data.get("mlir")
-
 
             self.compiler_flags = data.get("compiler_flags", [])
             self.device = data.get("device")

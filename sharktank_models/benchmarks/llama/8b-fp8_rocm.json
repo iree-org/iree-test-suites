@@ -10,6 +10,7 @@
     "--benchmark_repetitions=5",
     "--benchmark_min_warmup_time=3.0"
   ],
+  "real_weights_file_path": "/shark-dev/8b/fp8/attnf8/native_fp8_e4m3fnuz_llama3_8b.irpa",
   "device": "hip",
   "golden_time_tolerance_multiplier": {
     "mi250": 1.3,
