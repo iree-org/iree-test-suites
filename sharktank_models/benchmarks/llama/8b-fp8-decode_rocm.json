@@ -1,0 +1,27 @@
+{
+  "submodel_name":"8b-fp8", 
+  "inputs": [
+    "4x1xi64",
+    "4xi64",
+    "4xi64",
+    "4x65xi64",
+    "261x2097152xf8E4M3FNUZ"
+  ],
+  "function_run": "decode_bs4",
+  "benchmark_flags": [
+    "--benchmark_repetitions=5",
+    "--benchmark_min_warmup_time=3.0"
+  ],
+  "real_weights_file_path": "/shark-dev/8b/fp8/attnf8/native_fp8_e4m3fnuz_llama3_8b.irpa",
+  "device": "hip",
+  "golden_time_tolerance_multiplier": {
+    "mi250": 1.3,
+    "mi300": 1.1,
+    "mi308": 1.1
+  },
+  "golden_time_ms": {
+    "mi250": 9.0,
+    "mi300": 235.0,
+    "mi308": 12.0
+  }
+}

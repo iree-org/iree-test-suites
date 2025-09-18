@@ -35,21 +35,8 @@ def pytest_addoption(parser):
         help="The directory of external test files (ex: E2E MLIR, tuner files)",
     )
 
-    # parser.addoption(
-    #     "--export_and_compile",
-    #     action="store_true",
-    #     default=False,
-    #     help="If set, run export and compile step before running benchmarks",
-    # )
-
-
 def pytest_sessionstart(session):
     logger.info("Pytest benchmark test session is starting")
-
-
-    # check for export and compile
-    # if session.config.getoption("export_and_compile"):
-    #     run_export_and_compile()
 
     with open(f"{job_summary_path}/job_summary.md", "a") as job_summary, open(
         f"{job_summary_path}/job_summary.json", "w+"
@@ -75,11 +62,6 @@ def pytest_sessionstart(session):
         for external_file in external_files:
             file_name = external_file.name
             session.config.external_test_files[file_name] = external_file
-
-# def run_export_and_compile():
-#     logger.info("Running export and compile step...")
-#     pass
-
 
 
 def pytest_sessionfinish(session, exitstatus):

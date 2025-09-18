@@ -1,4 +1,5 @@
 {
+  "submodel_name":"8b-fp8", 
   "inputs": [
     "4x2048xi64",
     "4xi64",

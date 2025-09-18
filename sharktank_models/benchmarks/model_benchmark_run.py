@@ -22,6 +22,8 @@ THIS_DIR = Path(__file__).parent
 job_summary_path = os.getenv("JOB_SUMMARY_PATH", str(THIS_DIR))
 # compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
 PARENT_DIR = Path(__file__).parent.parent
+# TEST_OUTPUT_ARTIFACTS=iree-test-suite
+
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 artifacts_dir = f"{os.getenv('IREE_TEST_FILES', default=str(PARENT_DIR))}/artifacts"
 artifacts_dir = Path(os.path.expanduser(artifacts_dir)).resolve()
@@ -102,8 +104,8 @@ class ModelBenchmarkRunItem(pytest.Item):
         # pdb.set_trace()
 
 
-        print("===============================*************")
-        print(self.file_path)
+        # print("===============================*************")
+        # print(self.file_path)
         with open(self.file_path, "r") as file:
             data = json.load(file)
             # print(data)
@@ -126,7 +128,9 @@ class ModelBenchmarkRunItem(pytest.Item):
             self.real_weights_file_name = data.get(
                 "real_weights_file_name", "real_weights.irpa"
             )
-
+            self.real_weights_file_path = data.get(
+                "real_weights_file_path", None
+            )
             # custom configurations related to e2e testing
             self.compilation_required = data.get("compilation_required", False)
             self.compiled_file_name = data.get("compiled_file_name")
@@ -176,8 +180,15 @@ class ModelBenchmarkRunItem(pytest.Item):
         artifact_directory = f"{artifacts_dir}/{self.model_name}_{self.submodel_name}"
 
         vmfb_file_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
+
+        irpa_file_path=f"{artifact_directory}/{self.real_weights_file_name}"
+        if self.real_weights_file_path is not None:
+            if os.path.exists(self.real_weights_file_path):
+                irpa_file_path=Path(os.path.expanduser(self.real_weights_file_path)).resolve()
+            else:
+                RuntimeError(f"Real Weights File Path Does Not Exist: {self.real_weights_file_path}")
         exec_args = [
-            f"--parameters=model={artifact_directory}/{self.real_weights_file_name}"
+            f"--parameters=model={irpa_file_path}"
         ]
 
         # If there are modules for an e2e pipeline test, reset exec_args and directory_compile variables to custom variables
@@ -202,12 +213,16 @@ class ModelBenchmarkRunItem(pytest.Item):
         # import pdb
         # pdb.set_trace()
 
+
         print("---------------------------")
         print(vmfb_file_path)
         if not Path(vmfb_file_path).is_file():
             pytest.skip(
                 f"Vmfb file for {self.model_name} :: {self.submodel_name} was not found. Unable to run benchmark tests, skipping..."
             )
+
+        # import pdb
+        # pdb.set_trace()
 
         # run iree benchmark command
         ret_value, output = iree_benchmark_module(
@@ -230,6 +245,7 @@ class ModelBenchmarkRunItem(pytest.Item):
             mean_time_row = [
                 self.model_name,
                 self.submodel_name,
+                self.function_run,
                 str(benchmark_mean_time),
                 self.golden_time,
             ]
