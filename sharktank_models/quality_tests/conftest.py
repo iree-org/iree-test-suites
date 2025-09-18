@@ -29,12 +29,11 @@ def pytest_addoption(parser):
         help="The directory of external test files (ex: E2E MLIR, tuner files)",
     )
 
-    # flag if passed will export first from sharktank and will place the mlir at the right place for the quality tests to pick
     parser.addoption(
         "--export",
         action="store_true",
         default=False,
-        help="If set, run export and compile step before running benchmarks",
+        help="If set, will export ir from sharktank before running benchmarks",
     )
 
 
@@ -81,8 +80,8 @@ def run_export_first():
         )
         logger.info("Export finished successfully.")
     except subprocess.CalledProcessError as e:
-        logger.error(f"Export and compile failed: {e}")
-        pytest.exit("Stopping pytest because export/compile failed.", returncode=1)
+        logger.error(f"Export failed: {e}")
+        pytest.exit("Stopping pytest because export failed.", returncode=1)
 
 
 def pytest_collect_file(parent, file_path):
