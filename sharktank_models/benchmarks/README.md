@@ -43,5 +43,7 @@ pytest sharktank_models/benchmarks/ \
 | golden_size                      | optional | object  | An object of golden sizes, where the key is the sku and the value is the golden size in bytes, (ex: `{"mi250": 2000000}`)    |
 | specific_chip_to_ignore          | optional | array   | An array of chip values, where the benchmark tests will ignore the chips specified                                           |
 | real_weights_file_name           | optional | string  | If real weights is a different file name, specify it here in order to get the correct real weights file                      |
+| real_weights_file_path           | optional | string  | If real weights file is on a different location on the system, specify it here. Takes precedence over real_weights_file_name.|
+| submodel_name                    | optional | string  | To run a multi-func vmfb, add seaparate tests for each function keeping the submodel name same as used for vmfb generation (in quality tests). See sharktank_models/benchmarks/llama                       |
 
 Please feel free to look at any JSON examples under a model directory (ex: sdxl)
