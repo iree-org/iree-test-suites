@@ -117,6 +117,14 @@ class ModelQualityRunItem(pytest.Item):
                         group=f"{self.model_name}_{self.submodel_name}"
                         self.mlir = Artifact(group, "model.mlir")
 
+                    else:
+                        RuntimeError(f"MLIR File Not Found at: {data.get('mlir')}")
+            # else:
+            #     sharktank_exported_mlir="../../artifacts/"
+            #     if os.path.exists(data.get("mlir")):
+            #             group=f"{self.model_name}_{self.submodel_name}"
+            #             self.mlir = Artifact(group, "model.mlir")
+
             self.compiler_flags = data.get("compiler_flags", [])
             self.device = data.get("device")
 

@@ -1,7 +1,7 @@
 {
     "device": "hip",
-    "real_weights": "/home/yrathore/yv/iree-test-suites/sharktank_models/artifacts/llama_llama/real_weights.irpa",
-    "mlir": "/home/yrathore/yv/iree-test-suites/sharktank_models/output_artifacts_llama_8b_fp8/output.mlir",
+    "real_weights": "sharktank_models/artifacts/llama_llama/real_weights.irpa",
+    "mlir":"sharktank_models/artifacts/llama_8b-fp8/model.mlir",
     "compiler_flags": [
         "--iree-hal-target-backends=rocm",
         "--iree-hal-target-device=hip",
