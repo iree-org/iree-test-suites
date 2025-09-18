@@ -29,6 +29,14 @@ def pytest_addoption(parser):
         help="The directory of external test files (ex: E2E MLIR, tuner files)",
     )
 
+    # flag if passed will export first from sharktank and will place the mlir at the right place for the quality tests to pick
+    parser.addoption(
+        "--export",
+        action="store_true",
+        default=False,
+        help="If set, run export and compile step before running benchmarks",
+    )
+
 
 def pytest_configure():
     pytest.vmfb_manager = {}
@@ -36,6 +44,11 @@ def pytest_configure():
 
 def pytest_sessionstart(session):
     logger.info("Pytest quality test session is starting")
+
+
+    # Export first from sharktank if flag is passed
+    if session.config.getoption("export"):
+        run_export_first()
 
     # Collect all .json files for quality tests
     session.config.quality_test_files = []
@@ -55,6 +68,21 @@ def pytest_sessionstart(session):
         for external_file in external_files:
             file_name = external_file.name
             session.config.external_test_files[file_name] = external_file
+
+# Function for running Export script
+def run_export_first():
+    logger.info("Running export step...")
+
+    script_path = THIS_DIR / "run_export.py"
+    try:
+        subprocess.run(
+            ["python3", str(script_path)],
+            check=True,
+        )
+        logger.info("Export finished successfully.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Export and compile failed: {e}")
+        pytest.exit("Stopping pytest because export/compile failed.", returncode=1)
 
 
 def pytest_collect_file(parent, file_path):
