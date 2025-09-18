@@ -84,53 +84,6 @@ def run_export_first():
         logger.error(f"Export failed: {e}")
         pytest.exit("Stopping pytest because export failed.", returncode=1)
 
-# def run_cmd(cmd, log_file):
-#     log_path = OUTPUT_DIR / log_file
-#     log_path.parent.mkdir(parents=True, exist_ok=True)
-
-#     with open(log_path, "w") as f:
-#         process = subprocess.Popen(
-#             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-#         )
-#         for line in process.stdout:
-#             decoded = line.decode()
-#             f.write(decoded)
-#             print(decoded, end="")
-#         process.wait()
-#         if process.returncode != 0:
-#             raise RuntimeError(f"Command failed: {cmd}")
-#     return log_path
-
-# def run_export_first():
-#     logger.info("Running export...")
-
-#     gen_mlir_path = f"{model_config['output_dir']}/output.mlir"
-#     gen_config_path = f"{model_config['output_dir']}/config_attn.json"
-
-#     # if os.path.exists(gen_mlir_path) and os.path.exists(gen_config_path):
-#     #     logger.info("File exists. Skipping Export....")
-#     #     return
-
-#     logger.info("Continuing With Export...")
-
-#     cmd = (
-#         f"python scripts/run_export.py --irpa {model_config['irpa']} "
-#         f"--attention-kernel {model_config['attention_kernel']} "
-#         f"--dtype {model_config['dtype']} "
-#         f"--bs-prefill {model_config['bs_prefill']} "
-#         f"--bs-decode {model_config['bs_decode']} "
-#         f"--device-block-count {model_config['device_block_count']} "
-#         f"--extra-export-flags-list \"{model_config['extra_export_flags_list']}\" "
-#         f"--output-dir {model_config['output_dir']}"
-#     )
-
-#     try:
-#         log_path = run_cmd(cmd, "export.log")
-#         logger.info(f"Export completed successfully. Log saved at {log_path}")
-#     except Exception as e:
-#         logger.error(f"Export failed: {e}")
-#         pytest.exit("Stopping pytest because export failed.", returncode=1)
-
 
 def pytest_collect_file(parent, file_path):
     # Run only the quality test for this directory
