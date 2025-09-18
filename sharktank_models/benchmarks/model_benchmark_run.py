@@ -149,6 +149,12 @@ class ModelBenchmarkRunItem(pytest.Item):
             elif type_of_backend == "cpu":
                 self.file_suffix = "cpu"
 
+            # add support for multiple function same vmfb
+            # the submodel name needs to be overwritten 
+            # to point to the same vmfb
+            if "submodel_name" in data:
+                self.submodel_name = data.get("submodel_name")
+
     def runtest(self):
         # if a rocm chip is designated to be ignored in JSON file, skip test
         if chip in self.specific_chip_to_ignore:
