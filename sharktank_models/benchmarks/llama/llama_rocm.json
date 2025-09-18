@@ -1,0 +1,24 @@
+{
+  "inputs": [
+    "4x2048xi64",
+    "4xi64",
+    "4x64xi64",
+    "261x2097152xf8E4M3FNUZ"
+  ],
+  "function_run": "prefill_bs4",
+  "benchmark_flags": [
+    "--benchmark_repetitions=5",
+    "--benchmark_min_warmup_time=3.0"
+  ],
+  "device": "hip",
+  "golden_time_tolerance_multiplier": {
+    "mi250": 1.3,
+    "mi300": 1.1,
+    "mi308": 1.1
+  },
+  "golden_time_ms": {
+    "mi250": 9.0,
+    "mi300": 235.0,
+    "mi308": 12.0
+  }
+}

@@ -98,8 +98,15 @@ class ModelBenchmarkRunItem(pytest.Item):
         self.submodel_name = "_".join(split_file_name[:-1])
         type_of_backend = split_file_name[-1]
 
+        # import pdb
+        # pdb.set_trace()
+
+
+        print("===============================*************")
+        print(self.file_path)
         with open(self.file_path, "r") as file:
             data = json.load(file)
+            # print(data)
 
             self.inputs = data.get("inputs", [])
             self.function_run = data.get("function_run")
@@ -176,6 +183,7 @@ class ModelBenchmarkRunItem(pytest.Item):
                 pytest.skip(
                     f"Modules needed for {self.model_name} :: {self.submodel_name} not found, unable to run benchmark tests. Skipping..."
                 )
+
             vmfb_file_path = f"{vmfb_dir}/{self.compiled_file_name}.vmfb"
 
         exec_args += (
@@ -185,7 +193,11 @@ class ModelBenchmarkRunItem(pytest.Item):
             + get_input_list(self.inputs)
             + self.benchmark_flags
         )
+        # import pdb
+        # pdb.set_trace()
 
+        print("---------------------------")
+        print(vmfb_file_path)
         if not Path(vmfb_file_path).is_file():
             pytest.skip(
                 f"Vmfb file for {self.model_name} :: {self.submodel_name} was not found. Unable to run benchmark tests, skipping..."
@@ -235,7 +247,6 @@ class ModelBenchmarkRunItem(pytest.Item):
                 self.golden_time * self.golden_time_tolerance_multiplier,
                 f"{self.model_name} {self.submodel_name} benchmark time should not regress more than a factor of {self.golden_time_tolerance_multiplier}",
             )
-
         # golden dispatch check
         if self.golden_dispatch:
             with open(f"{directory_compile}/compilation_info.json", "r") as file:

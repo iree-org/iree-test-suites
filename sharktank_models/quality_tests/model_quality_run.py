@@ -86,21 +86,51 @@ class ModelQualityRunItem(pytest.Item):
             real_weights_group_name = f"{self.model_name}_{self.submodel_name}"
             if data.get("custom_real_weights_group"):
                 real_weights_group_name = data.get("custom_real_weights_group")
-            self.real_weights = (
-                fetch_source_fixture(
-                    data.get("real_weights"),
-                    group=real_weights_group_name,
-                )
-                if data.get("real_weights")
-                else None
-            )
-            self.mlir = (
-                fetch_source_fixture(
-                    data.get("mlir"), group=f"{self.model_name}_{self.submodel_name}"
-                )
-                if data.get("mlir")
-                else None
-            )
+
+            s="https"
+
+
+            # import pdb
+            # pdb.set_trace()
+
+            if data.get("real_weights"):
+                if s in data.get("real_weights"):
+                    self.real_weights = (
+                        fetch_source_fixture(
+                            data.get("real_weights"),
+                            group=real_weights_group_name,
+                        )
+                        if data.get("real_weights")
+                        else None
+                    )
+                else:
+                    if os.path.exists(data.get("real_weights")):
+                        self.real_weights = Artifact(real_weights_group_name, "real_weights.irpa")
+                        # self.real_weights = data.get("real_weights")
+
+
+
+
+            '''
+            Assumptions:
+                1. self.mlir file is present in the expected dir.
+                2.
+            '''
+            if data.get("mlir"):
+                if s in data.get("mlir"):
+                    self.mlir = (
+                        fetch_source_fixture(
+                            data.get("mlir"), group=f"{self.model_name}_{self.submodel_name}"
+                        )
+                        if data.get("mlir")
+                        else None
+                    )
+                else:
+                    if os.path.exists(data.get("mlir")):
+                        group=f"{self.model_name}_{self.submodel_name}"
+                        self.mlir = Artifact(group, "model.mlir")
+                        # self.mlir = data.get("mlir")
+
 
             self.compiler_flags = data.get("compiler_flags", [])
             self.device = data.get("device")

@@ -28,7 +28,7 @@ MODELS = {
         "benchmark_repetitions": 3,
         "attention_kernel": "sharktank",
         "device_block_count": "4096",
-        "gold_number": "x",
+
         "bs_prefil": 4,
         "bs_decode": 4,
         "extra_export_flags_list": [],

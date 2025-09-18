@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 THIS_DIR = Path(__file__).parent
 logger = logging.getLogger(__name__)
-backend = os.getenv("BACKEND", default="cpu")
+backend = os.getenv("BACKEND", default="rocm")
 
 
 def pytest_addoption(parser):
