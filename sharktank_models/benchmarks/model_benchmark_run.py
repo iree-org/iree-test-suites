@@ -209,8 +209,6 @@ class ModelBenchmarkRunItem(pytest.Item):
                 f"Vmfb file for {self.model_name} :: {self.submodel_name} was not found. Unable to run benchmark tests, skipping..."
             )
 
-
-
         # run iree benchmark command
         ret_value, output = iree_benchmark_module(
             vmfb=Path(vmfb_file_path),
