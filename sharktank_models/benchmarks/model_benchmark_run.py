@@ -22,7 +22,6 @@ THIS_DIR = Path(__file__).parent
 job_summary_path = os.getenv("JOB_SUMMARY_PATH", str(THIS_DIR))
 # compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
 PARENT_DIR = Path(__file__).parent.parent
-
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 artifacts_dir = f"{os.getenv('IREE_TEST_FILES', default=str(PARENT_DIR))}/artifacts"
 artifacts_dir = Path(os.path.expanduser(artifacts_dir)).resolve()
@@ -45,8 +44,6 @@ def job_summary_process(ret_value, output, model_name):
         # Output should have already been logged earlier.
         pytest.fail(f"Running {model_name} benchmark failed. Exiting.")
     output_json = json.loads(output)
-
-
     benchmark_mean_time = decode_output(output_json)
     if benchmark_mean_time == -1:
         pytest.fail(
@@ -134,7 +131,6 @@ class ModelBenchmarkRunItem(pytest.Item):
 
             else:
                 RuntimeError(f"Unable To Fetch the MLIR File From the URL: {data.get('mlir')}")
-
             # custom configurations related to e2e testing
             self.compilation_required = data.get("compilation_required", False)
             self.compiled_file_name = data.get("compiled_file_name")
@@ -157,14 +153,12 @@ class ModelBenchmarkRunItem(pytest.Item):
             elif type_of_backend == "cpu":
                 self.file_suffix = "cpu"
 
-
     def runtest(self):
         # if a rocm chip is designated to be ignored in JSON file, skip test
         if chip in self.specific_chip_to_ignore:
             pytest.skip(
                 f"Ignoring benchmark test for {self.model_name} {self.submodel_name} for chip {chip}"
             )
-
 
         # if compilation is required, run this step
         if self.compilation_required:
@@ -187,7 +181,6 @@ class ModelBenchmarkRunItem(pytest.Item):
         artifact_directory = f"{artifacts_dir}/{self.model_name}_{self.submodel_name}"
 
         vmfb_file_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
-
         exec_args = [
             f"--parameters=model={artifact_directory}/{self.real_weights_file_name}"
         ]
@@ -201,7 +194,6 @@ class ModelBenchmarkRunItem(pytest.Item):
                 pytest.skip(
                     f"Modules needed for {self.model_name} :: {self.submodel_name} not found, unable to run benchmark tests. Skipping..."
                 )
-
             vmfb_file_path = f"{vmfb_dir}/{self.compiled_file_name}.vmfb"
 
         exec_args += (
@@ -211,8 +203,6 @@ class ModelBenchmarkRunItem(pytest.Item):
             + get_input_list(self.inputs)
             + self.benchmark_flags
         )
-
-
 
         if not Path(vmfb_file_path).is_file():
             pytest.skip(
@@ -228,8 +218,6 @@ class ModelBenchmarkRunItem(pytest.Item):
             function=self.function_run,
             args=exec_args,
         )
-
-
 
         # parse the output and retrieve the benchmark mean time
         benchmark_mean_time = job_summary_process(ret_value, output, self.model_name)
