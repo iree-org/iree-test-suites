@@ -15,6 +15,7 @@ import tabulate
 from ireers_tools import *
 from pytest_check import check
 import pytest
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,12 @@ def e2e_iree_benchmark_module_args(modules, file_suffix):
 
     return (True, exec_args)
 
+def is_url(string: str) -> bool:
+    try:
+        result = urlparse(string)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
 
 class ModelBenchmarkRunItem(pytest.Item):
     def __init__(self, spec, **kwargs):
@@ -120,16 +127,35 @@ class ModelBenchmarkRunItem(pytest.Item):
             self.real_weights_file_name = data.get(
                 "real_weights_file_name", "real_weights.irpa"
             )
-            self.real_weights_file_path = data.get(
-                "real_weights_file_path", None
-            )
+
+            # if is_url(self.real_wights_file_name):
+            #     self.real_weights_file_name = str(
+            #         fetch_source_fixture(
+            #             data.get("real_weights_file_name"), group=f"{self.model_name}_{self.submodel_name}"
+            #         )
+            #         if data.get("real_weights_file_name")
+            #         else None
+            #     )
+
+            if data.get("mlir_url"):
+                self.mlir_url = str(
+                    fetch_source_fixture(
+                        data.get("mlir_url"), group=f"{self.model_name}_{self.submodel_name}"
+                    )
+                    if data.get("mlir_url")
+                    else None
+                )
+
+            else:
+                RuntimeError(f"Unable To Fetch the MLIR File From the URL: {data.get('mlir')}")
+
             # custom configurations related to e2e testing
             self.compilation_required = data.get("compilation_required", False)
             self.compiled_file_name = data.get("compiled_file_name")
-            mlir_file_name = data.get("mlir_file_name", "")
+            self.mlir_file_name = data.get("mlir_file_name", "")
             external_test_files = self.spec.external_test_files
-            if mlir_file_name:
-                self.mlir_file_path = external_test_files.get(mlir_file_name, "")
+            if self.mlir_file_name:
+                self.mlir_file_path = external_test_files.get(self.mlir_file_name, "")
             self.modules = data.get("modules", [])
             self.device = data.get("device")
 
@@ -145,11 +171,6 @@ class ModelBenchmarkRunItem(pytest.Item):
             elif type_of_backend == "cpu":
                 self.file_suffix = "cpu"
 
-            # add support for multiple function same vmfb
-            # the submodel name needs to be overwritten 
-            # to point to the same vmfb
-            if "submodel_name" in data:
-                self.submodel_name = data.get("submodel_name")
 
     def runtest(self):
         # if a rocm chip is designated to be ignored in JSON file, skip test
@@ -158,11 +179,21 @@ class ModelBenchmarkRunItem(pytest.Item):
                 f"Ignoring benchmark test for {self.model_name} {self.submodel_name} for chip {chip}"
             )
 
+
+        # import pdb
+        # pdb.set_trace()
         # if compilation is required, run this step
         if self.compilation_required:
-            compiled_vmfb_path = compile_iree_method(
-                self.mlir_file_path, self.compile_flags, self.compiled_file_name
-            )
+            if self.mlir_file_name:
+                compiled_vmfb_path = compile_iree_method(
+                    self.mlir_file_path, self.compile_flags, self.compiled_file_name
+                )
+            elif self.mlir_url:
+                compiled_vmfb_path = compile_iree_method(
+                    self.mlir_url, self.compile_flags, self.compiled_file_name
+                )
+            else:
+                RuntimeError("No Option Provided: mlir_file_name or mlir_url, so no mlir file to compile.")
             if not compiled_vmfb_path:
                 pytest.fail(
                     f"Failed to compile for {self.model_name} {self.submodel_name} during benchmark test. Skipping..."
@@ -173,14 +204,8 @@ class ModelBenchmarkRunItem(pytest.Item):
 
         vmfb_file_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
 
-        irpa_file_path=f"{artifact_directory}/{self.real_weights_file_name}"
-        if self.real_weights_file_path is not None:
-            if os.path.exists(self.real_weights_file_path):
-                irpa_file_path=Path(os.path.expanduser(self.real_weights_file_path)).resolve()
-            else:
-                RuntimeError(f"Real Weights File Path Does Not Exist: {self.real_weights_file_path}")
         exec_args = [
-            f"--parameters=model={irpa_file_path}"
+            f"--parameters=model={artifact_directory}/{self.real_weights_file_name}"
         ]
 
         # If there are modules for an e2e pipeline test, reset exec_args and directory_compile variables to custom variables
@@ -203,10 +228,16 @@ class ModelBenchmarkRunItem(pytest.Item):
             + self.benchmark_flags
         )
 
+
+        # import pdb
+        # pdb.set_trace()
+
         if not Path(vmfb_file_path).is_file():
             pytest.skip(
                 f"Vmfb file for {self.model_name} :: {self.submodel_name} was not found. Unable to run benchmark tests, skipping..."
             )
+
+
 
         # run iree benchmark command
         ret_value, output = iree_benchmark_module(
@@ -215,6 +246,8 @@ class ModelBenchmarkRunItem(pytest.Item):
             function=self.function_run,
             args=exec_args,
         )
+
+
 
         # parse the output and retrieve the benchmark mean time
         benchmark_mean_time = job_summary_process(ret_value, output, self.model_name)
