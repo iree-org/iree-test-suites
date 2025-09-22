@@ -15,7 +15,6 @@ import tabulate
 from ireers_tools import *
 from pytest_check import check
 import pytest
-from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +45,8 @@ def job_summary_process(ret_value, output, model_name):
         # Output should have already been logged earlier.
         pytest.fail(f"Running {model_name} benchmark failed. Exiting.")
     output_json = json.loads(output)
+
+
     benchmark_mean_time = decode_output(output_json)
     if benchmark_mean_time == -1:
         pytest.fail(
@@ -88,12 +89,6 @@ def e2e_iree_benchmark_module_args(modules, file_suffix):
 
     return (True, exec_args)
 
-def is_url(string: str) -> bool:
-    try:
-        result = urlparse(string)
-        return all([result.scheme, result.netloc])
-    except ValueError:
-        return False
 
 class ModelBenchmarkRunItem(pytest.Item):
     def __init__(self, spec, **kwargs):
@@ -127,15 +122,6 @@ class ModelBenchmarkRunItem(pytest.Item):
             self.real_weights_file_name = data.get(
                 "real_weights_file_name", "real_weights.irpa"
             )
-
-            # if is_url(self.real_wights_file_name):
-            #     self.real_weights_file_name = str(
-            #         fetch_source_fixture(
-            #             data.get("real_weights_file_name"), group=f"{self.model_name}_{self.submodel_name}"
-            #         )
-            #         if data.get("real_weights_file_name")
-            #         else None
-            #     )
 
             if data.get("mlir_url"):
                 self.mlir_url = str(
@@ -180,8 +166,6 @@ class ModelBenchmarkRunItem(pytest.Item):
             )
 
 
-        # import pdb
-        # pdb.set_trace()
         # if compilation is required, run this step
         if self.compilation_required:
             if self.mlir_file_name:
@@ -229,8 +213,6 @@ class ModelBenchmarkRunItem(pytest.Item):
         )
 
 
-        # import pdb
-        # pdb.set_trace()
 
         if not Path(vmfb_file_path).is_file():
             pytest.skip(

@@ -37,7 +37,6 @@ def pytest_addoption(parser):
 
 def pytest_sessionstart(session):
     logger.info("Pytest benchmark test session is starting")
-
     with open(f"{job_summary_path}/job_summary.md", "a") as job_summary, open(
         f"{job_summary_path}/job_summary.json", "w+"
     ) as content:
@@ -85,6 +84,7 @@ def pytest_sessionfinish(session, exitstatus):
             "Expected/golden binary size (bytes)",
         ],
     }
+
     with open(f"{job_summary_path}/job_summary.md", "a") as job_summary, open(
         f"{job_summary_path}/job_summary.json", "r"
     ) as content:
