@@ -14,7 +14,6 @@ import json
 THIS_DIR = Path(__file__).parent
 # compiled files will live in the previous directory, so benchmark tests can access those and no need to recompile
 PARENT_DIR = Path(__file__).parent.parent
-
 vmfb_dir = os.getenv("TEST_OUTPUT_ARTIFACTS", default=str(PARENT_DIR))
 chip = os.getenv("ROCM_CHIP", default="gfx942")
 sku = os.getenv("SKU", default="mi300")
@@ -65,6 +64,12 @@ class ModelQualityRunItem(pytest.Item):
         self.submodel_name = "_".join(split_file_name[:-1])
         self.type_of_backend = split_file_name[-1]
 
+    def runtest(self):
+        self.initialize()
+        self.test_compile()
+        self.test_run_threshold()
+
+    def initialize(self):
         with open(self.file_path, "r") as file:
             data = json.load(file)
 
@@ -87,43 +92,21 @@ class ModelQualityRunItem(pytest.Item):
             real_weights_group_name = f"{self.model_name}_{self.submodel_name}"
             if data.get("custom_real_weights_group"):
                 real_weights_group_name = data.get("custom_real_weights_group")
-
-            s="https"
-            if data.get("real_weights"):
-                if s in data.get("real_weights"):
-                    self.real_weights = (
-                        fetch_source_fixture(
-                            data.get("real_weights"),
-                            group=real_weights_group_name,
-                        )
-                        if data.get("real_weights")
-                        else None
-                    )
-                else:
-                    if os.path.exists(data.get("real_weights")):
-                        self.real_weights = Artifact(real_weights_group_name, "real_weights.irpa")
-
-            if data.get("mlir"):
-                if s in data.get("mlir"):
-                    self.mlir = (
-                        fetch_source_fixture(
-                            data.get("mlir"), group=f"{self.model_name}_{self.submodel_name}"
-                        )
-                        if data.get("mlir")
-                        else None
-                    )
-                else:
-                    if os.path.exists(data.get("mlir")):
-                        group=f"{self.model_name}_{self.submodel_name}"
-                        self.mlir = Artifact(group, "model.mlir")
-
-                    else:
-                        RuntimeError(f"MLIR File Not Found at: {data.get('mlir')}")
-            # else:
-            #     sharktank_exported_mlir="../../artifacts/"
-            #     if os.path.exists(data.get("mlir")):
-            #             group=f"{self.model_name}_{self.submodel_name}"
-            #             self.mlir = Artifact(group, "model.mlir")
+            self.real_weights = (
+                fetch_source_fixture(
+                    data.get("real_weights"),
+                    group=real_weights_group_name,
+                )
+                if data.get("real_weights")
+                else None
+            )
+            self.mlir = (
+                fetch_source_fixture(
+                    data.get("mlir"), group=f"{self.model_name}_{self.submodel_name}"
+                )
+                if data.get("mlir")
+                else None
+            )
 
             self.compiler_flags = data.get("compiler_flags", [])
             self.device = data.get("device")
@@ -183,10 +166,6 @@ class ModelQualityRunItem(pytest.Item):
                 self.compiler_flags += [
                     f"--iree-opt-splat-parameters={self.fake_weights.path}"
                 ]
-
-    def runtest(self):
-        self.test_compile()
-        self.test_run_threshold()
 
     def test_compile(self):
         if chip in self.compile_chip_expecting_to_fail:
