@@ -51,9 +51,9 @@ def pytest_sessionstart(session):
     for test_file in test_files:
         if model_name:
             if backend in str(test_file.name) and model_name in str(test_file.name):
-                session.config.quality_test_files.append(test_file)
+                session.config.benchmark_test_files.append(test_file)
         elif backend in str(test_file.name):
-            session.config.quality_test_files.append(test_file)
+            session.config.benchmark_test_files.append(test_file)
 
     # Keeping track of all external test files and their paths
     session.config.external_test_files = {}
