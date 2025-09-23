@@ -1,0 +1,42 @@
+{
+    "type": "quality",
+    "markers": ["cpu"],
+    "modules": [
+        "sdxl/scheduled_unet_cpu", 
+        "sdxl/scheduler_cpu"
+    ],
+    "weights": [
+        {
+            "scope": "model",
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/real_weights.irpa"
+        }
+    ],
+    "inputs": [
+        {
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/inference_input.0.bin",
+            "value": "1x4x128x128xf16"
+        },
+        {
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/inference_input.1.bin",
+            "value": "2x64x2048xf16"
+        },
+        {
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/inference_input.2.bin",
+            "value": "2x1280xf16"
+        },
+        {
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/inference_input.3.bin",
+            "value": "1xf16"
+        }
+    ],
+    "expected_outputs": [
+        {
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/kunwar/sdxl-scheduler-unet-test-suite-output.npy"
+        }
+    ],
+    "run_args": [
+      "--device=local-task",
+      "--function=produce_image_latents",
+      "--expected_f16_threshold=0.05f"
+    ]
+}
