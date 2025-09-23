@@ -46,10 +46,14 @@ def pytest_sessionstart(session):
     # Collect all .json files for benchmark tests
     session.config.benchmark_test_files = []
     path_of_benchmark_tests = Path(session.config.getoption("test_file_directory"))
+    model_name = session.config.getoption("-k")
     test_files = sorted(path_of_benchmark_tests.glob("**/*.json"))
     for test_file in test_files:
-        if backend in str(test_file.name):
-            session.config.benchmark_test_files.append(test_file)
+        if model_name:
+            if backend in str(test_file.name) and model_name in str(test_file.name):
+                session.config.quality_test_files.append(test_file)
+        elif backend in str(test_file.name):
+            session.config.quality_test_files.append(test_file)
 
     # Keeping track of all external test files and their paths
     session.config.external_test_files = {}
