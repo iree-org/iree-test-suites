@@ -119,7 +119,9 @@ class ModelBenchmarkRunItem(pytest.Item):
             self.real_weights_file_name = data.get(
                 "real_weights_file_name", "real_weights.irpa"
             )
-
+            self.real_weights_file_path = data.get(
+                "real_weights_file_path", None
+            )
             if data.get("mlir_url"):
                 self.mlir_url = str(
                     fetch_source_fixture(
@@ -181,9 +183,18 @@ class ModelBenchmarkRunItem(pytest.Item):
         artifact_directory = f"{artifacts_dir}/{self.model_name}_{self.submodel_name}"
 
         vmfb_file_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
-        exec_args = [
-            f"--parameters=model={artifact_directory}/{self.real_weights_file_name}"
-        ]
+
+        # import pdb
+        # pdb.set_trace()
+
+        if self.real_weights_file_path:
+            exec_args = [
+                f"--parameters=model={self.real_weights_file_path}"
+            ]
+        else:
+            exec_args = [
+                f"--parameters=model={artifact_directory}/{self.real_weights_file_name}"
+            ]
 
         # If there are modules for an e2e pipeline test, reset exec_args and directory_compile variables to custom variables
         if self.modules:
