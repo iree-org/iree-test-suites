@@ -48,7 +48,7 @@ class MatMulOpTest(OpTest):
 
     def forward(self, *args):
         left, right = args
-        result = (left @ right) 
+        result = left @ right
         return result
 
     def generate_inputs(self):
@@ -56,11 +56,12 @@ class MatMulOpTest(OpTest):
         input1 = torch.rand(64, 64)
         return input0, input1
 
+
 class TrilinearOpTest(OpTest):
     def forward(self, *args):
         a, b, c = args
         result = torch.ops.aten._trilinear(
-                a, b, c, expand1=[], expand2=[], expand3=[], sumdim=[], unroll_dim=0
+            a, b, c, expand1=[], expand2=[], expand3=[], sumdim=[], unroll_dim=0
         )
         return result
 
@@ -69,6 +70,7 @@ class TrilinearOpTest(OpTest):
         input1 = torch.rand(64, 64)
         input2 = torch.rand(64, 64)
         return input0, input1, input2
+
 
 class UnfoldTest(OpTest):
     def forward(self, *args):
@@ -79,12 +81,15 @@ class UnfoldTest(OpTest):
 
 
 def main():
-    tests = [MatMulOpTest("test_matmul_64x64"),
-             TrilinearOpTest("test_trilinear_64x64"),
-             UnfoldTest("test_unfold_128")]
+    tests = [
+        MatMulOpTest("test_matmul_64x64"),
+        TrilinearOpTest("test_trilinear_64x64"),
+        UnfoldTest("test_unfold_128"),
+    ]
 
     for test in tests:
         test.generate_test()
+
 
 if "__main__" == __name__:
     main()
