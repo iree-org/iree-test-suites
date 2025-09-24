@@ -43,6 +43,7 @@ pytest sharktank_models/benchmarks/ \
 | golden_size                      | optional | object  | An object of golden sizes, where the key is the sku and the value is the golden size in bytes, (ex: `{"mi250": 2000000}`)    |
 | specific_chip_to_ignore          | optional | array   | An array of chip values, where the benchmark tests will ignore the chips specified                                           |
 | real_weights_file_name           | optional | string  | If real weights is a different file name, specify it here in order to get the correct real weights file                      |
-| mlir_url           | optional | string  | Takes the url for MLIR file and fetches it.|
+| mlir_url           | optional | string  | Takes the url for MLIR file and fetches it(Does not override mlir_file_name).|
+| real_weights_file_path           | optional | string  | Takes the path for irpa file. Overrides the real_weight_file_name. |
 
 Please feel free to look at any JSON examples under a model directory (ex: sdxl)

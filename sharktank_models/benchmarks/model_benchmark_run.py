@@ -184,9 +184,6 @@ class ModelBenchmarkRunItem(pytest.Item):
 
         vmfb_file_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
 
-        # import pdb
-        # pdb.set_trace()
-
         if self.real_weights_file_path:
             exec_args = [
                 f"--parameters=model={self.real_weights_file_path}"
