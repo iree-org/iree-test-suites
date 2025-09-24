@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 testdir=$1
-pushd
+pushd $testdir
 
 iree-compile \
 	--iree-hal-target-backends=llvm-cpu \
