@@ -20,6 +20,7 @@ class TorchModelBenchmarkTest(TestBase):
         super().__init__(test_data=test_data, **kwargs)
         self.add_marker("benchmark")
         self.golden_time = test_data.get("golden_time", None)
+        self.module_artifacts = self._get_modules()
 
     def _get_mean_time_from_output_json(self, output_json: dict) -> float:
         benchmarks = output_json["benchmarks"]
@@ -31,14 +32,13 @@ class TorchModelBenchmarkTest(TestBase):
 
     def runtest(self):
         # Compile all required modules.
-        module_artifacts = self._get_modules()
-        for module in module_artifacts:
+        for module in self.module_artifacts:
             module.join()
         # Get common run arguments.
         run_args = self._get_common_run_args()
         # Run the model.
         output_json = iree_benchmark_module(
-            modules=[m.path for m in module_artifacts],
+            modules=[m.path for m in self.module_artifacts],
             cwd=self.artifact_dir,
             args=run_args,
         )

@@ -19,17 +19,17 @@ class TorchModelQualityTest(TestBase):
     def __init__(self, *, test_data: dict, **kwargs):
         super().__init__(test_data=test_data, **kwargs)
         self.add_marker("quality")
+        self.module_artifacts = self._get_modules()
 
     def runtest(self):
         # Compile all required modules.
-        module_artifacts = self._get_modules()
-        for module in module_artifacts:
+        for module in self.module_artifacts:
             module.join()
         # Get common run arguments.
         run_args = self._get_common_run_args()
         # Run the model.
         iree_run_module(
-            modules=[m.path for m in module_artifacts],
+            modules=[m.path for m in self.module_artifacts],
             cwd=self.artifact_dir,
             args=run_args,
         )

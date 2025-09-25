@@ -163,4 +163,5 @@ class AzureArtifact(Artifact):
                     local_blob.write(download_stream.readall())
 
     def join(self):
+        super().join()
         self.download_azure_artifact()

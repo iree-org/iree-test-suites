@@ -5,6 +5,7 @@ import json
 from torch_test_utils.artifact import Artifact
 from torch_test_utils.azure import AzureArtifact
 from torch_test_utils.utils import iree_compile
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -43,21 +44,24 @@ class ModuleArtifact(Artifact):
             module_json.exists()
         ), f"Module definition '{module_json}' does not exist."
 
+        # Delete the directory to force recompilation of module if requested.
+        if force_recompile and module_artifact_dir.exists():
+            logger.info(
+                f"  Force recompilation - removing existing module artifact directory '{module_artifact_dir}'"
+            )
+            shutil.rmtree(module_artifact_dir)
+
         super().__init__(module_artifact_dir, name)
 
         self.artifact_base_dir = artifact_base_dir
         self.module_json = module_json
         self.module_artifact_dir = module_artifact_dir
         self.external_file_dir = external_file_dir
-        self.force_recompile = force_recompile
 
     def join(self):
+        super().join()
         # Check if the module file already exists.
-        if (
-            not self.force_recompile
-            and self.path.exists()
-            and self.path.stat().st_size > 0
-        ):
+        if self.path.exists() and self.path.stat().st_size > 0:
             logger.info(f"  Skipping '{self.path}' download - file exists")
             return
         module_data = json.loads(self.module_json.read_text())

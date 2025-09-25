@@ -14,7 +14,6 @@ class Artifact:
     ):
         self.artifact_dir = artifact_dir
         self.name = name
-        self.path.parent.mkdir(parents=True, exist_ok=True)
 
     @property
     def path(self) -> Path:
@@ -22,7 +21,7 @@ class Artifact:
 
     def join(self):
         """Waits for the artifact to become available."""
-        pass
+        self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def __str__(self):
         return str(self.path)

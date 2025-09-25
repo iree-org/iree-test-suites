@@ -3,7 +3,7 @@
 ## Example Usage
 
 ```base
-pytest -m "hip" --test-file-directory=./sdxl --module-directory=modules --external-file-directory=./test_suite_files  --log-level=INFO -o log_cli=True
+pytest -m "hip" --test-file-directory=./sdxl --module-directory=modules --external-file-directory=./test_suite_files  --log-level=INFO -o log_cli=True --force-recompile=True
 ```
 
 Explanation of flags:
@@ -16,6 +16,7 @@ pytest \
 --external-file-directory=./test_suite_files # Directory containing any external files referenced by the JSON files
 --log-level=INFO # Set logging level to INFO
 -o log_cli=True # Enable live logging output during test runs
+--force-recompile=True # Force recompilation of modules even if a cached compiled module already exists from a previous run
 ```
 
 ## Using pytest to control collection
