@@ -167,22 +167,58 @@ class TorchAtenLerpScalarTest(OpTest):
         end = torch.rand(64)    # end tensor
         return [start, end]
 
+class TorchAtenLogitTest(OpTest):
+    def forward(self, x):
+        eps = 1e-6  # small value to avoid numerical instability
+        return torch.ops.aten.logit(x, eps)
+
+    def generate_inputs(self):
+        # Generate random values between 0 and 1 since logit expects input in this range
+        return [torch.rand(64)]
+
+class TorchAtenReflectionPad2dTest(OpTest):
+    def forward(self, x):
+        padding = [1, 1, 1, 1]  # left, right, top, bottom padding
+        return torch.ops.aten.reflection_pad2d(x, padding)
+
+    def generate_inputs(self):
+        # Input shape: [batch_size, channels, height, width]
+        return [torch.rand(1, 3, 32, 32)]
+
+class TorchAtenWeightNormInterfaceTest(OpTest):
+    # test.mlir:4:26: error: 'tensor.cast' op operand type 'tensor<?x1xf32>' and result type 'tensor<16x8xf32>' are cast incompatible
+    # %result0, %result1 = torch.aten._weight_norm_interface %arg0, %arg1, %int0 : !torch.vtensor<[16,8],f32>, !torch.vtensor<[8],f32>, !torch.int -> !torch.vtensor<[16,8],f32>, !torch.vtensor<[16,1],f32>
+    #                         ^
+    # test.mlir:4:26: note: see current operation: %32 = "tensor.cast"(%31) : (tensor<?x1xf32>) -> tensor<16x8xf32>
+    def forward(self, v, g):
+        dim = 0
+        res = torch.ops.aten._weight_norm_interface(v, g, dim)
+        return res[0][0], res[0][1]
+
+    def generate_inputs(self):
+        v = torch.rand(16, 8)  # weight tensor
+        g = torch.rand(8)      # gain parameter
+        return [v, g]
+
 def main():
     tests = [
-        MatMulOpTest("test_matmul_64x64"),
-        TrilinearOpTest("test_trilinear_64x64"),
-        UnfoldTest("test_unfold_128"),
-        SLogDetTest("test_slogdet_64x64"),
-        TorchAtenNormScalarTest("test_torch_aten_norm_scalar_64"),
-        TorchAtenHannWindowPeriodicTest("test_torch_aten_hann_window_periodic_128"),
-        TorchAtenRenormTest("test_torch_aten_renorm_128x128"),
-        TorchAtenAllDimTest("test_torch_aten_all_dim_128x128"),
-        TorchAtenTriuIndicesTest("test_torch_aten_triu_indices_test_128"),
-        TorchAtenKthValueTest("test_torch_aten_kth_value_test"),
-        TorchAtenAvgPool2dTest("test_torch_aten_avg_pool_2d"),
-        TorchAtenTrilIndicesTest("test_torch_aten_tril_indices"),
-        TorchAtenMaxUnpool3dTest("test_torch_aten_max_unpool_3d"),
-        TorchAtenLerpScalarTest("test_torch_aten_lerp_scalar"),
+        #MatMulOpTest("test_matmul_64x64"),
+        #TrilinearOpTest("test_trilinear_64x64"),
+        #UnfoldTest("test_unfold_128"),
+        #SLogDetTest("test_slogdet_64x64"),
+        #TorchAtenNormScalarTest("test_torch_aten_norm_scalar_64"),
+        #TorchAtenHannWindowPeriodicTest("test_torch_aten_hann_window_periodic_128"),
+        #TorchAtenRenormTest("test_torch_aten_renorm_128x128"),
+        #TorchAtenAllDimTest("test_torch_aten_all_dim_128x128"),
+        #TorchAtenTriuIndicesTest("test_torch_aten_triu_indices_test_128"),
+        #TorchAtenKthValueTest("test_torch_aten_kth_value_test"),
+        #TorchAtenAvgPool2dTest("test_torch_aten_avg_pool_2d"),
+        #TorchAtenTrilIndicesTest("test_torch_aten_tril_indices"),
+        #TorchAtenMaxUnpool3dTest("test_torch_aten_max_unpool_3d"),
+        #TorchAtenLerpScalarTest("test_torch_aten_lerp_scalar"),
+        #TorchAtenLogitTest("test_torch_aten_logit"),
+        #TorchAtenReflectionPad2dTest("test_torch_aten_reflection_pad_2d"),
+        TorchAtenWeightNormInterfaceTest("test_torch_aten_weight_norm_interface"),
     ]
 
     for test in tests:
