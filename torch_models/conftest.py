@@ -75,6 +75,9 @@ class TorchModelDirectory(pytest.Directory):
 class TorchModelFile(pytest.File):
     def collect(self):
         test_data = json.loads(self.path.read_text())
+        if "type" not in test_data:
+            # Not a valid JSON test file.
+            return
         if test_data["type"] == "quality":
             yield TorchModelQualityTest.from_parent(
                 self, test_data=test_data, name=self.name
@@ -91,6 +94,7 @@ class TorchModelFile(pytest.File):
 def pytest_collect_file(file_path: Path, parent: pytest.Collector):
     if file_path == Path(__file__):
         test_file_directory = parent.config.getoption("test_file_directory")
+        logging.info(f"Collecting tests from {test_file_directory}")
         assert (
             test_file_directory is not None
         ), "--test-file-directory must be specified"

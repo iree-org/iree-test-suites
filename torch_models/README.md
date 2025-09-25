@@ -111,14 +111,7 @@ would be passed (say as an input) as:
 
 | Field Name                     | Required | Type    | Description                                                                                                                                      |
 | ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| type                           | required | string  | The type of test definition. Example: `benchmark`, `quality`. Also acts as a pytest marker.                                                      |
-| markers                        | required | array   | List of pytest markers to apply to the test.                                                                                                     |
-| modules                        | required | array   | List of modules required for this test.                                                                                                          |
-| weights                        | optional | array   | List of weights to use for this test. Each weight definition contains a scope and a url.                                                         |
-| inputs                         | required | argspec | List of inputs to use for this test.                                                                                                             |
-| outputs                        | required | argspec | List of outputs to use for this test.                                                                                                            |
-| expected_outputs               | required | argspec | List of expected outputs for this test.                                                                                                          |
-| run_args                       | optional | array   | Additional runtime arguments to pass to the iree-run-module/iree-benchmark-module command.                                                       |
+| golden_time                    | optional | float   | golden time in ms                                                                                                                                                 |
 
 ## TODO
 
