@@ -86,12 +86,77 @@ class SLogDetTest(OpTest):
     def generate_inputs(self):
         return [torch.rand(64,64)]
 
+class TorchAtenNormScalarTest(OpTest):
+    def forward(self, A):
+        return torch.ops.aten.norm.Scalar(A, 0.5)
+
+    def generate_inputs(self):
+        return [torch.rand(64)]
+
+# torch.aten.hann_window.periodic
+class TorchAtenHannWindowPeriodicTest(OpTest):
+    def forward(self, *args):
+        return torch.ops.aten.hann_window.periodic(128, True)
+
+    def generate_inputs(self):
+        return []
+
+class TorchAtenRenormTest(OpTest):
+    def forward(self, x):
+        return torch.ops.aten.renorm(x, 2.0, 0, 1.0)
+
+    def generate_inputs(self):
+        return [torch.rand(128, 128)]
+
+class TorchAtenAllDimTest(OpTest):
+    def forward(self, x):
+        return torch.ops.aten.all.dim(x, 0)
+
+    def generate_inputs(self):
+        return [torch.randint(0, 2, (128, 128), dtype=torch.bool)]
+
+class TorchAtenTriuIndicesTest(OpTest):
+    def forward(self, *args):
+        return torch.ops.aten.triu_indices(8, 8, 0)
+
+    def generate_inputs(self):
+        return []
+
+class TorchAtenKthValueTest(OpTest):
+    def forward(self, x):
+        return torch.ops.aten.kthvalue(x, 1, 0)  # k=1, dim=0
+
+    def generate_inputs(self):
+        return [torch.rand(128, 128)]
+
+class TorchAtenAvgPool2dTest(OpTest):
+    def forward(self, x):
+        return torch.ops.aten.avg_pool2d(x, kernel_size=[2,2], stride=[2,2], padding=[0,0])
+
+    def generate_inputs(self):
+        return [torch.rand(1, 64, 32, 32)]  # [batch_size, channels, height, width]
+
+class TorchAtenTrilIndicesTest(OpTest):
+    def forward(self, *args):
+        return torch.ops.aten.tril_indices(128, 128, 0)
+
+    def generate_inputs(self):
+        return []
+
 def main():
     tests = [
         MatMulOpTest("test_matmul_64x64"),
         TrilinearOpTest("test_trilinear_64x64"),
         UnfoldTest("test_unfold_128"),
         SLogDetTest("test_slogdet_64x64"),
+        TorchAtenNormScalarTest("test_torch_aten_norm_scalar_64"),
+        TorchAtenHannWindowPeriodicTest("test_torch_aten_hann_window_periodic_128"),
+        TorchAtenRenormTest("test_torch_aten_renorm_128x128"),
+        TorchAtenAllDimTest("test_torch_aten_all_dim_128x128"),
+        TorchAtenTriuIndicesTest("test_torch_aten_triu_indices_test_128"),
+        TorchAtenKthValueTest("test_torch_aten_kth_value_test"),
+        TorchAtenAvgPool2dTest("test_torch_aten_avg_pool_2d"),
+        TorchAtenTrilIndicesTest("test_torch_aten_tril_indices"),
     ]
 
     for test in tests:
