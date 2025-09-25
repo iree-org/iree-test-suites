@@ -26,6 +26,8 @@ class TestBase(pytest.Item):
         self.module_directory = Path(
             self.config.getoption("module_directory")
         ).resolve()
+        # TODO: Hook into pytest_runtest_makereport to capture this.
+        self.status = "NOT-YET-IMPLEMENTED"
 
         # Add markers.
         for marker in test_data["markers"]:
@@ -110,3 +112,17 @@ class TestBase(pytest.Item):
         run_args = self.test_data.get("run_args", [])
         args.extend(run_args)
         return args
+
+    def reportinfo(self):
+        return self.path, 0, f"usecase: {self.name}"
+
+    @classmethod
+    def get_test_type(cls) -> str:
+        ...
+
+    @classmethod
+    def get_test_headers(cls) -> list[str]:
+        ...
+
+    def get_test_summary(self) -> list:
+        ...

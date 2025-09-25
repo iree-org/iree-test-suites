@@ -42,8 +42,24 @@ class TorchModelBenchmarkTest(TestBase):
             cwd=self.artifact_dir,
             args=run_args,
         )
-        mean_time = self._get_mean_time_from_output_json(output_json)
+        self.mean_time = self._get_mean_time_from_output_json(output_json)
         if self.golden_time is not None:
             assert (
-                mean_time <= self.golden_time
-            ), f"Benchmark failed: mean_time {mean_time} exceeds golden_time {self.golden_time}"
+                self.mean_time <= self.golden_time
+            ), f"Benchmark failed: mean_time {self.mean_time} exceeds golden_time {self.golden_time}"
+
+    @classmethod
+    def get_test_type(cls) -> str:
+        return "benchmark"
+
+    @classmethod
+    def get_test_headers(cls) -> list[str]:
+        return ["Name", "Current Time (ms)", "Golden Time (ms)", "Status"]
+
+    def get_test_summary(self) -> list:
+        return [
+            self.name,
+            f"{self.mean_time:.3f}",
+            f"{self.golden_time:.3f}" if self.golden_time is not None else "N/A",
+            self.status,
+        ]

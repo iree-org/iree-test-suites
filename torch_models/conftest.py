@@ -9,7 +9,9 @@ import logging
 from pathlib import Path
 import logging
 import json
+import tabulate
 
+from torch_test_utils.test_base import TestBase
 from torch_test_utils.quality_test import TorchModelQualityTest
 from torch_test_utils.benchmark_test import TorchModelBenchmarkTest
 
@@ -100,3 +102,26 @@ def pytest_collect_file(file_path: Path, parent: pytest.Collector):
         ), "--test-file-directory must be specified"
         test_file_directory = Path(test_file_directory).resolve()
         return TorchModelDirectory.from_parent(parent=parent, path=test_file_directory)
+
+
+@pytest.hookimpl
+def pytest_sessionfinish(session, exitstatus):
+    # Generate a job_summary report at the end of the session.
+    summaries = {}
+    for item in session.items:
+        assert isinstance(item, TestBase)
+        test_type = item.get_test_type()
+        if test_type not in summaries:
+            summaries[test_type] = {"headers": item.get_test_headers(), "rows": []}
+        summaries[test_type]["rows"].append(item.get_test_summary())
+
+    with open("job_summary.md", "w") as md_file:
+        md_file.write(
+            f"# Job Summary For Markers: {session.config.getoption('-m')}\n\n"
+        )
+        for test_type, summary in summaries.items():
+            md_file.write(f"## {test_type.capitalize()} Test Summary\n\n")
+            table = tabulate.tabulate(
+                summary["rows"], headers=summary["headers"], tablefmt="github"
+            )
+            md_file.write(table + "\n\n")

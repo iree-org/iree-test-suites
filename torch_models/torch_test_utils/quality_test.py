@@ -33,3 +33,20 @@ class TorchModelQualityTest(TestBase):
             cwd=self.artifact_dir,
             args=run_args,
         )
+
+    @classmethod
+    def get_test_type(cls) -> str:
+        return "quality"
+
+    @classmethod
+    def get_test_headers(cls) -> list[str]:
+        return [
+            "Name",
+            "Status",
+        ]
+
+    def get_test_summary(self) -> list:
+        return [
+            self.name,
+            self.status,
+        ]
