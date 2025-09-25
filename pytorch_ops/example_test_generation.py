@@ -79,12 +79,19 @@ class UnfoldTest(OpTest):
     def generate_inputs(self):
         return [torch.rand(128)]
 
+class SLogDetTest(OpTest):
+    def forward(self, A):
+        return torch.linalg.slogdet(A)
+
+    def generate_inputs(self):
+        return [torch.rand(64,64)]
 
 def main():
     tests = [
         MatMulOpTest("test_matmul_64x64"),
         TrilinearOpTest("test_trilinear_64x64"),
         UnfoldTest("test_unfold_128"),
+        SLogDetTest("test_slogdet_64x64"),
     ]
 
     for test in tests:

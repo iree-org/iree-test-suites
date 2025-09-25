@@ -10,7 +10,6 @@ iree-compile \
 
 inputs=$(ls input*.npy | sort --human-numeric-sort |  awk '{print "--input=@" $1}')
 results=$(ls result*.npy | sort --human-numeric-sort |  awk '{print "--expected_output=@" $1}')
-echo $inputs
 
 iree-run-module \
 	--module=file.vmfb \
