@@ -143,6 +143,30 @@ class TorchAtenTrilIndicesTest(OpTest):
     def generate_inputs(self):
         return []
 
+class TorchAtenMaxUnpool3dTest(OpTest):
+    def forward(self, x, indices):
+        output_size = [4, 4, 4]  # smaller output size [depth, height, width]
+        kernel_size = [2, 2, 2]
+        padding = [0, 0, 0]
+        return torch.ops.aten.max_unpool3d(x, indices, output_size, kernel_size, padding)
+
+    def generate_inputs(self):
+        # Possibly we should not use random.
+        # Right now the test fails but I am unsure if it is because of the random data.
+        x = torch.rand(2, 4, 2, 2, 2)  # smaller input size [batch_size, channels, depth, height, width]
+        indices = torch.randint(0, 2, (2, 4, 2, 2, 2), dtype=torch.int64)
+        return [x, indices]
+
+class TorchAtenLerpScalarTest(OpTest):
+    def forward(self, start, end):
+        weight = 0.5  # interpolation weight between 0 and 1
+        return torch.ops.aten.lerp.Scalar(start, end, weight)
+
+    def generate_inputs(self):
+        start = torch.rand(64)  # start tensor
+        end = torch.rand(64)    # end tensor
+        return [start, end]
+
 def main():
     tests = [
         MatMulOpTest("test_matmul_64x64"),
@@ -157,6 +181,8 @@ def main():
         TorchAtenKthValueTest("test_torch_aten_kth_value_test"),
         TorchAtenAvgPool2dTest("test_torch_aten_avg_pool_2d"),
         TorchAtenTrilIndicesTest("test_torch_aten_tril_indices"),
+        TorchAtenMaxUnpool3dTest("test_torch_aten_max_unpool_3d"),
+        TorchAtenLerpScalarTest("test_torch_aten_lerp_scalar"),
     ]
 
     for test in tests:
