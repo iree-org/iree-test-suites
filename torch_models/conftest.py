@@ -52,6 +52,12 @@ def pytest_addoption(parser):
         default=False,
         help="Force recompilation of modules even if cached versions exist.",
     )
+    parser.addoption(
+        "--job-summary-path",
+        action="store",
+        default="./",
+        help="The directory to store the job summary markdown file.",
+    )
 
 
 @pytest.hookimpl
@@ -115,7 +121,8 @@ def pytest_sessionfinish(session, exitstatus):
             summaries[test_type] = {"headers": item.get_test_headers(), "rows": []}
         summaries[test_type]["rows"].append(item.get_test_summary())
 
-    with open("job_summary.md", "w") as md_file:
+    job_summary_path = Path(session.config.getoption("job_summary_path")).resolve()
+    with open(job_summary_path / "job_summary.md", "w") as md_file:
         md_file.write(
             f"# Job Summary For Markers: {session.config.getoption('-m')}\n\n"
         )
