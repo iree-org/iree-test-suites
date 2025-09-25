@@ -1,3 +1,4 @@
 pytest
+pytest-timeout
 azure-storage-blob
 tqdm
