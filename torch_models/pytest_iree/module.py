@@ -57,11 +57,19 @@ class ModuleArtifact(Artifact):
         self.module_json = module_json
         self.module_artifact_dir = module_artifact_dir
         self.external_file_dir = external_file_dir
+        self.compstat_path = module_artifact_dir / "compilation_info.json"
+
+    def _needs_recompile(self) -> bool:
+        if not self.path.exists() or self.path.stat().st_size == 0:
+            return True
+        if not self.compstat_path.exists() or self.compstat_path.stat().st_size == 0:
+            return True
+        return False
 
     def join(self):
         super().join()
         # Check if the module file already exists.
-        if self.path.exists() and self.path.stat().st_size > 0:
+        if not self._needs_recompile():
             logger.info(f"  Skipping '{self.path}' download - file exists")
             return
         module_data = json.loads(self.module_json.read_text())
@@ -73,9 +81,23 @@ class ModuleArtifact(Artifact):
         mlir_artifact.join()
         # Compile the MLIR file to a VMFB file.
         compiler_flags = module_data.get("compiler_flags", [])
+        # Add compilation stats path and format.
+        compiler_flags += [
+            f"--iree-scheduling-dump-statistics-file={self.compstat_path.resolve()}",
+            "--iree-scheduling-dump-statistics-format=json",
+        ]
         iree_compile(
             source=mlir_artifact.path,
             output=self.path,
             cwd=self.external_file_dir,
             args=compiler_flags,
         )
+
+    def get_compstats(self) -> dict:
+        """Get the compilation statistics from the compilation_info.json file."""
+        self.join()
+        assert (
+            self.compstat_path.exists()
+        ), f"Compilation stats file '{self.compstat_path}' does not exist."
+        compstats = json.loads(self.compstat_path.read_text())
+        return compstats

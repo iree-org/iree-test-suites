@@ -14,6 +14,7 @@ import tabulate
 from pytest_iree.test_base import TestBase
 from pytest_iree.quality_test import IREEQualityTest
 from pytest_iree.benchmark_test import IREEBenchmarkTest
+from pytest_iree.compstat_test import IREECompStatTest
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +91,10 @@ class IREEFile(pytest.File):
             yield IREEQualityTest.from_parent(self, test_data=test_data, name=self.name)
         elif test_data["type"] == "benchmark":
             yield IREEBenchmarkTest.from_parent(
+                self, test_data=test_data, name=self.name
+            )
+        elif test_data["type"] == "compstat":
+            yield IREECompStatTest.from_parent(
                 self, test_data=test_data, name=self.name
             )
         else:
