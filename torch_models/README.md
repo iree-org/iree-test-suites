@@ -1,49 +1,83 @@
 # Torch Models Test Suite
 
-## Example Usage
-
-```base
-pytest -m "hip" --test-file-directory=./sdxl --module-directory=modules --external-file-directory=./test_suite_files  --log-level=INFO -o log_cli=True --force-recompile=True
-```
-
-Explanation of flags:
+## Installation
 
 ```
+python3 -m venv .env
+source .env/bin/activate
+pip install -r requirements.txt
+```
+
+## Example Usages
+
+- Run all tests under the directory `./examples` with the module definitions
+  relative to `./`:
+
+```bash
 pytest \
--m "cpu" # Run only cpu tests
---test-file-directory=./sdxl # Directory containing test JSON files
---module-directory=modules # Directory containing module JSON files
---external-file-directory=./test_suite_files # Directory containing any external files referenced by the JSON files
---log-level=INFO # Set logging level to INFO
--o log_cli=True # Enable live logging output during test runs
---force-recompile=True # Force recompilation of modules even if a cached compiled module already exists from a previous run
+--test-file-directory=./examples \
+--module-directory=./ \
+--external-file-directory=./
 ```
 
-## Using pytest to control collection
+- Run all tests marked as `hip` and `benchmark`:
 
-The test suite is designed to work well with pytest. Some useful commands:
-
-### Markers
-
-- `pytest -m benchmark` to run only benchmark tests.
-- `pytest -m quality` to run only quality tests.
-- `pytest -m "quality and cpu"` to run only quality tests on cpu.
-- `pytest -m "benchmark or gfx1201"` to run benchmark tests or tests on gfx1201.
-
-You can pass the `--collect-only` flag to see which tests would be ran without
-running them.
+```bash
+pytest \
+--test-file-directory=./examples \
+--module-directory=./ \
+--external-file-directory=./ \
+-m "hip and benchmark"
+```
 
 See
 https://python-basics-tutorial.readthedocs.io/en/24.3.0/test/pytest/markers.html
 for more information on pytest markers.
 
-### Logging
+- Run all tests marked as `hip` and `benchmark` with live logging enabled:
 
-To see logging output, use `--log-level=INFO`.
+```bash
+pytest \
+--test-file-directory=./examples \
+--module-directory=./ \
+--external-file-directory=./ \
+-m "hip and benchmark" \
+--log-cli-level=info
+```
 
-To see live logging output during test runs, use the `-o log_cli=true` flag:
+- Collect all `hip` or `cpu` tests without running them:
 
-### Flags
+```bash
+pytest \
+--test-file-directory=./examples \
+--module-directory=./ \
+--external-file-directory=./ \
+-m "hip or cpu" \
+--collect-only
+```
+
+- Run all tests under an external directory with cwd as `iree-test-suites`:
+
+```
+pytest torch_modles \
+--test-file-directory=<path-to-iree>/tests/external/iree-test-suites/torch_models \
+--module-directory=<path-to-iree>/tests/external/iree-test-suites/torch_models \
+--external-file-directory=<path-to-iree>/tests/external/iree-test-suites/test_suite_files \
+--log-cli-level=info
+```
+
+- Force recompilation of modules even if modules are cached from a previous run:
+
+```bash
+pytest \
+--test-file-directory=./examples \
+--module-directory=./ \
+--external-file-directory=./ \
+-m "hip or cpu" \
+--force-recompile
+```
+
+### pytest-iree Flags
 
 - `--test-file-directory`: The directory containing the test JSON files.
 - `--module-directory`: The directory containing the module JSON files. All
@@ -60,7 +94,7 @@ To see live logging output during test runs, use the `-o log_cli=true` flag:
 
 ## Module Definitions
 
-Please feel free to look at any JSON examples under the modules directory for reference.
+Please feel free to look at any JSON examples under the `examples/modules` directory for reference.
 
 | Field Name                     | Required | Type    | Description                                                                                                                                      |
 | ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -69,7 +103,7 @@ Please feel free to look at any JSON examples under the modules directory for re
 
 ## Test Definitions
 
-Please feel free to look at any JSON examples under the sdxl/ directory for reference.
+Please feel free to look at any JSON examples under the `examples` directory for reference.
 
 ### Common Fields
 
@@ -83,6 +117,32 @@ Please feel free to look at any JSON examples under the sdxl/ directory for refe
 | outputs                        | required | argspec | List of outputs to use for this test.                                                                                                            |
 | expected_outputs               | required | argspec | List of expected outputs for this test.                                                                                                          |
 | run_args                       | optional | array   | Additional runtime arguments to pass to the iree-run-module/iree-benchmark-module command.                                                       |
+
+### Quality Test Definition
+
+| Field Name                     | Required | Type    | Description                                                                                                                                      |
+| ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| type                           | required | string  | The type of test definition. Example: `benchmark`, `quality`. Also acts as a pytest marker.                                                      |
+| markers                        | required | array   | List of pytest markers to apply to the test.                                                                                                     |
+| modules                        | required | array   | List of modules required for this test.                                                                                                          |
+| weights                        | optional | array   | List of weights to use for this test. Each weight definition contains a scope and a url.                                                         |
+| inputs                         | required | argspec | List of inputs to use for this test.                                                                                                             |
+| expected_outputs               | required | argspec | List of expected outputs for this test.                                                                                                          |
+| run_args                       | optional | array   | Additional runtime arguments to pass to the iree-run-module/iree-benchmark-module command.                                                       |
+
+### Benchmark Test Definition
+
+| Field Name                     | Required | Type    | Description                                                                                                                                      |
+| ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| type                           | required | string  | The type of test definition. Example: `benchmark`, `quality`. Also acts as a pytest marker.                                                      |
+| markers                        | required | array   | List of pytest markers to apply to the test.                                                                                                     |
+| modules                        | required | array   | List of modules required for this test.                                                                                                          |
+| weights                        | optional | array   | List of weights to use for this test. Each weight definition contains a scope and a url.                                                         |
+| inputs                         | required | argspec | List of inputs to use for this test.                                                                                                             |
+| run_args                       | optional | array   | Additional runtime arguments to pass to the iree-run-module/iree-benchmark-module command.                                                       |
+| golden_time                    | optional | float   | golden time in ms                                                                                                                                                 |
+
+### Custom Argument Specifications
 
 `argspec` is defined as:
 
@@ -104,14 +164,6 @@ For example:
 would be passed (say as an input) as:
   --input=1xf16=@/path/to/downloaded/data.txt
 ```
-
-### Quality Test Specific Fields
-
-### Benchmark Test Specific Fields
-
-| Field Name                     | Required | Type    | Description                                                                                                                                      |
-| ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| golden_time                    | optional | float   | golden time in ms                                                                                                                                                 |
 
 ## TODO
 
