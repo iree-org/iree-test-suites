@@ -1,9 +1,12 @@
 {
     "type": "benchmark",
-    "markers": ["cpu"],
+    "markers": [
+      "hip",
+      "gfx1201"
+    ],
     "modules": [
-        "sdxl/scheduled_unet_cpu", 
-        "sdxl/scheduler_cpu"
+        "examples/modules/scheduled_unet_gfx1201", 
+        "examples/modules/scheduler_gfx1201"
     ],
     "weights": [
         {
@@ -30,7 +33,8 @@
         }
     ],
     "run_args": [
-      "--device=local-task",
+      "--device=hip",
       "--function=produce_image_latents"
-    ]
+    ],
+    "golden_time": 550.0
 }

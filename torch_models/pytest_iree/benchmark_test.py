@@ -9,13 +9,13 @@ import logging
 from pathlib import Path
 import logging
 
-from torch_test_utils.test_base import TestBase
-from torch_test_utils.utils import iree_benchmark_module
+from pytest_iree.test_base import TestBase
+from pytest_iree.utils import iree_benchmark_module
 
 logger = logging.getLogger(__name__)
 
 
-class TorchModelBenchmarkTest(TestBase):
+class IREEBenchmarkTest(TestBase):
     def __init__(self, *, test_data: dict, **kwargs):
         super().__init__(test_data=test_data, **kwargs)
         self.add_marker("benchmark")

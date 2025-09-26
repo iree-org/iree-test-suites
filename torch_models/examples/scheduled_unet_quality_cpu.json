@@ -1,12 +1,9 @@
 {
     "type": "quality",
-    "markers": [
-      "hip",
-      "gfx1201"
-    ],
+    "markers": ["cpu"],
     "modules": [
-        "sdxl/scheduled_unet_gfx1201", 
-        "sdxl/scheduler_gfx1201"
+        "examples/modules/scheduled_unet_cpu", 
+        "examples/modules/scheduler_cpu"
     ],
     "weights": [
         {
@@ -38,7 +35,8 @@
         }
     ],
     "run_args": [
-      "--device=hip",
-      "--function=produce_image_latents"
+      "--device=local-task",
+      "--function=produce_image_latents",
+      "--expected_f16_threshold=0.05f"
     ]
 }

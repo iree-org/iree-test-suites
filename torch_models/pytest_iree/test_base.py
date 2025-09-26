@@ -2,9 +2,9 @@ import pytest
 import logging
 from pathlib import Path
 import logging
-from torch_test_utils.module import ModuleArtifact
-from torch_test_utils.azure import AzureArtifact
-from torch_test_utils.artifact import Artifact
+from pytest_iree.module import ModuleArtifact
+from pytest_iree.azure import AzureArtifact
+from pytest_iree.artifact import Artifact
 
 logger = logging.getLogger(__name__)
 

@@ -11,9 +11,9 @@ import logging
 import json
 import tabulate
 
-from torch_test_utils.test_base import TestBase
-from torch_test_utils.quality_test import TorchModelQualityTest
-from torch_test_utils.benchmark_test import TorchModelBenchmarkTest
+from pytest_iree.test_base import TestBase
+from pytest_iree.quality_test import IREEQualityTest
+from pytest_iree.benchmark_test import IREEBenchmarkTest
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def pytest_addoption(parser):
         "--module-directory",
         action="store",
         default=None,
-        help="The directory of torch models to be compiled",
+        help="The directory of iree models to be compiled",
     )
     parser.addoption(
         "--external-file-directory",
@@ -73,25 +73,23 @@ def pytest_sessionstart(session):
             raise ValueError(f"{option} is required but not provided.")
 
 
-class TorchModelDirectory(pytest.Directory):
+class IREEDirectory(pytest.Directory):
     def collect(self):
         test_files: list[Path] = sorted(self.path.glob("**/*.json"))
         for test_file in test_files:
-            yield TorchModelFile.from_parent(path=test_file, parent=self)
+            yield IREEFile.from_parent(path=test_file, parent=self)
 
 
-class TorchModelFile(pytest.File):
+class IREEFile(pytest.File):
     def collect(self):
         test_data = json.loads(self.path.read_text())
         if "type" not in test_data:
             # Not a valid JSON test file.
             return
         if test_data["type"] == "quality":
-            yield TorchModelQualityTest.from_parent(
-                self, test_data=test_data, name=self.name
-            )
+            yield IREEQualityTest.from_parent(self, test_data=test_data, name=self.name)
         elif test_data["type"] == "benchmark":
-            yield TorchModelBenchmarkTest.from_parent(
+            yield IREEBenchmarkTest.from_parent(
                 self, test_data=test_data, name=self.name
             )
         else:
@@ -107,7 +105,7 @@ def pytest_collect_file(file_path: Path, parent: pytest.Collector):
             test_file_directory is not None
         ), "--test-file-directory must be specified"
         test_file_directory = Path(test_file_directory).resolve()
-        return TorchModelDirectory.from_parent(parent=parent, path=test_file_directory)
+        return IREEDirectory.from_parent(parent=parent, path=test_file_directory)
 
 
 @pytest.hookimpl
@@ -132,3 +130,6 @@ def pytest_sessionfinish(session, exitstatus):
                 summary["rows"], headers=summary["headers"], tablefmt="github"
             )
             md_file.write(table + "\n\n")
+
+    with open(job_summary_path / "job_summary.json", "w") as json_file:
+        json.dump(summaries, json_file, indent=2)

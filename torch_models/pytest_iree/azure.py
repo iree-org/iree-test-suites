@@ -8,7 +8,7 @@ import re
 import tqdm
 import logging
 import json
-from torch_test_utils.artifact import Artifact
+from pytest_iree.artifact import Artifact
 
 logger = logging.getLogger(__name__)
 
