@@ -31,22 +31,29 @@ class TorchModelBenchmarkTest(TestBase):
         return benchmarks[0]["real_time"]
 
     def runtest(self):
-        # Compile all required modules.
-        for module in self.module_artifacts:
-            module.join()
-        # Get common run arguments.
-        run_args = self._get_common_run_args()
-        # Run the model.
-        output_json = iree_benchmark_module(
-            modules=[m.path for m in self.module_artifacts],
-            cwd=self.artifact_dir,
-            args=run_args,
-        )
-        self.mean_time = self._get_mean_time_from_output_json(output_json)
-        if self.golden_time is not None:
-            assert (
-                self.mean_time <= self.golden_time
-            ), f"Benchmark failed: mean_time {self.mean_time} exceeds golden_time {self.golden_time}"
+        # No matter what I do, the pytest_runtest_makereport hook doesn't work.
+        # So workaround by setting status directly here.
+        try:
+            # Compile all required modules.
+            for module in self.module_artifacts:
+                module.join()
+            # Get common run arguments.
+            run_args = self._get_common_run_args()
+            # Run the model.
+            output_json = iree_benchmark_module(
+                modules=[m.path for m in self.module_artifacts],
+                cwd=self.artifact_dir,
+                args=run_args,
+            )
+            self.mean_time = self._get_mean_time_from_output_json(output_json)
+            if self.golden_time is not None:
+                assert (
+                    self.mean_time <= self.golden_time
+                ), f"Benchmark failed: mean_time {self.mean_time} exceeds golden_time {self.golden_time}"
+            self.status = "PASSED"
+        except Exception as e:
+            self.status = "FAILED"
+            raise e
 
     @classmethod
     def get_test_type(cls) -> str:

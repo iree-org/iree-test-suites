@@ -22,17 +22,24 @@ class TorchModelQualityTest(TestBase):
         self.module_artifacts = self._get_modules()
 
     def runtest(self):
-        # Compile all required modules.
-        for module in self.module_artifacts:
-            module.join()
-        # Get common run arguments.
-        run_args = self._get_common_run_args()
-        # Run the model.
-        iree_run_module(
-            modules=[m.path for m in self.module_artifacts],
-            cwd=self.artifact_dir,
-            args=run_args,
-        )
+        # No matter what I do, the pytest_runtest_makereport hook doesn't work.
+        # So workaround by setting status directly here.
+        try:
+            # Compile all required modules.
+            for module in self.module_artifacts:
+                module.join()
+            # Get common run arguments.
+            run_args = self._get_common_run_args()
+            # Run the model.
+            iree_run_module(
+                modules=[m.path for m in self.module_artifacts],
+                cwd=self.artifact_dir,
+                args=run_args,
+            )
+            self.status = "PASSED"
+        except Exception as e:
+            self.status = "FAILED"
+            raise e
 
     @classmethod
     def get_test_type(cls) -> str:
