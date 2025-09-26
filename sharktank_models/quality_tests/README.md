@@ -2,13 +2,13 @@
 
 ### Adding your own model
 
-- To add your own model, create a directory under `quality_tests` and add JSON files that correspond to the submodels. Please follow the [JSON file schema in this README file](#required-and-optional-fields-for-the-json-model-file)
+- To add your own model, create a directory under `quality_tests` and add JSON files that correspond to the submodels. Please follow the [JSON file schema in this README file](#required-and-optional-fields-for-the-json-model-file).
 
-- Please refer to the sample file `sdxl/clip_rocm.json`
+- Please refer to the sample file `sdxl/clip_rocm.json`.
 
 ### How to run
 
-- Command to run quality tests for a specific model
+- Command to run quality tests for a specific model:
 
 ```
 # Retrieving test files and external test files
@@ -16,7 +16,7 @@ git clone https://github.com/iree-org/iree.git
 export PATH_TO_TESTS=iree/tests/external/iree-test-suites/sharktank_models/quality_tests
 export PATH_TO_EXTERNAL_FILES=iree/build_tools/pkgci/external_test_suite
 
-# running quality tests
+# Running quality tests
 git clone https://github.com/iree-org/iree-test-suites.git
 pytest iree-test-suites/sharktank_models/quality_tests/ \
     -rpFe \
@@ -48,4 +48,4 @@ pytest iree-test-suites/sharktank_models/quality_tests/ \
 | tuner_file                     | optional | dict    | Adds a `iree-codegen-transform-dialect-library` compiler flag for a SKU-specific tuner file (ex: `{"mi308": "{tuner_file_name}"}`)               |
 | custom_real_weights_group      | optional | string  | Add a custom group to a weights source retrieval                                                                                                 |
 
-Please feel free to look at any JSON examples under a model directory (ex: sd3, sdxl)
+Please feel free to look at any JSON examples under a model directory (ex: sd3, sdxl).
