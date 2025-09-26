@@ -13,20 +13,18 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
     git lfs install
     git lfs pull --include="*"
 
-     git lfs ls-files
-     # 37f90b4754 * sharktank_models/llama3.1/assets/toy_llama.irpa
-     # 7172acdf43 * sharktank_models/llama3.1/assets/toy_llama.mlir
-     # e997647ecc * sharktank_models/llama3.1/assets/toy_llama_tp2.irpa
-     # b7b2f5a206 * sharktank_models/llama3.1/assets/toy_llama_tp2.mlir
-     # 917845c887 * sharktank_models/llama3.1/assets/toy_llama_tp2.rank0.irpa
-     # 9ab51093c4 * sharktank_models/llama3.1/assets/toy_llama_tp2.rank1.irpa
-     ```
+    git lfs ls-files
+    # 37f90b4754 * sharktank_models/llama3.1/assets/toy_llama.irpa
+    # 7172acdf43 * sharktank_models/llama3.1/assets/toy_llama.mlir
+    # e997647ecc * sharktank_models/llama3.1/assets/toy_llama_tp2.irpa
+    # b7b2f5a206 * sharktank_models/llama3.1/assets/toy_llama_tp2.mlir
+    # 917845c887 * sharktank_models/llama3.1/assets/toy_llama_tp2.rank0.irpa
+    # 9ab51093c4 * sharktank_models/llama3.1/assets/toy_llama_tp2.rank1.irpa
+    ```
 
 2. Set up your virtual environment and install requirements:
 
     ```bash
-    cd sharktank_models
-
     python -m venv .venv
     source .venv/bin/activate
     python -m pip install -e sharktank_models/
@@ -100,19 +98,19 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
 ## Running quality tests
 
-Please refer to [Quality tests README](quality_tests/README.md) to run tests
+Please refer to [Quality tests README](quality_tests/README.md) to run tests.
 
 ## Running benchmark tests
 
-Please refer to [Benchmark tests README](benchmarks/README.md) to run tests
+Please refer to [Benchmark tests README](benchmarks/README.md) to run tests.
 
-Note: for benchmark tests to run, you will need `vmfbs` files available
+Note: for benchmark tests to run, you will need `vmfbs` files available.
 
 ## Generating model files using Shark AI
 
-In order to generate and compile MLIR files to compile, run quality tests and benchmarking tests, please run the following the following commands:
+In order to generate and compile MLIR files to compile, run quality tests and benchmarking tests, please run the following commands:
 
-This example generates IRPA and MLIR files for Llama, please look in [Shark AI Models](https://github.com/nod-ai/shark-ai/tree/main/sharktank/sharktank/models) to see which models you can generate
+This example generates IRPA and MLIR files for Llama, please look in [Shark AI Models](https://github.com/nod-ai/shark-ai/tree/main/sharktank/sharktank/models) to see which models you can generate.
 
 ```
 python3 -m pip install sharktank
