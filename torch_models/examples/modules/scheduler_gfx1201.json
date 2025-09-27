@@ -1,0 +1,8 @@
+{
+  "mlir": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/sdxl_unet_pipeline_bench_f16.mlir",
+  "compiler_flags": [
+      "--iree-hal-target-device=hip",
+      "--iree-hip-target=gfx1201",
+      "--iree-opt-level=O3"
+  ]
+}
