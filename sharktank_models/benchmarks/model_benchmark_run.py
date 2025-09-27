@@ -119,14 +119,27 @@ class ModelBenchmarkRunItem(pytest.Item):
             self.real_weights_file_name = data.get(
                 "real_weights_file_name", "real_weights.irpa"
             )
+            self.real_weights_file_path = data.get(
+                "real_weights_file_path", None
+            )
+            if data.get("mlir_url"):
+                self.mlir_url = str(
+                    fetch_source_fixture(
+                        data.get("mlir_url"), group=f"{self.model_name}_{self.submodel_name}"
+                    )
+                    if data.get("mlir_url")
+                    else None
+                )
 
+            else:
+                RuntimeError(f"Unable To Fetch the MLIR File From the URL: {data.get('mlir')}")
             # custom configurations related to e2e testing
             self.compilation_required = data.get("compilation_required", False)
             self.compiled_file_name = data.get("compiled_file_name")
-            mlir_file_name = data.get("mlir_file_name", "")
+            self.mlir_file_name = data.get("mlir_file_name", "")
             external_test_files = self.spec.external_test_files
-            if mlir_file_name:
-                self.mlir_file_path = external_test_files.get(mlir_file_name, "")
+            if self.mlir_file_name:
+                self.mlir_file_path = external_test_files.get(self.mlir_file_name, "")
             self.modules = data.get("modules", [])
             self.device = data.get("device")
 
@@ -151,9 +164,16 @@ class ModelBenchmarkRunItem(pytest.Item):
 
         # if compilation is required, run this step
         if self.compilation_required:
-            compiled_vmfb_path = compile_iree_method(
-                self.mlir_file_path, self.compile_flags, self.compiled_file_name
-            )
+            if self.mlir_file_name:
+                compiled_vmfb_path = compile_iree_method(
+                    self.mlir_file_path, self.compile_flags, self.compiled_file_name
+                )
+            elif self.mlir_url:
+                compiled_vmfb_path = compile_iree_method(
+                    self.mlir_url, self.compile_flags, self.compiled_file_name
+                )
+            else:
+                RuntimeError("No Option Provided: mlir_file_name or mlir_url, so no mlir file to compile.")
             if not compiled_vmfb_path:
                 pytest.fail(
                     f"Failed to compile for {self.model_name} {self.submodel_name} during benchmark test. Skipping..."
@@ -163,9 +183,15 @@ class ModelBenchmarkRunItem(pytest.Item):
         artifact_directory = f"{artifacts_dir}/{self.model_name}_{self.submodel_name}"
 
         vmfb_file_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
-        exec_args = [
-            f"--parameters=model={artifact_directory}/{self.real_weights_file_name}"
-        ]
+
+        if self.real_weights_file_path:
+            exec_args = [
+                f"--parameters=model={self.real_weights_file_path}"
+            ]
+        else:
+            exec_args = [
+                f"--parameters=model={artifact_directory}/{self.real_weights_file_name}"
+            ]
 
         # If there are modules for an e2e pipeline test, reset exec_args and directory_compile variables to custom variables
         if self.modules:
@@ -212,6 +238,7 @@ class ModelBenchmarkRunItem(pytest.Item):
             mean_time_row = [
                 self.model_name,
                 self.submodel_name,
+                self.function_run,
                 str(benchmark_mean_time),
                 self.golden_time,
             ]
@@ -225,7 +252,7 @@ class ModelBenchmarkRunItem(pytest.Item):
 
             logger.info(
                 (
-                    f"{self.model_name} {self.submodel_name} benchmark time: {str(benchmark_mean_time)} ms"
+                    f"{self.model_name} {self.submodel_name} {self.function_run} benchmark time: {str(benchmark_mean_time)} ms"
                     f" (golden time {self.golden_time} ms)"
                 )
             )
@@ -233,7 +260,7 @@ class ModelBenchmarkRunItem(pytest.Item):
             check.less_equal(
                 benchmark_mean_time,
                 self.golden_time * self.golden_time_tolerance_multiplier,
-                f"{self.model_name} {self.submodel_name} benchmark time should not regress more than a factor of {self.golden_time_tolerance_multiplier}",
+                f"{self.model_name} {self.submodel_name} {self.function_run} benchmark time should not regress more than a factor of {self.golden_time_tolerance_multiplier}",
             )
 
         # golden dispatch check
