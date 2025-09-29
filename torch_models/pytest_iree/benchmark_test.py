@@ -21,6 +21,7 @@ class IREEBenchmarkTest(TestBase):
         self.add_marker("benchmark")
         self.golden_time = test_data.get("golden_time", None)
         self.module_artifacts = self._get_modules()
+        self.mean_time = None
 
     def _get_mean_time_from_output_json(self, output_json: dict) -> float:
         benchmarks = output_json["benchmarks"]
@@ -66,7 +67,7 @@ class IREEBenchmarkTest(TestBase):
     def get_test_summary(self) -> list:
         return [
             self.name,
-            f"{self.mean_time:.3f}",
+            f"{self.mean_time:.3f}" if self.mean_time is not None else "N/A",
             f"{self.golden_time:.3f}" if self.golden_time is not None else "N/A",
             self.status,
         ]

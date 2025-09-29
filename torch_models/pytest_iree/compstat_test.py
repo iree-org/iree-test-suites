@@ -31,6 +31,8 @@ class IREECompStatTest(TestBase):
         )
         self.golden_dispatch_count = test_data.get("golden_dispatch_count", None)
         self.golden_binary_size = test_data.get("golden_binary_size", None)
+        self.current_dispatch_count = None
+        self.current_binary_size = None
 
     def runtest(self):
         # No matter what I do, the pytest_runtest_makereport hook doesn't work.
@@ -81,9 +83,13 @@ class IREECompStatTest(TestBase):
     def get_test_summary(self) -> list:
         return [
             self.name,
-            self.golden_dispatch_count,
-            self.current_dispatch_count,
-            self.golden_binary_size,
-            self.current_binary_size,
+            self.golden_dispatch_count
+            if self.golden_dispatch_count is not None
+            else "N/A",
+            self.current_dispatch_count
+            if self.current_dispatch_count is not None
+            else "N/A",
+            self.golden_binary_size if self.golden_binary_size is not None else "N/A",
+            self.current_binary_size if self.current_binary_size is not None else "N/A",
             self.status,
         ]
