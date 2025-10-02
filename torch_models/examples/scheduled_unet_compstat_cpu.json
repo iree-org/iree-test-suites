@@ -3,5 +3,5 @@
   "markers": ["cpu"],
   "module": "examples/modules/scheduled_unet_cpu",
   "golden_dispatch_count": 1400,
-  "golden_binary_size": 12345678
+  "golden_binary_size": 2000000
 }

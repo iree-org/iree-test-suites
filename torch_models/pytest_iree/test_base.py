@@ -26,8 +26,7 @@ class TestBase(pytest.Item):
         self.module_directory = Path(
             self.config.getoption("module_directory")
         ).resolve()
-        # TODO: Hook into pytest_runtest_makereport to capture this.
-        self.status = "NOT-YET-IMPLEMENTED"
+        self.status = "N/A"
 
         # Add markers.
         for marker in test_data["markers"]:
