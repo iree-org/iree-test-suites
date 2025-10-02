@@ -17,7 +17,8 @@ pip install -r requirements.txt
 pytest \
     --test-file-directory=./examples \
     --module-directory=./ \
-    --external-file-directory=./
+    --external-file-directory=./ \
+    --log-cli-level=info
 ```
 
 - Run all tests marked as `hip` and `benchmark`:
@@ -27,6 +28,7 @@ pytest \
     --test-file-directory=./examples \
     --module-directory=./ \
     --external-file-directory=./ \
+    --log-cli-level=info \
     -m "hip and benchmark"
 ```
 
@@ -34,7 +36,7 @@ See
 https://python-basics-tutorial.readthedocs.io/en/24.3.0/test/pytest/markers.html
 for more information on pytest markers.
 
-- Run all tests marked as `hip` and `benchmark` with live logging enabled:
+- Run all tests marked as `hip` and `benchmark` with live logging disabled:
 
 ```bash
 pytest \
@@ -42,7 +44,6 @@ pytest \
     --module-directory=./ \
     --external-file-directory=./ \
     -m "hip and benchmark" \
-    --log-cli-level=info
 ```
 
 - Collect all `hip` or `cpu` tests without running them:
@@ -52,6 +53,7 @@ pytest \
     --test-file-directory=./examples \
     --module-directory=./ \
     --external-file-directory=./ \
+    --log-cli-level=info \
     -m "hip or cpu" \
     --collect-only
 ```
@@ -73,6 +75,7 @@ pytest \
     --test-file-directory=./examples \
     --module-directory=./ \
     --external-file-directory=./ \
+    --log-cli-level=info \
     -m "hip or cpu" \
     --force-recompile
 ```
