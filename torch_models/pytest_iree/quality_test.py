@@ -16,14 +16,19 @@ logger = logging.getLogger(__name__)
 
 
 class IREEQualityTest(TestBase):
+    """
+    A test case for accuracy quality of IREE modules, for given input data.
+    """
+
     def __init__(self, *, test_data: dict, **kwargs):
         super().__init__(test_data=test_data, **kwargs)
         self.add_marker("quality")
         self.module_artifacts = self._get_modules()
 
     def runtest(self):
-        # No matter what I do, the pytest_runtest_makereport hook doesn't work.
-        # So workaround by setting status directly here.
+        # TODO: Figure out how to do this with pytest_runtest_makereport instead.
+        # Earlier attempts didn't work because pytest would never go into the
+        # user defined hook for non python tests.
         try:
             # Compile all required modules.
             for module in self.module_artifacts:

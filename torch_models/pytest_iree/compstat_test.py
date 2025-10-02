@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class IREECompStatTest(TestBase):
+    """
+    A test case for compilation statistics of IREE modules.
+    """
+
     def __init__(self, *, test_data: dict, **kwargs):
         super().__init__(test_data=test_data, **kwargs)
         self.add_marker("compstat")
@@ -35,8 +39,9 @@ class IREECompStatTest(TestBase):
         self.current_binary_size = None
 
     def runtest(self):
-        # No matter what I do, the pytest_runtest_makereport hook doesn't work.
-        # So workaround by setting status directly here.
+        # TODO: Figure out how to do this with pytest_runtest_makereport instead.
+        # Earlier attempts didn't work because pytest would never go into the
+        # user defined hook for non python tests.
         try:
             # Get compilation stats.
             compstats = self.module_artifact.get_compstats()
