@@ -19,8 +19,12 @@ class Artifact:
     def path(self) -> Path:
         return self.artifact_dir / self.name
 
-    def join(self):
-        """Waits for the artifact to become available."""
+    def join(self) -> None:
+        """
+        Waits for the artifact to become available. This is generally supposed
+        to be overridden by subclasses, to implement custom artifact
+        materialization logic.
+        """
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def __str__(self):

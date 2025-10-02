@@ -2,7 +2,7 @@
 
 ## Installation
 
-```
+```bash
 python3 -m venv .env
 source .env/bin/activate
 pip install -r requirements.txt
@@ -15,19 +15,19 @@ pip install -r requirements.txt
 
 ```bash
 pytest \
---test-file-directory=./examples \
---module-directory=./ \
---external-file-directory=./
+    --test-file-directory=./examples \
+    --module-directory=./ \
+    --external-file-directory=./
 ```
 
 - Run all tests marked as `hip` and `benchmark`:
 
 ```bash
 pytest \
---test-file-directory=./examples \
---module-directory=./ \
---external-file-directory=./ \
--m "hip and benchmark"
+    --test-file-directory=./examples \
+    --module-directory=./ \
+    --external-file-directory=./ \
+    -m "hip and benchmark"
 ```
 
 See
@@ -38,43 +38,43 @@ for more information on pytest markers.
 
 ```bash
 pytest \
---test-file-directory=./examples \
---module-directory=./ \
---external-file-directory=./ \
--m "hip and benchmark" \
---log-cli-level=info
+    --test-file-directory=./examples \
+    --module-directory=./ \
+    --external-file-directory=./ \
+    -m "hip and benchmark" \
+    --log-cli-level=info
 ```
 
 - Collect all `hip` or `cpu` tests without running them:
 
 ```bash
 pytest \
---test-file-directory=./examples \
---module-directory=./ \
---external-file-directory=./ \
--m "hip or cpu" \
---collect-only
+    --test-file-directory=./examples \
+    --module-directory=./ \
+    --external-file-directory=./ \
+    -m "hip or cpu" \
+    --collect-only
 ```
 
 - Run all tests under an external directory with cwd as `iree-test-suites`:
 
-```
+```bash
 pytest torch_modles \
---test-file-directory=<path-to-iree>/tests/external/iree-test-suites/torch_models \
---module-directory=<path-to-iree>/tests/external/iree-test-suites/torch_models \
---external-file-directory=<path-to-iree>/tests/external/iree-test-suites/test_suite_files \
---log-cli-level=info
+    --test-file-directory=<path-to-iree>/tests/external/iree-test-suites/torch_models \
+    --module-directory=<path-to-iree>/tests/external/iree-test-suites/torch_models \
+    --external-file-directory=<path-to-iree>/tests/external/iree-test-suites/test_suite_files \
+    --log-cli-level=info
 ```
 
 - Force recompilation of modules even if modules are cached from a previous run:
 
 ```bash
 pytest \
---test-file-directory=./examples \
---module-directory=./ \
---external-file-directory=./ \
--m "hip or cpu" \
---force-recompile
+    --test-file-directory=./examples \
+    --module-directory=./ \
+    --external-file-directory=./ \
+    -m "hip or cpu" \
+    --force-recompile
 ```
 
 ### pytest-iree Flags
@@ -91,6 +91,18 @@ pytest \
 - `--force-recompile`: If set, forces recompilation of modules even if a cached
   compiled module already exists. Defaults to False. Useful for testing
   compiler changes.
+
+## Tips
+
+- By default, the plugin caches all compiled modules and downloaded artifacts.
+  If you are doing compiler development, you always want to set the
+  `--force-recompile` flag. If you are building tests, but not modifying module
+  definitions, you should keep it on to not have compilation overhead.
+- The caching of modules and downloaded artifacts is predictable. Look at the
+  artifact class definition to find out how the particular artifact is cached.
+- Every iree command is ran with "external-file-directory" as the cwd. So if
+  you have any relative paths in your module definitions or test definitions,
+  they are relative to that directory.
 
 ## Module Definitions
 
@@ -149,22 +161,23 @@ Please feel free to look at any JSON examples under the `examples` directory for
     "url": "<url to file>",
     "value": "<literal value> | <file path> | <byte string>"
 }
+```
 All fields are optional, but at least one must be present.
 The resulting argument string is a concatenation of the fields:
-  <value>=@<url_file_path>
+  `<value>=@<url_file_path>`
 
 For example:
+```
 {
    "url": "https://example.com/data.txt",
    "value": 1xf16
 }
+```
 
 would be passed (say as an input) as:
-  --input=1xf16=@/path/to/downloaded/data.txt
-```
+  `--input=1xf16=@/path/to/downloaded/data.txt`
 
 ## TODO
 
 - Add splat weight support.
 - Add random weight generated support.
-- Add binary size / dispatch size support.
