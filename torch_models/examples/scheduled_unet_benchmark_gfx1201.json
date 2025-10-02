@@ -36,5 +36,5 @@
       "--device=hip",
       "--function=produce_image_latents"
     ],
-    "golden_time": 550.0
+    "golden_time_ms": 550.0
 }

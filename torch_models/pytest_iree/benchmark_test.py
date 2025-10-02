@@ -23,7 +23,7 @@ class IREEBenchmarkTest(TestBase):
     def __init__(self, *, test_data: dict, **kwargs):
         super().__init__(test_data=test_data, **kwargs)
         self.add_marker("benchmark")
-        self.golden_time = test_data.get("golden_time", None)
+        self.golden_time = test_data.get("golden_time_ms", None)
         self.module_artifacts = self._get_modules()
         self.mean_time = None
 

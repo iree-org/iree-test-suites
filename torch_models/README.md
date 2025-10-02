@@ -129,7 +129,7 @@ Please feel free to look at any JSON examples under the `examples` directory for
 | weights                        | optional | array   | List of weights to use for this test. Each weight definition contains a scope and a url.                                                         |
 | inputs                         | required | argspec | List of inputs to use for this test.                                                                                                             |
 | run_args                       | optional | array   | Additional runtime arguments to pass to the iree-run-module/iree-benchmark-module command.                                                       |
-| golden_time                    | optional | float   | golden time in ms                                                                                                                                |
+| golden_time_ms                 | optional | float   | golden time in ms                                                                                                                                |
 ###  Compstat Test Definition
 
 | Field Name                     | Required | Type    | Description                                                                                                                                      |
