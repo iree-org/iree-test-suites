@@ -1,0 +1,38 @@
+{
+    "type": "benchmark",
+    "markers": [
+      "cpu",
+      "quick"
+    ],
+    "modules": [
+        "examples/modules/clip_cpu"
+    ],
+    "weights": [
+        {
+            "scope": "model",
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-prompt-encoder/real_weights.irpa"
+        }
+    ],
+    "inputs": [
+        {
+            "value": "1x64xi64"
+        },
+        {
+            "value": "1x64xi64"
+        },
+        {
+            "value": "1x64xi64"
+        },
+        {
+            "value": "1x64xi64"
+        }
+    ],
+    "run_args": [
+      "--device=local-task",
+      "--function=encode_prompts",
+      "--benchmark_repetitions=10",
+      "--benchmark_min_warmup_time=3.0",
+      "--device_allocator=caching"
+    ],
+    "golden_time_ms": 2850.0
+}
