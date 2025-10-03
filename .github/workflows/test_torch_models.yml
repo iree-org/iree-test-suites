@@ -29,6 +29,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
   cancel-in-progress: true
 
+permissions:
+  pull-requests: write
+
 jobs:
   test-torch-models:
     if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
@@ -87,4 +90,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           header: "Torch Models Test Job Summary"
-          message-file: ${{ github.workspace }}/job_summary.md
+          path: ${{ github.workspace }}/job_summary.md
