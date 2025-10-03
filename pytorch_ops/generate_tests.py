@@ -17,7 +17,11 @@ def camel_to_snake(name):
 
 
 class TestGenerator(ABC, torch.nn.Module):
-    def __init__(self, *args, name=None, **kwargs):
+    def __init__(self, *args, name=None, export_kwargs=None, **kwargs):
+        if not export_kwargs:
+            self.export_kwargs = {}
+        else:
+            self.export_kwargs = export_kwargs
         assert name
         self.args = args
         self.kwargs = kwargs
@@ -27,7 +31,7 @@ class TestGenerator(ABC, torch.nn.Module):
         super().__init__()
 
     def save_mlir(self, *args):
-        exported_module = aot.export(self, *args)
+        exported_module = aot.export(self, *args, **self.export_kwargs)
         exported_module.save_mlir(self.path / "test.mlir")
 
     def save_inputs(self, *args):
@@ -108,7 +112,17 @@ class GeluABPlusC(TestGenerator):
 
 # TODO: itertools
 for dtype in [torch.float32, torch.float16]:
-    for cls in [AB, ATB, ABT]:
+    for cls in [AB]:
+        inputs = (torch.rand(64, 64, dtype=dtype), torch.rand(64, 64, dtype=dtype))
+        dyn_dim = torch.export.Dim("N")
+        dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
+        instance = cls(
+            *inputs,
+            name=cls.__name__ + str(dtype),
+            export_kwargs={"dynamic_shapes": dynamic_shapes},
+        )
+        instance.generate_test()
+    for cls in [ATB, ABT]:
         inputs = (torch.rand(64, 64, dtype=dtype), torch.rand(64, 64, dtype=dtype))
         instance = cls(*inputs, name=cls.__name__ + str(dtype))
         instance.generate_test()
