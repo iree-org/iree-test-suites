@@ -1,0 +1,80 @@
+# Copyright 2025 The IREE Authors
+#
+# Licensed under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+name: Test Torch Models
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/test_torch_models.yml"
+      - "torch_models/**"
+  pull_request:
+    paths:
+      - ".github/workflows/test_torch_models.yml"
+      - "torch_models/**"
+  workflow_dispatch:
+  schedule:
+    # Runs at 3:00 PM UTC, which is 8:00 AM PST
+    - cron: "0 15 * * *"
+
+concurrency:
+  # A PR number if a pull request and otherwise the commit hash. This cancels
+  # queued and in-progress runs for the same PR (presubmit) or commit
+  # (postsubmit). The workflow name is prepended to avoid conflicts between
+  # different workflows.
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  test-torch-models:
+    if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
+    runs-on: ubuntu-24.04
+    env:
+      VENV_DIR: ${{ github.workspace }}/.venv
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          lfs: true
+
+      # Install Python packages.
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+      - name: Setup Python venv
+        run: python3 -m venv ${VENV_DIR}
+      - name: Install IREE nightly release Python packages
+        run: |
+          source ${VENV_DIR}/bin/activate
+          python3 -m pip install -r torch_models/requirements.txt
+          python3 -m pip install -r torch_models/requirements-iree.txt
+
+      # Run tests.
+      - name: Run Torch models test suite
+        run: |
+          source ${VENV_DIR}/bin/activate
+          pytest \
+            torch_models \
+            -rpFe \
+            --log-cli-level=info \
+            -o log_cli=True \
+            --durations=0 \
+            --timeout=1200 \
+            --capture=no \
+            --test-file-directory=torch_models \
+            --external-file-directory=torch_models \
+            --module-directory=torch_models \
+            --artifact-directory=${{ github.workspace }}/torch_models_artifacts \
+            --job-summary-path=${{ github.workspace }} \
+            --force-recompile \
+            -m "cpu and quick"
+
+      - name: Upload Torch Model Job Summary
+        if: always()
+        run: |
+          cat ${{ github.workspace }}/job_summary.md >> $GITHUB_STEP_SUMMARY
