@@ -15,6 +15,7 @@ import subprocess
 
 THIS_DIR = Path(__file__).parent
 TEST_DATA_FLAGFILE_NAME = "run_module_io_flags.txt"
+TEST_DATA_FLAGFILE_NAME2 = "run_module_io_flags.json"
 
 def pytest_addoption(parser):
     # List of configuration files following this schema:
@@ -96,10 +97,10 @@ def pytest_sessionstart(session):
 
 
 def pytest_collect_file(parent, file_path):
-    if file_path.name == TEST_DATA_FLAGFILE_NAME:
+    if file_path.name == TEST_DATA_FLAGFILE_NAME or file_path.name == TEST_DATA_FLAGFILE_NAME2:
         return MlirCompileRunTest.from_parent(parent, path=file_path)
 
-    if file_path.suffix == ".json":
+    if file_path.suffix == ".json" and not file_path.name == TEST_DATA_FLAGFILE_NAME2:
         with open(file_path) as f:
             test_cases_json = pyjson5.load(f)
             if test_cases_json.get("file_format", "") == "test_cases_v0":
@@ -170,6 +171,14 @@ class MlirCompileRunTest(pytest.File):
                 )
             )
 
+        if self.path.name == TEST_DATA_FLAGFILE_NAME2:
+            test_cases.append(
+                MlirCompileRunTest.TestCase(
+                    mlir_file=mlir_file,
+                    runtime_flagfile=TEST_DATA_FLAGFILE_NAME2,
+                )
+            )
+
         return test_cases
 
     def collect(self):
@@ -214,6 +223,7 @@ class MlirCompileRunTest(pytest.File):
                 name_parts = [e for e in [mlir_file.name, config_name] if e]
                 item_name = "::".join(name_parts)
 
+
                 spec = IreeCompileAndRunTestSpec(
                     test_directory=test_directory,
                     input_mlir_name=mlir_file.name,
@@ -256,11 +266,28 @@ class IreeCompileRunItem(pytest.Item):
         compile_args.extend(self.spec.iree_compile_flags)
         compile_args.extend(["-o", vmfb_name])
         self.compile_cmd = subprocess.list2cmdline(compile_args)
+        self.run_cmds = []
+
+        # Change me here...
+        if self.spec.data_flagfile_name == TEST_DATA_FLAGFILE_NAME2:
+            test_config_json = Path(relative_test_directory) / self.spec.data_flagfile_name
+            with open(test_config_json) as json_file:
+                test_runs = pyjson5.load(json_file)
+            for run in test_runs:
+                run_args = ["iree-run-module", f"--module={vmfb_name}"]
+                run_args.extend(self.spec.iree_run_module_flags)
+                function = run["function"]
+                run_args.extend(f"--input=@{input}" for input in run["inputs"])
+                run_args.extend(f"--expected_output=@{expected_output}" for expected_output in run["expected_outputs"])
+                run_args.append(f"--function={function}")
+                self.run_cmds.append(subprocess.list2cmdline(run_args))
+            return
+
 
         run_args = ["iree-run-module", f"--module={vmfb_name}"]
         run_args.extend(self.spec.iree_run_module_flags)
         run_args.append(f"--flagfile={self.spec.data_flagfile_name}")
-        self.run_cmd = subprocess.list2cmdline(run_args)
+        self.run_cmds = [subprocess.list2cmdline(run_args)]
 
     def runtest(self):
         # We want to test two phases: 'compile', and 'run'.
@@ -335,18 +362,19 @@ class IreeCompileRunItem(pytest.Item):
 
     def test_run(self):
         cwd = self.test_cwd
-        logging.getLogger().info(
-            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
-        )
-        proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
-        if proc.returncode != 0:
-            raise IreeRunException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-                run_cmd=self.run_cmd,
+        for run_cmd in self.run_cmds:
+            logging.getLogger().info(
+                f"Launching run command:\n" f"cd {cwd} && {run_cmd}"  #
             )
+            proc = subprocess.run(run_cmd, shell=True, capture_output=True, cwd=cwd)
+            if proc.returncode != 0:
+                raise IreeRunException(
+                    process=proc,
+                    cwd=cwd,
+                    input_mlir_name=self.spec.input_mlir_name,
+                    compile_cmd=self.compile_cmd,
+                    run_cmd=run_cmd,
+                )
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
