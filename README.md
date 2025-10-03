@@ -40,6 +40,13 @@ Test suites for IREE and related projects.
   built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 * Runnable via [pytest](https://docs.pytest.org/) for both CPU and GPU targets.
 
+### [torch_models/](torch_models/) : PyTorch models as Torch Dialect
+
+[![Test Torch Models](https://github.com/iree-org/iree-test-suites/actions/workflows/test_torch_models.yml/badge.svg?branch=main)](https://github.com/iree-org/iree-test-suites/actions/workflows/test_torch_models.yml?query=branch%3Amain)
+
+* Tests that compile and run PyTorch models, converted using torch-mlir.
+* Runnable via [pytest](https://docs.pytest.org/) for any iree registered target.
+
 ## Git repository details
 
 This repository uses [Git Large File Storage (LFS)](https://git-lfs.com/) to

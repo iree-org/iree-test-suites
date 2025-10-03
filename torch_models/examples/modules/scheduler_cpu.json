@@ -1,0 +1,8 @@
+{
+  "mlir": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/sdxl_unet_pipeline_bench_f16.mlir",
+  "compiler_flags": [
+    "--iree-hal-target-device=local",
+    "--iree-hal-local-target-device-backends=llvm-cpu",
+    "--iree-llvmcpu-target-cpu=host"
+  ]
+}
