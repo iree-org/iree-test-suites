@@ -16,6 +16,7 @@ import subprocess
 THIS_DIR = Path(__file__).parent
 TEST_DATA_FLAGFILE_NAME = "run_module_io_flags.txt"
 
+
 def pytest_addoption(parser):
     # List of configuration files following this schema:
     #   {

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import torch
 import iree.turbine.aot as aot
 
+
 def camel_to_snake(name):
     result = ""
     for i, char in enumerate(name):
@@ -14,8 +15,8 @@ def camel_to_snake(name):
         result += char.lower()
     return result
 
-class TestGenerator(ABC, torch.nn.Module):
 
+class TestGenerator(ABC, torch.nn.Module):
     def __init__(self, *args, name=None, **kwargs):
         assert name
         self.args = args
@@ -37,7 +38,7 @@ class TestGenerator(ABC, torch.nn.Module):
             np.save(path, input)
             inputs.append(fname)
         self.test_config["inputs"] = inputs
-    
+
     def save_results(self, *args):
         expected_outputs = []
         for idx, result in enumerate(args):
@@ -71,31 +72,39 @@ class TestGenerator(ABC, torch.nn.Module):
         return self.args
 
     @abstractmethod
-    def forward(self, *args): ...
+    def forward(self, *args):
+        ...
+
 
 class AB(TestGenerator):
     def forward(self, left, right):
         return left @ right
 
+
 class ATB(TestGenerator):
     def forward(self, left, right):
         return left.t() @ right
+
 
 class ABT(TestGenerator):
     def forward(self, left, right):
         return left @ right.t()
 
+
 class ABplusC(TestGenerator):
     def forward(self, A, B, C):
         return A @ B + C
+
 
 class ReluABPlusC(TestGenerator):
     def forward(self, A, B, C):
         return torch.relu(A @ B + C)
 
+
 class GeluABPlusC(TestGenerator):
     def forward(self, A, B, C):
         return torch.ops.aten.gelu.default(A @ B + C)
+
 
 # TODO: itertools
 for dtype in [torch.float32, torch.float16]:
@@ -104,6 +113,10 @@ for dtype in [torch.float32, torch.float16]:
         instance = cls(*inputs, name=cls.__name__ + str(dtype))
         instance.generate_test()
     for cls in [ABplusC, ReluABPlusC, GeluABPlusC]:
-        inputs = (torch.rand(64, 64, dtype=dtype) * 2 - 1, torch.rand(64, 64, dtype=dtype) * 2 - 1, torch.rand(64, 64, dtype=dtype) * 2 - 1)
+        inputs = (
+            torch.rand(64, 64, dtype=dtype) * 2 - 1,
+            torch.rand(64, 64, dtype=dtype) * 2 - 1,
+            torch.rand(64, 64, dtype=dtype) * 2 - 1,
+        )
         instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
         instance.generate_test()
