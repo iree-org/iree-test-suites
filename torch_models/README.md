@@ -7,6 +7,25 @@ python3 -m venv .env
 source .env/bin/activate
 pip install -r requirements.txt
 ```
+The test suite expects that you have `iree-base-compiler` and
+`iree-base-runtime` packages installed or built from source
+
+### IREE: prebuilt wheels
+
+```bash
+pip install -r requirements-iree.txt
+```
+
+### IREE: build from source
+
+If you are using them from a source build, make sure that the iree python
+bindings are discoverable in your `PYTHONPATH` and iree tools are in your
+`PATH`.
+
+```bash
+export PATH="<path-to-iree-build>/tools:$PATH"
+export PYTHONPATH="<path-to-iree-build>/bindings/python:$PYTHONPATH"
+```
 
 ## Example Usages
 
