@@ -16,8 +16,11 @@ def camel_to_snake(name):
 
 class TestGenerator(ABC, torch.nn.Module):
 
-    def __init__(self, *args, **kwargs):
-        self.path = Path(camel_to_snake("Test" + type(self).__name__))
+    def __init__(self, *args, name=None, **kwargs):
+        assert name
+        self.args = args
+        self.kwargs = kwargs
+        self.path = Path(camel_to_snake("Test" + name))
         self.path.mkdir(exist_ok=True)
         self.test_config = {}
         super().__init__()
@@ -64,8 +67,8 @@ class TestGenerator(ABC, torch.nn.Module):
         results = self.forward(*args)
         return [results]
 
-    @abstractmethod
-    def generate_inputs(self): ...
+    def generate_inputs(self):
+        return self.args
 
     @abstractmethod
     def forward(self, *args): ...
@@ -74,44 +77,33 @@ class AB(TestGenerator):
     def forward(self, left, right):
         return left @ right
 
-    def generate_inputs(self):
-        return torch.rand(64, 64), torch.rand(64, 64)
-
 class ATB(TestGenerator):
     def forward(self, left, right):
         return left.t() @ right
-
-    def generate_inputs(self):
-        return torch.rand(64, 64), torch.rand(64, 64)
 
 class ABT(TestGenerator):
     def forward(self, left, right):
         return left @ right.t()
 
-    def generate_inputs(self):
-        return torch.rand(64, 64), torch.rand(64, 64)
-
 class ABplusC(TestGenerator):
     def forward(self, A, B, C):
         return A @ B + C
-    def generate_inputs(self):
-        return torch.rand(64, 64), torch.rand(64, 64), torch.rand(64, 64)
 
-class ReluABplusC(TestGenerator):
+class ReluABPlusC(TestGenerator):
     def forward(self, A, B, C):
         return torch.relu(A @ B + C)
 
-    def generate_inputs(self):
-        return torch.rand(64, 64) * 2 - 1, torch.rand(64, 64) * 2 - 1, torch.rand(64, 64) * 2 - 1
-
-class GeluABplusC(TestGenerator):
+class GeluABPlusC(TestGenerator):
     def forward(self, A, B, C):
         return torch.ops.aten.gelu.default(A @ B + C)
 
-    def generate_inputs(self):
-        return torch.rand(64, 64) * 2 - 1, torch.rand(64, 64) * 2 - 1, torch.rand(64, 64) * 2 - 1
-
-
-for cls in [AB, ATB, ABT, ABplusC, ReluABplusC, GeluABplusC]:
-    instance = cls()
-    instance.generate_test()
+# TODO: itertools
+for dtype in [torch.float32, torch.float16]:
+    for cls in [AB, ATB, ABT]:
+        inputs = (torch.rand(64, 64, dtype=dtype), torch.rand(64, 64, dtype=dtype))
+        instance = cls(*inputs, name=cls.__name__ + str(dtype))
+        instance.generate_test()
+    for cls in [ABplusC, ReluABPlusC, GeluABPlusC]:
+        inputs = (torch.rand(64, 64, dtype=dtype) * 2 - 1, torch.rand(64, 64, dtype=dtype) * 2 - 1, torch.rand(64, 64, dtype=dtype) * 2 - 1)
+        instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
+        instance.generate_test()
