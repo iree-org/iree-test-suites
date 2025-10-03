@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from pathlib import Path
+from dataclasses import dataclass
 
 import torch
 import iree.turbine.aot as aot
@@ -69,16 +70,48 @@ class TestGenerator(ABC, torch.nn.Module):
     @abstractmethod
     def forward(self, *args): ...
 
-
-
-
-class MatMulOp(TestGenerator):
-
+class AB(TestGenerator):
     def forward(self, left, right):
         return left @ right
 
     def generate_inputs(self):
         return torch.rand(64, 64), torch.rand(64, 64)
 
-matmulop = MatMulOp()
-matmulop.generate_test()
+class ATB(TestGenerator):
+    def forward(self, left, right):
+        return left.t() @ right
+
+    def generate_inputs(self):
+        return torch.rand(64, 64), torch.rand(64, 64)
+
+class ABT(TestGenerator):
+    def forward(self, left, right):
+        return left @ right.t()
+
+    def generate_inputs(self):
+        return torch.rand(64, 64), torch.rand(64, 64)
+
+class ABplusC(TestGenerator):
+    def forward(self, A, B, C):
+        return A @ B + C
+    def generate_inputs(self):
+        return torch.rand(64, 64), torch.rand(64, 64), torch.rand(64, 64)
+
+class ReluABplusC(TestGenerator):
+    def forward(self, A, B, C):
+        return torch.relu(A @ B + C)
+
+    def generate_inputs(self):
+        return torch.rand(64, 64) * 2 - 1, torch.rand(64, 64) * 2 - 1, torch.rand(64, 64) * 2 - 1
+
+class GeluABplusC(TestGenerator):
+    def forward(self, A, B, C):
+        return torch.ops.aten.gelu.default(A @ B + C)
+
+    def generate_inputs(self):
+        return torch.rand(64, 64) * 2 - 1, torch.rand(64, 64) * 2 - 1, torch.rand(64, 64) * 2 - 1
+
+
+for cls in [AB, ATB, ABT, ABplusC, ReluABplusC, GeluABplusC]:
+    instance = cls()
+    instance.generate_test()
