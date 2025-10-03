@@ -55,6 +55,8 @@ jobs:
           python3 -m pip install -r torch_models/requirements-iree.txt
 
       # Run tests.
+      # We don't run benchmark tests as we cannot guarantee the hardware specs
+      # of the GitHub-hosted runners.
       - name: Run Torch models test suite
         run: |
           source ${VENV_DIR}/bin/activate
@@ -72,7 +74,7 @@ jobs:
             --artifact-directory=${{ github.workspace }}/torch_models_artifacts \
             --job-summary-path=${{ github.workspace }} \
             --force-recompile \
-            -m "cpu and quick"
+            -m "(quick and quality) or compstat"
 
       - name: Upload Torch Model Job Summary
         if: always()
