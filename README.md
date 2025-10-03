@@ -42,7 +42,7 @@ Test suites for IREE and related projects.
 
 ### [torch_models/](torch_models/) : PyTorch models as Torch Dialect
 
-[![Test Sharktank Models](https://github.com/iree-org/iree-test-suites/actions/workflows/test_torch_models.yml/badge.svg?branch=main)](https://github.com/iree-org/iree-test-suites/actions/workflows/test_torch_models.yml?query=branch%3Amain)
+[![Test Torch Models](https://github.com/iree-org/iree-test-suites/actions/workflows/test_torch_models.yml/badge.svg?branch=main)](https://github.com/iree-org/iree-test-suites/actions/workflows/test_torch_models.yml?query=branch%3Amain)
 
 * Tests that compile and run PyTorch models, converted using torch-mlir.
 * Runnable via [pytest](https://docs.pytest.org/) for any iree registered target.
