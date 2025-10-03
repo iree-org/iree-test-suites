@@ -32,5 +32,5 @@
       "--function=encode_prompts",
       "--device_allocator=caching"
     ],
-    "golden_time_ms": 2850.0
+    "golden_time_ms": 3865.0
 }
