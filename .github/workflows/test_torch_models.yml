@@ -29,9 +29,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
   cancel-in-progress: true
 
-permissions:
-  pull-requests: write
-
 jobs:
   test-torch-models:
     if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
@@ -83,11 +80,3 @@ jobs:
         if: always()
         run: |
           cat ${{ github.workspace }}/job_summary.md >> $GITHUB_STEP_SUMMARY
-
-      - name: Comment Torch Model Job Summary
-        if: ${{ github.event_name == 'pull_request' && always() }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          header: "Torch Models Test Job Summary"
-          path: ${{ github.workspace }}/job_summary.md
