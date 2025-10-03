@@ -29,10 +29,7 @@
     ],
     "run_args": [
       "--device=local-task",
-      "--function=encode_prompts",
-      "--benchmark_repetitions=10",
-      "--benchmark_min_warmup_time=3.0",
-      "--device_allocator=caching"
+      "--function=encode_prompts"
     ],
     "golden_time_ms": 2850.0
 }
