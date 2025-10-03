@@ -29,7 +29,8 @@
     ],
     "run_args": [
       "--device=local-task",
-      "--function=encode_prompts"
+      "--function=encode_prompts",
+      "--device_allocator=caching"
     ],
     "golden_time_ms": 2850.0
 }
