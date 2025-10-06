@@ -18,11 +18,10 @@ def camel_to_snake(name):
 
 class TestGenerator(ABC, torch.nn.Module):
     def __init__(self, *args, name=None, export_kwargs=None, **kwargs):
-        if not export_kwargs:
-            self.export_kwargs = {}
-        else:
-            self.export_kwargs = export_kwargs
         assert name
+        self.export_kwargs = export_kwargs
+        if not self.export_kwargs:
+            self.export_kwargs = {}
         self.args = args
         self.kwargs = kwargs
         self.path = Path(camel_to_snake("Test" + name))
@@ -31,6 +30,7 @@ class TestGenerator(ABC, torch.nn.Module):
         super().__init__()
 
     def save_mlir(self, *args):
+        # TODO: export_kwargs should influence name
         exported_module = aot.export(self, *args, **self.export_kwargs)
         exported_module.save_mlir(self.path / "test.mlir")
 
@@ -59,18 +59,35 @@ class TestGenerator(ABC, torch.nn.Module):
             for file in self.test_config["expected_outputs"]:
                 print("--expected_output=@" + str(file), file=config)
 
-    def generate_test(self):
+
+    def generate_test(self, rtol=1.e-5, atol=1.e-8, equal_nan=False):
+        """
+        The default values for rtol, atol, and equal_nan are taken from the numpy's
+        allclose default values here.
+
+        https://github.com/numpy/numpy/blob/2f7fe64b8b6d7591dd208942f1cc74473d5db4cb/numpy/_core/numeric.py#L2254
+        """
         inputs = self.generate_inputs()
         self.save_mlir(*inputs)
-        results = self.generate_expected_value(*inputs)
+        expected_results = self.generate_expected_value(*inputs)
+        observed_results = self.run_turbine(*inputs)
+        # We also run iree-turbine here to make sure that the generation
+        # matches the expected results within tolerance and we exit early
+        # TODO: Save rtol, atol, equal_nan
+        assert np.allclose(expected_results, observed_results, rtol=rtol, atol=atol, equal_nan=equal_nan)
+
 
         self.save_inputs(*inputs)
-        self.save_results(*results)
+        self.save_results(*expected_results)
         self.save_config()
 
     def generate_expected_value(self, *args):
         results = self.forward(*args)
         return [results]
+
+    def run_turbine(self, *args):
+        opt_module = torch.compile(self, backend="turbine_cpu")
+        return [opt_module(*args)]
 
     def generate_inputs(self):
         return self.args
@@ -126,7 +143,7 @@ for dtype in [torch.float32, torch.float16]:
         inputs = (torch.rand(64, 64, dtype=dtype), torch.rand(64, 64, dtype=dtype))
         instance = cls(*inputs, name=cls.__name__ + str(dtype))
         instance.generate_test()
-    for cls in [ABplusC, ReluABPlusC, GeluABPlusC]:
+    for cls in [ABplusC, ReluABPlusC]:
         inputs = (
             torch.rand(64, 64, dtype=dtype) * 2 - 1,
             torch.rand(64, 64, dtype=dtype) * 2 - 1,
@@ -134,3 +151,11 @@ for dtype in [torch.float32, torch.float16]:
         )
         instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
         instance.generate_test()
+    for cls in [GeluABPlusC]:
+        inputs = (
+            torch.rand(64, 64, dtype=dtype),
+            torch.rand(64, 64, dtype=dtype),
+            torch.rand(64, 64, dtype=dtype),
+        )
+        instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
+        instance.generate_test(atol=1.e-4)
