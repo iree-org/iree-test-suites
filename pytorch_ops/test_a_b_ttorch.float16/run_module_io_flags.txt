@@ -1,0 +1,3 @@
+--input=@input0.npy
+--input=@input1.npy
+--expected_output=@result0.npy

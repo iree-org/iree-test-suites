@@ -51,7 +51,7 @@ def pytest_addoption(parser):
     ]
     if not default_config_files:
         default_config_files = [
-            THIS_DIR / "configs" / "simple.json",
+            THIS_DIR / "configs" / "pytorch_ops_cpu_llvm_sync.json",
         ]
     parser.addoption(
         "--config-files",

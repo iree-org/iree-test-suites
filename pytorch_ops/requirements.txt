@@ -1,0 +1,10 @@
+# Baseline requirements for running the test suite.
+#   * See requirements-iree.txt for using IREE packages.
+#   * See requirements-dev.txt for extra deps used to regenerate test cases.
+
+pyjson5
+pytest
+pytest-html
+pytest-reportlog
+pytest-timeout
+pytest-xdist
