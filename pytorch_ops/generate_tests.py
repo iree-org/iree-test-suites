@@ -59,8 +59,7 @@ class TestGenerator(ABC, torch.nn.Module):
             for file in self.test_config["expected_outputs"]:
                 print("--expected_output=@" + str(file), file=config)
 
-
-    def generate_test(self, rtol=1.e-5, atol=1.e-8, equal_nan=False):
+    def generate_test(self, rtol=1.0e-5, atol=1.0e-8, equal_nan=False):
         """
         The default values for rtol, atol, and equal_nan are taken from the numpy's
         allclose default values here.
@@ -74,8 +73,13 @@ class TestGenerator(ABC, torch.nn.Module):
         # We also run iree-turbine here to make sure that the generation
         # matches the expected results within tolerance and we exit early
         # TODO: Save rtol, atol, equal_nan
-        assert np.allclose(expected_results, observed_results, rtol=rtol, atol=atol, equal_nan=equal_nan)
-
+        assert np.allclose(
+            expected_results,
+            observed_results,
+            rtol=rtol,
+            atol=atol,
+            equal_nan=equal_nan,
+        )
 
         self.save_inputs(*inputs)
         self.save_results(*expected_results)
@@ -158,4 +162,4 @@ for dtype in [torch.float32, torch.float16]:
             torch.rand(64, 64, dtype=dtype),
         )
         instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
-        instance.generate_test(atol=1.e-4)
+        instance.generate_test(atol=1.0e-4)
