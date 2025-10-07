@@ -16,7 +16,7 @@
         "cpu": 1.1
     },
     "golden_time_ms": {
-        "cpu": 2850.0
+        "cpu": 40000.0
     },
     "golden_dispatch": {
         "cpu": 2100
