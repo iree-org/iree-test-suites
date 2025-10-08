@@ -148,7 +148,7 @@ Please feel free to look at any JSON examples under the `examples` directory for
 | type                           | required | string  | The type of test definition. Must be `quality`. Also acts as a pytest marker.                                                                    |
 | markers                        | required | array   | List of pytest markers to apply to the test.                                                                                                     |
 | modules                        | required | array   | List of modules required for this test.                                                                                                          |
-| weights                        | optional | array   | List of weights to use for this test. Each weight definition contains a scope and a url.                                                         |
+| weights                        | optional | array   | List of weights to use for this test. Each weight definition is a `weightspec`.                                                                  |
 | inputs                         | required | argspec | List of inputs to use for this test.                                                                                                             |
 | expected_outputs               | required | argspec | List of expected outputs for this test.                                                                                                          |
 | run_args                       | optional | array   | Additional runtime arguments to pass to the iree-run-module/iree-benchmark-module command.                                                       |
@@ -160,7 +160,7 @@ Please feel free to look at any JSON examples under the `examples` directory for
 | type                           | required | string  | The type of test definition. Must be `benchmark`. Also acts as a pytest marker.                                                                  |
 | markers                        | required | array   | List of pytest markers to apply to the test.                                                                                                     |
 | modules                        | required | array   | List of modules required for this test.                                                                                                          |
-| weights                        | optional | array   | List of weights to use for this test. Each weight definition contains a scope and a url.                                                         |
+| weights                        | optional | array   | List of weights to use for this test. Each weight definition is a `weightspec`.                                                                  |
 | inputs                         | required | argspec | List of inputs to use for this test.                                                                                                             |
 | run_args                       | optional | array   | Additional runtime arguments to pass to the iree-run-module/iree-benchmark-module command.                                                       |
 | golden_time_ms                 | optional | float   | golden time in ms                                                                                                                                |
@@ -175,6 +175,44 @@ Please feel free to look at any JSON examples under the `examples` directory for
 | golden_binary_size             | optional | float   | Maximum binary size allowed.                                                                                                                     |
 
 ### Custom Argument Specifications
+
+#### weightspec
+
+`weightspec` is defined as:
+
+```
+{
+    "type": "url" | "random"
+    "scope": "<string>"
+
+    # Only for type=url
+    "url": "<url to file>", # Only for type=url
+
+    # Only for type=random
+    "module": "<module-name>"
+    "seed": <int>
+}
+```
+
+For example:
+```
+{
+   "type": "url",
+   "url": "https://example.com/weights.pt",
+   "scope": "model"
+}
+```
+
+```
+{
+    "type": "random",
+    "module": "examples/modules/scheduled_unet_gfx1201"
+    "seed": 42,
+    "scope": "model"
+}
+```
+
+#### argspec
 
 `argspec` is defined as:
 

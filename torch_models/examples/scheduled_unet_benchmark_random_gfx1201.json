@@ -1,8 +1,9 @@
 {
-    "type": "quality",
+    "type": "benchmark",
     "markers": [
       "hip",
-      "gfx1201"
+      "gfx1201",
+      "random"
     ],
     "modules": [
         "examples/modules/scheduled_unet_gfx1201", 
@@ -10,9 +11,10 @@
     ],
     "weights": [
         {
-            "type": "url",
+            "type": "random",
             "scope": "model",
-            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/real_weights.irpa"
+            "module": "examples/modules/scheduled_unet_gfx1201",
+            "seed": 101
         }
     ],
     "inputs": [
@@ -33,14 +35,9 @@
             "value": "1xf16"
         }
     ],
-    "expected_outputs": [
-        {
-            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/kunwar/sdxl-scheduler-unet-test-suite-output.npy"
-        }
-    ],
     "run_args": [
       "--device=hip",
-      "--function=produce_image_latents",
-      "--expected_f16_threshold=0.05f"
-    ]
+      "--function=produce_image_latents"
+    ],
+    "golden_time_ms": 550.0
 }

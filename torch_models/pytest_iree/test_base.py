@@ -5,6 +5,7 @@ import logging
 from pytest_iree.module import ModuleArtifact
 from pytest_iree.azure import AzureArtifact
 from pytest_iree.artifact import Artifact
+from pytest_iree.irpa_gen import RandomIRPAArtifact
 
 logger = logging.getLogger(__name__)
 
@@ -32,19 +33,22 @@ class TestBase(pytest.Item):
         for marker in test_data["markers"]:
             self.add_marker(marker)
 
+    def _get_module(self, module: str) -> ModuleArtifact:
+        return ModuleArtifact(
+            artifact_base_dir=self.artifact_dir,
+            module_base_dir=self.module_directory,
+            module=module,
+            external_file_dir=self.external_file_directory,
+            force_recompile=self.force_recompile,
+        )
+
     def _get_modules(self) -> list[ModuleArtifact]:
         # Compile all required modules.
         modules = self.test_data.get("modules")
         assert modules is not None, "Test data must contain 'modules' field"
         module_artifacts = []
         for module in modules:
-            module_artifact = ModuleArtifact(
-                artifact_base_dir=self.artifact_dir,
-                module_base_dir=self.module_directory,
-                module=module,
-                external_file_dir=self.external_file_directory,
-                force_recompile=self.force_recompile,
-            )
+            module_artifact = self._get_module(module)
             module_artifacts.append(module_artifact)
         return module_artifacts
 
@@ -83,13 +87,25 @@ class TestBase(pytest.Item):
         weights = self.test_data.get("weights", [])
         weight_artifacts: list[tuple[str, Artifact]] = []
         for weight in weights:
-            scope = weight["scope"]
-            url = weight["url"]
-            artifact = AzureArtifact(
-                artifact_base_dir=self.artifact_dir,
-                url=url,
-            )
+            if weight["type"] == "url":
+                url = weight["url"]
+                artifact = AzureArtifact(
+                    artifact_base_dir=self.artifact_dir,
+                    url=url,
+                )
+            elif weight["type"] == "random":
+                module = weight["module"]
+                seed = weight["seed"]
+                module = self._get_module(module)
+                artifact = RandomIRPAArtifact(
+                    artifact_base_dir=self.artifact_dir,
+                    module=module,
+                    seed=seed,
+                )
+            else:
+                raise ValueError(f"Unknown weight type: {weight['type']}")
             artifact.join()
+            scope = weight["scope"]
             weight_artifacts.append((scope, artifact))
 
         # Get the inputs / outputs / expected outputs.
