@@ -104,7 +104,6 @@ class TestBase(pytest.Item):
                 )
             else:
                 raise ValueError(f"Unknown weight type: {weight['type']}")
-            artifact.join()
             scope = weight["scope"]
             weight_artifacts.append((scope, artifact))
 
@@ -116,6 +115,7 @@ class TestBase(pytest.Item):
         # Create args for iree-run-module.
         args = []
         for scope, weight_artifact in weight_artifacts:
+            weight_artifact.join()
             args.append(f"--parameters={scope}={str(weight_artifact.path.absolute())}")
         for input in inputs:
             args.append(f"--input={input}")
