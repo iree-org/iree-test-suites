@@ -154,13 +154,16 @@ class RandomIRPAArtifact(Artifact):
             return np.float16
         elif isinstance(el_ty, iree_ir.BF16Type):
             return ml_dtypes.bfloat16
+        elif isinstance(el_ty, iree_ir.Float8E4M3FNUZType):
+            return ml_dtypes.float8_e4m3fnuz
+        elif isinstance(el_ty, iree_ir.Float8E4M3FNType):
+            return ml_dtypes.float8_e4m3fn
         else:
             raise ValueError(f"NYI floating point type: {el_ty}")
 
     def join(self):
         self._check_imports()
         super().join()
-        self.module.join()
         mlir_path = self.module.get_mlir_path()
         if not self._needs_regenerate(mlir_path):
             logger.info(f"  Skipping '{self.path}' generation - file exists")
@@ -185,6 +188,8 @@ class RandomIRPAArtifact(Artifact):
                 if (
                     np.issubdtype(np_dtype, np.floating)
                     or np_dtype == ml_dtypes.bfloat16
+                    or np_dtype == ml_dtypes.float8_e4m3fnuz
+                    or np_dtype == ml_dtypes.float8_e4m3fn
                 ):
                     # For floats, sample from a normal distribution with mean
                     # 0.0 and stddev 0.01.
