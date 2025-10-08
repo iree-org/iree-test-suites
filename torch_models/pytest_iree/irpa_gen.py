@@ -122,14 +122,13 @@ class RandomIRPAArtifact(Artifact):
                 mlir_mod = Module.parse(f.read())
                 for op in mlir_mod.body.operations:
                     if isinstance(op, util_d.GlobalOp):
-                        globalop = util_d.GlobalOp(op)
-                        if globalop.initial_value is None:
+                        if op.initial_value is None:  # type: ignore
                             continue
-                        init_value = str(globalop.initial_value)
+                        init_value = str(op.initial_value)  # type: ignore
                         match = self._match_named_parameter_regex(init_value)
                         if match:
                             _, name = match
-                            shaped_type = ShapedType(globalop.type_.value)
+                            shaped_type = ShapedType(op.type_.value)  # type: ignore
                             params.append((name, shaped_type))
         return params
 
