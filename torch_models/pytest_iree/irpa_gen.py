@@ -126,6 +126,31 @@ class RandomIRPAArtifact(Artifact):
                             params.append((name, shaped_type))
         return params
 
+    def _mlir_dtype_to_numpy_dtype(self, el_ty):
+        import iree.compiler.ir as iree_ir
+
+        if isinstance(el_ty, iree_ir.IntegerType):
+            if el_ty.width == 8:
+                return np.uint8 if el_ty.is_unsigned else np.int8
+            elif el_ty.width == 16:
+                return np.uint16 if el_ty.is_unsigned else np.int16
+            elif el_ty.width == 32:
+                return np.uint32 if el_ty.is_unsigned else np.int32
+            elif el_ty.width == 64:
+                return np.uint64 if el_ty.is_unsigned else np.int64
+            else:
+                raise ValueError(f"NYI integer width: {el_ty.width}")
+        elif isinstance(el_ty, iree_ir.F64Type):
+            return np.float64
+        elif isinstance(el_ty, iree_ir.F32Type):
+            return np.float32
+        elif isinstance(el_ty, iree_ir.F16Type):
+            return np.float16
+        elif isinstance(el_ty, iree_ir.BF16Type):
+            return ml_dtypes.bfloat16
+        else:
+            raise ValueError(f"NYI floating point type: {el_ty}")
+
     def join(self):
         self._check_imports()
         super().join()
@@ -138,7 +163,6 @@ class RandomIRPAArtifact(Artifact):
 
         self._check_imports()
         import iree.runtime as rt
-        import iree.compiler.ir as iree_ir
 
         rng = np.random.default_rng(self.seed)
         random_param = rt.ParameterIndex()
@@ -148,34 +172,11 @@ class RandomIRPAArtifact(Artifact):
         ) as pbar:
             for key, shape in params:
                 el_ty = shape.element_type
-                if isinstance(el_ty, iree_ir.IntegerType):
-                    if el_ty.width == 8:
-                        np_dtype = np.uint8 if el_ty.is_unsigned else np.int8
-                    elif el_ty.width == 16:
-                        np_dtype = np.uint16 if el_ty.is_unsigned else np.int16
-                    elif el_ty.width == 32:
-                        np_dtype = np.uint32 if el_ty.is_unsigned else np.int32
-                    elif el_ty.width == 64:
-                        np_dtype = np.uint64 if el_ty.is_unsigned else np.int64
-                    else:
-                        raise ValueError(
-                            f"Unsupported integer width {el_ty.width} for parameter {key}"
-                        )
-                elif isinstance(el_ty, iree_ir.F64Type):
-                    np_dtype = np.float64
-                elif isinstance(el_ty, iree_ir.F32Type):
-                    np_dtype = np.float32
-                elif isinstance(el_ty, iree_ir.F16Type):
-                    np_dtype = np.float16
-                elif isinstance(el_ty, iree_ir.BF16Type):
-                    np_dtype = ml_dtypes.bfloat16
-                else:
-                    raise ValueError(
-                        f"Unsupported element type {el_ty} for parameter {key}"
-                    )
+                np_dtype = self._mlir_dtype_to_numpy_dtype(el_ty)
 
                 if np.issubdtype(np_dtype, np.floating):
-                    # For floats, create a random number between -1.0 and 1.0.
+                    # For floats, sample from a normal distribution with mean
+                    # 0.0 and stddev 0.01.
                     array = rng.normal(loc=0.0, scale=0.01, size=shape.shape).astype(
                         np_dtype
                     )
@@ -191,8 +192,7 @@ class RandomIRPAArtifact(Artifact):
                     )
                 random_param.add_buffer(key, array)
                 pbar.update(1)
-                if pbar.n % 100 == 0 or pbar.n == pbar.total:
-                    # Log every 100 params or at the end.
+                if pbar.n % 100 == 0:
                     logger.info(str(pbar))
 
         random_param.create_archive_file(str(self.path))
