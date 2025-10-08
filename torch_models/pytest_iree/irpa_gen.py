@@ -20,10 +20,16 @@ class RandomIRPAArtifact(Artifact):
     artifact_base_dir/
         irpa_gen/
             <module1>/
-                param_<seed>.irpa
+                param_<seed1>.irpa
+                param_<seed1>.irpa.md5
+                param_<seed2>.irpa
+                param_<seed2>.irpa.md5
                 ...
             <module2>/
-                param_<seed>.irpa
+                param_<seed1>.irpa
+                param_<seed1>.irpa.md5
+                param_<seed2>.irpa
+                param_<seed2>.irpa.md5
                 ...
 
     TODO: Do proper scoping of parameters. Currently, to handle a file with
@@ -116,13 +122,14 @@ class RandomIRPAArtifact(Artifact):
                 mlir_mod = Module.parse(f.read())
                 for op in mlir_mod.body.operations:
                     if isinstance(op, util_d.GlobalOp):
-                        if op.initial_value is None:
+                        globalop = util_d.GlobalOp(op)
+                        if globalop.initial_value is None:
                             continue
-                        init_value = str(op.initial_value)
+                        init_value = str(globalop.initial_value)
                         match = self._match_named_parameter_regex(init_value)
                         if match:
                             _, name = match
-                            shaped_type = ShapedType(op.type_.value)
+                            shaped_type = ShapedType(globalop.type_.value)
                             params.append((name, shaped_type))
         return params
 
@@ -165,7 +172,7 @@ class RandomIRPAArtifact(Artifact):
         import iree.runtime as rt
 
         rng = np.random.default_rng(self.seed)
-        random_param = rt.ParameterIndex()
+        random_param = rt.ParameterIndex()  # type: ignore
         np_dtype = None
         with tqdm.tqdm(
             total=len(params), desc=f"Generating {self.path.name}", unit="param"
@@ -182,7 +189,7 @@ class RandomIRPAArtifact(Artifact):
                     )
                 elif np.issubdtype(np_dtype, np.integer):
                     # For integers, create a random number between the min and max of the dtype
-                    info = np.iinfo(np_dtype)
+                    info = np.iinfo(np_dtype)  # type: ignore
                     array = rng.integers(
                         info.min, info.max, size=shape.shape, dtype=np_dtype
                     )
