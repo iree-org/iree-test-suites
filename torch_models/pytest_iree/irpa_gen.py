@@ -180,7 +180,12 @@ class RandomIRPAArtifact(Artifact):
                 el_ty = shape.element_type
                 np_dtype = self._mlir_dtype_to_numpy_dtype(el_ty)
 
-                if np.issubdtype(np_dtype, np.floating):
+                # ml_dtypes are registered as np.generic, not np.floating, so we have
+                # to explicitly register them.
+                if (
+                    np.issubdtype(np_dtype, np.floating)
+                    or np_dtype == ml_dtypes.bfloat16
+                ):
                     # For floats, sample from a normal distribution with mean
                     # 0.0 and stddev 0.01.
                     array = rng.normal(loc=0.0, scale=0.01, size=shape.shape).astype(
