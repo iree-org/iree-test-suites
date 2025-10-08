@@ -52,6 +52,35 @@ class TestBase(pytest.Item):
             module_artifacts.append(module_artifact)
         return module_artifacts
 
+    def _get_weights(self) -> list[tuple[str, Artifact]]:
+        """
+        Returns a list of (scope, Artifact) tuples for the model weights.
+        """
+        # Get the model weights.
+        weights = self.test_data.get("weights", [])
+        weight_artifacts: list[tuple[str, Artifact]] = []
+        for weight in weights:
+            if weight["type"] == "url":
+                url = weight["url"]
+                artifact = AzureArtifact(
+                    artifact_base_dir=self.artifact_dir,
+                    url=url,
+                )
+            elif weight["type"] == "random":
+                module = weight["module"]
+                seed = weight["seed"]
+                module = self._get_module(module)
+                artifact = RandomIRPAArtifact(
+                    artifact_base_dir=self.artifact_dir,
+                    module=module,
+                    seed=seed,
+                )
+            else:
+                raise ValueError(f"Unknown weight type: {weight['type']}")
+            scope = weight["scope"]
+            weight_artifacts.append((scope, artifact))
+        return weight_artifacts
+
     def _get_arg_strings(self, json_field: str) -> list[str]:
         """
         Get argument strings based on the argument spec:
@@ -82,31 +111,9 @@ class TestBase(pytest.Item):
             arg_strings.append("=".join(strings))
         return arg_strings
 
-    def _get_common_run_args(self) -> list[str]:
-        # Get the model weights.
-        weights = self.test_data.get("weights", [])
-        weight_artifacts: list[tuple[str, Artifact]] = []
-        for weight in weights:
-            if weight["type"] == "url":
-                url = weight["url"]
-                artifact = AzureArtifact(
-                    artifact_base_dir=self.artifact_dir,
-                    url=url,
-                )
-            elif weight["type"] == "random":
-                module = weight["module"]
-                seed = weight["seed"]
-                module = self._get_module(module)
-                artifact = RandomIRPAArtifact(
-                    artifact_base_dir=self.artifact_dir,
-                    module=module,
-                    seed=seed,
-                )
-            else:
-                raise ValueError(f"Unknown weight type: {weight['type']}")
-            scope = weight["scope"]
-            weight_artifacts.append((scope, artifact))
-
+    def _get_common_run_args(
+        self, weight_artifacts: list[tuple[str, Artifact]]
+    ) -> list[str]:
         # Get the inputs / outputs / expected outputs.
         inputs = self._get_arg_strings("inputs")
         outputs = self._get_arg_strings("outputs")
