@@ -4,3 +4,4 @@ azure-storage-blob
 tqdm
 tabulate
 numpy
+ml_dtypes
