@@ -59,13 +59,7 @@ class TestGenerator(ABC, torch.nn.Module):
             for file in self.test_config["expected_outputs"]:
                 print("--expected_output=@" + str(file), file=config)
 
-    def generate_test(self, rtol=1.0e-5, atol=1.0e-8, equal_nan=False):
-        """
-        The default values for rtol, atol, and equal_nan are taken from the numpy's
-        allclose default values here.
-
-        https://github.com/numpy/numpy/blob/2f7fe64b8b6d7591dd208942f1cc74473d5db4cb/numpy/_core/numeric.py#L2254
-        """
+    def generate_test(self):
         inputs = self.generate_inputs()
         self.save_mlir(*inputs)
         expected_results = self.generate_expected_value(*inputs)
@@ -115,9 +109,10 @@ class GeluABPlusC(TestGenerator):
         return torch.ops.aten.gelu.default(A @ B + C)
 
 
-# TODO: itertools
+# TODO: Future PR, itertools.product where it makes sense
 for dtype in [torch.float32, torch.float16]:
     for cls in [AB]:
+        # TODO: Future PR, consider using non-random matrices.
         inputs = (torch.rand(64, 64, dtype=dtype), torch.rand(64, 64, dtype=dtype))
         dyn_dim = torch.export.Dim("N")
         dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
@@ -131,7 +126,7 @@ for dtype in [torch.float32, torch.float16]:
         inputs = (torch.rand(64, 64, dtype=dtype), torch.rand(64, 64, dtype=dtype))
         instance = cls(*inputs, name=cls.__name__ + str(dtype))
         instance.generate_test()
-    for cls in [ABplusC, ReluABPlusC]:
+    for cls in [ABplusC, ReluABPlusC, GeluABPlusC]:
         inputs = (
             torch.rand(64, 64, dtype=dtype) * 2 - 1,
             torch.rand(64, 64, dtype=dtype) * 2 - 1,
@@ -139,11 +134,3 @@ for dtype in [torch.float32, torch.float16]:
         )
         instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
         instance.generate_test()
-    for cls in [GeluABPlusC]:
-        inputs = (
-            torch.rand(64, 64, dtype=dtype),
-            torch.rand(64, 64, dtype=dtype),
-            torch.rand(64, 64, dtype=dtype),
-        )
-        instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
-        instance.generate_test(atol=1.0e-4)
