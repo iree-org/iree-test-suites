@@ -127,7 +127,6 @@ class GeluABPlusC(TestGenerator):
 for dtype in [torch.float32, torch.float16]:
     for cls in [AB]:
         random = RandomSession()
-        # TODO: Future PR, consider using non-random matrices.
         inputs = (random.rand(64, 64, dtype=dtype), random.rand(64, 64, dtype=dtype))
         dyn_dim = torch.export.Dim("N")
         dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
