@@ -75,8 +75,22 @@ class TestGenerator(ABC, torch.nn.Module):
         return self.args
 
     @abstractmethod
-    def forward(self, *args):
-        ...
+    def forward(self, *args): ...
+
+
+@dataclass
+class RandomSession:
+    generator: torch.Generator = torch.Generator()
+    seed: int = 0
+
+    def __post_init__(self):
+        self.generator.manual_seed(self.seed)
+
+    def rand(self, *args, **kwargs):
+        if kwargs.get("generator"):
+            raise ValueError("RandomSession uses its own generator")
+        kwargs["generator"] = self.generator
+        return torch.rand(*args, **kwargs)
 
 
 class AB(TestGenerator):
@@ -112,8 +126,9 @@ class GeluABPlusC(TestGenerator):
 # TODO: Future PR, itertools.product where it makes sense
 for dtype in [torch.float32, torch.float16]:
     for cls in [AB]:
+        random = RandomSession()
         # TODO: Future PR, consider using non-random matrices.
-        inputs = (torch.rand(64, 64, dtype=dtype), torch.rand(64, 64, dtype=dtype))
+        inputs = (random.rand(64, 64, dtype=dtype), random.rand(64, 64, dtype=dtype))
         dyn_dim = torch.export.Dim("N")
         dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
         instance = cls(
@@ -123,14 +138,16 @@ for dtype in [torch.float32, torch.float16]:
         )
         instance.generate_test()
     for cls in [ATB, ABT]:
-        inputs = (torch.rand(64, 64, dtype=dtype), torch.rand(64, 64, dtype=dtype))
+        random = RandomSession()
+        inputs = (random.rand(64, 64, dtype=dtype), random.rand(64, 64, dtype=dtype))
         instance = cls(*inputs, name=cls.__name__ + str(dtype))
         instance.generate_test()
     for cls in [ABplusC, ReluABPlusC, GeluABPlusC]:
+        random = RandomSession()
         inputs = (
-            torch.rand(64, 64, dtype=dtype) * 2 - 1,
-            torch.rand(64, 64, dtype=dtype) * 2 - 1,
-            torch.rand(64, 64, dtype=dtype) * 2 - 1,
+            random.rand(64, 64, dtype=dtype) * 2 - 1,
+            random.rand(64, 64, dtype=dtype) * 2 - 1,
+            random.rand(64, 64, dtype=dtype) * 2 - 1,
         )
         instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
         instance.generate_test()
