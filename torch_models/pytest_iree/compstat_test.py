@@ -21,18 +21,14 @@ class IREECompStatTest(TestBase):
     A test case for compilation statistics of IREE modules.
     """
 
-    def __init__(self, *, test_data: dict, **kwargs):
-        super().__init__(test_data=test_data, **kwargs)
+    def __init__(self, *, test_data: dict, temp_working_dir: Path, **kwargs):
+        super().__init__(
+            test_data=test_data, temp_working_dir=temp_working_dir, **kwargs
+        )
         self.add_marker("compstat")
         module = test_data.get("module", None)
         assert module is not None, "Test data must contain 'module' field"
-        self.module_artifact = ModuleArtifact(
-            artifact_base_dir=self.artifact_dir,
-            module_base_dir=self.module_directory,
-            module=module,
-            external_file_dir=self.external_file_directory,
-            force_recompile=self.force_recompile,
-        )
+        self.module_artifact = self._get_module(module)
         self.golden_dispatch_count = test_data.get("golden_dispatch_count", None)
         self.golden_binary_size = test_data.get("golden_binary_size", None)
         self.current_dispatch_count = None

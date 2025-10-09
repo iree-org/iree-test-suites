@@ -87,7 +87,7 @@ pytest torch_modles \
     --log-cli-level=info
 ```
 
-- Force recompilation of modules even if modules are cached from a previous run:
+- Cache all module compilation between different runs.
 
 ```bash
 pytest \
@@ -96,7 +96,7 @@ pytest \
     --external-file-directory=./ \
     --log-cli-level=info \
     -m "hip or cpu" \
-    --force-recompile
+    --cache-modules
 ```
 
 ### pytest-iree Flags
@@ -110,18 +110,18 @@ pytest \
 
 - `--artifact-directory`: The directory to store any artifacts (e.g. compiled
   modules). Defaults to `./artifacts` in the current working directory.
-- `--force-recompile`: If set, forces recompilation of modules even if a cached
-  compiled module already exists. Defaults to False. Useful for testing
-  compiler changes.
+- `--cache-modules`: If set, caches modules between different test runs. This
+  is useful when writing and debugging test cases.
 
 ## Tips
 
-- By default, the plugin caches all compiled modules and downloaded artifacts.
-  If you are doing compiler development, you always want to set the
-  `--force-recompile` flag. If you are building tests, but not modifying module
-  definitions, you should keep it on to not have compilation overhead.
-- The caching of modules and downloaded artifacts is predictable. Look at the
-  artifact class definition to find out how the particular artifact is cached.
+- By default, the plugin does not cache compiled modules. If you are building
+  tests, but not modifying module definitions, you should keep it on to not
+  have compilation overhead.
+- The caching of (artifacts modules, downloaded artifacts, generated irpas) is
+  predictable. Look at the artifact class definition to find out how the
+  particular artifact is cached. You can manually modify the artifact cache
+  as long as you follow the caching behavior.
 - Every iree command is ran with "external-file-directory" as the cwd. So if
   you have any relative paths in your module definitions or test definitions,
   they are relative to that directory.

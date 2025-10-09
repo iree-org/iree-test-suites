@@ -71,7 +71,6 @@ jobs:
             --module-directory=torch_models \
             --artifact-directory=${{ github.workspace }}/torch_models_artifacts \
             --job-summary-path=${{ github.workspace }} \
-            --force-recompile \
             -m "quick or compstat"
 
       - name: Upload Torch Model Job Summary
