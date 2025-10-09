@@ -57,7 +57,8 @@ class TestGenerator(ABC, torch.nn.Module):
             for file in self.test_config["inputs"]:
                 print("--input=@" + str(file), file=config)
             for file in self.test_config["expected_outputs"]:
-                print("--expected_output=@" + str(file), file=config)
+                print("--output=@expected_" + str(file), file=config)
+                # print("--expected_output=@" + str(file), file=config)
 
     def generate_test(self):
         inputs = self.generate_inputs()
