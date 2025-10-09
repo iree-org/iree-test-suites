@@ -8,7 +8,9 @@ import pytest
 import logging
 from pathlib import Path
 import logging
+import shutil
 import json
+import uuid
 import tabulate
 
 from pytest_iree.test_base import TestBase
@@ -48,10 +50,10 @@ def pytest_addoption(parser):
         help="The base directory to store compiled/downloaded artifacts.",
     )
     parser.addoption(
-        "--force-recompile",
+        "--cache-modules",
         action="store_true",
         default=False,
-        help="Force recompilation of modules even if cached versions exist.",
+        help="Cache modules between different runs",
     )
     parser.addoption(
         "--job-summary-path",
@@ -73,6 +75,13 @@ def pytest_sessionstart(session):
         if session.config.getoption(option) is None:
             raise ValueError(f"{option} is required but not provided.")
 
+    # Create a temporary directory for working files inside the artifact
+    # directory.
+    artifact_dir = Path(session.config.getoption("artifact_directory")).resolve()
+    session._temp_working_dir = artifact_dir / f"run_temp_{uuid.uuid4()}"
+    logger.info(f"Creating temporary working directory at {session._temp_working_dir}")
+    session._temp_working_dir.mkdir(parents=True, exist_ok=True)
+
 
 class IREEDirectory(pytest.Directory):
     def collect(self):
@@ -83,19 +92,32 @@ class IREEDirectory(pytest.Directory):
 
 class IREEFile(pytest.File):
     def collect(self):
+        assert hasattr(self.session, "_temp_working_dir")
+        temp_working_dir = Path(getattr(self.session, "_temp_working_dir"))
         test_data = json.loads(self.path.read_text())
         if "type" not in test_data:
             # Not a valid JSON test file.
             return
         if test_data["type"] == "quality":
-            yield IREEQualityTest.from_parent(self, test_data=test_data, name=self.name)
+            yield IREEQualityTest.from_parent(
+                self,
+                test_data=test_data,
+                temp_working_dir=temp_working_dir,
+                name=self.name,
+            )
         elif test_data["type"] == "benchmark":
             yield IREEBenchmarkTest.from_parent(
-                self, test_data=test_data, name=self.name
+                self,
+                test_data=test_data,
+                temp_working_dir=temp_working_dir,
+                name=self.name,
             )
         elif test_data["type"] == "compstat":
             yield IREECompStatTest.from_parent(
-                self, test_data=test_data, name=self.name
+                self,
+                test_data=test_data,
+                temp_working_dir=temp_working_dir,
+                name=self.name,
             )
         else:
             raise ValueError(f"Unknown test type: {test_data['type']}")
@@ -115,6 +137,13 @@ def pytest_collect_file(file_path: Path, parent: pytest.Collector):
 
 @pytest.hookimpl
 def pytest_sessionfinish(session, exitstatus):
+    # Delete the temporary working directory.
+    if hasattr(session, "_temp_working_dir"):
+        logger.info(
+            f"Deleting temporary working directory at {session._temp_working_dir}"
+        )
+        shutil.rmtree(session._temp_working_dir)
+
     # Generate a job_summary report at the end of the session.
     summaries = {}
     for item in session.items:

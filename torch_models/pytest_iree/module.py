@@ -14,8 +14,8 @@ class ModuleArtifact(Artifact):
     artifact's uniqueness is defined by it's module name. The module definition
     can be found at `<module_base_dir>/Path(<module>).json`.
 
-    The artifact creates a directory structure under the artifact_base_dir as:
-    artifact_base_dir/
+    The artifact creates a directory structure under the module_artifact_base_dir as:
+    module_artifact_base_dir/
         modules/
             <module1>/
                 <module1>.vmfb
@@ -27,26 +27,17 @@ class ModuleArtifact(Artifact):
     def __init__(
         self,
         artifact_base_dir: Path,
+        module_artifact_base_dir: Path,
         module_base_dir: Path,
         module: str,
         external_file_dir: Path,
-        force_recompile: bool = False,
     ):
-        artifact_dir = artifact_base_dir / "modules"
-        module_artifact_dir = artifact_dir / Path(module)
+        module_artifact_dir = module_artifact_base_dir / "modules" / Path(module)
         name = "module.vmfb"
         module_json = (module_base_dir / Path(module)).with_suffix(".json")
         assert (
             module_json.exists()
         ), f"Module definition '{module_json}' does not exist."
-
-        # Delete the directory to force recompilation of module if requested.
-        if force_recompile and module_artifact_dir.exists():
-            logger.info(
-                f"  Force recompilation - removing existing module artifact directory '{module_artifact_dir}'"
-            )
-            shutil.rmtree(module_artifact_dir)
-
         super().__init__(module_artifact_dir, name)
 
         self.artifact_base_dir = artifact_base_dir

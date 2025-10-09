@@ -20,8 +20,10 @@ class IREEQualityTest(TestBase):
     A test case for accuracy quality of IREE modules, for given input data.
     """
 
-    def __init__(self, *, test_data: dict, **kwargs):
-        super().__init__(test_data=test_data, **kwargs)
+    def __init__(self, *, test_data: dict, temp_working_dir: Path, **kwargs):
+        super().__init__(
+            test_data=test_data, temp_working_dir=temp_working_dir, **kwargs
+        )
         self.add_marker("quality")
         self.module_artifacts = self._get_modules()
         self.weight_artifacts = self._get_weights()

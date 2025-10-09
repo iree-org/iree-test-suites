@@ -20,8 +20,10 @@ class IREEBenchmarkTest(TestBase):
     A test case for benchmarking IREE modules for given input data.
     """
 
-    def __init__(self, *, test_data: dict, **kwargs):
-        super().__init__(test_data=test_data, **kwargs)
+    def __init__(self, *, test_data: dict, temp_working_dir: Path, **kwargs):
+        super().__init__(
+            test_data=test_data, temp_working_dir=temp_working_dir, **kwargs
+        )
         self.add_marker("benchmark")
         self.golden_time = test_data.get("golden_time_ms", None)
         self.module_artifacts = self._get_modules()

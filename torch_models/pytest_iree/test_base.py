@@ -11,9 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class TestBase(pytest.Item):
-    def __init__(self, *, test_data: dict, **kwargs):
+    def __init__(self, *, test_data: dict, temp_working_dir: Path, **kwargs):
         super().__init__(**kwargs)
         self.test_data = test_data
+        self.temp_working_dir = temp_working_dir
 
         # Verify test.
         # TODO: Verify spec as described in README.md.
@@ -23,11 +24,17 @@ class TestBase(pytest.Item):
             self.config.getoption("external_file_directory")
         ).resolve()
         self.artifact_dir = Path(self.config.getoption("artifact_directory")).resolve()
-        self.force_recompile = self.config.getoption("force_recompile")
+        self.cache_modules = self.config.getoption("cache_modules")
         self.module_directory = Path(
             self.config.getoption("module_directory")
         ).resolve()
         self.status = "N/A"
+
+        self.module_artifact_dir = self.artifact_dir
+        # If module caching is disabled, use the temp working dir for module
+        # artifacts, so they are cached only for the duration of the test.
+        if not self.cache_modules:
+            self.module_artifact_dir = self.temp_working_dir
 
         # Add markers.
         for marker in test_data["markers"]:
@@ -36,10 +43,10 @@ class TestBase(pytest.Item):
     def _get_module(self, module: str) -> ModuleArtifact:
         return ModuleArtifact(
             artifact_base_dir=self.artifact_dir,
+            module_artifact_base_dir=self.module_artifact_dir,
             module_base_dir=self.module_directory,
             module=module,
             external_file_dir=self.external_file_directory,
-            force_recompile=self.force_recompile,
         )
 
     def _get_modules(self) -> list[ModuleArtifact]:
