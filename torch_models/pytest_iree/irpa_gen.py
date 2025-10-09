@@ -46,7 +46,7 @@ class RandomIRPAArtifact(Artifact):
     ):
         artifact_dir = artifact_base_dir / "random_irpa"
         param_artifact_dir = artifact_dir / Path(module.module_name)
-        name = "param_" + str(seed) + ".irpa"
+        name = f"param_{seed}.irpa"
 
         super().__init__(param_artifact_dir, name)
 
@@ -135,31 +135,33 @@ class RandomIRPAArtifact(Artifact):
     def _mlir_dtype_to_numpy_dtype(self, el_ty):
         import iree.compiler.ir as iree_ir
 
-        if isinstance(el_ty, iree_ir.IntegerType):
-            if el_ty.width == 8:
-                return np.uint8 if el_ty.is_unsigned else np.int8
-            elif el_ty.width == 16:
-                return np.uint16 if el_ty.is_unsigned else np.int16
-            elif el_ty.width == 32:
-                return np.uint32 if el_ty.is_unsigned else np.int32
-            elif el_ty.width == 64:
-                return np.uint64 if el_ty.is_unsigned else np.int64
-            else:
-                raise ValueError(f"NYI integer width: {el_ty.width}")
-        elif isinstance(el_ty, iree_ir.F64Type):
-            return np.float64
-        elif isinstance(el_ty, iree_ir.F32Type):
-            return np.float32
-        elif isinstance(el_ty, iree_ir.F16Type):
-            return np.float16
-        elif isinstance(el_ty, iree_ir.BF16Type):
-            return ml_dtypes.bfloat16
-        elif isinstance(el_ty, iree_ir.Float8E4M3FNUZType):
-            return ml_dtypes.float8_e4m3fnuz
-        elif isinstance(el_ty, iree_ir.Float8E4M3FNType):
-            return ml_dtypes.float8_e4m3fn
-        else:
-            raise ValueError(f"NYI floating point type: {el_ty}")
+        match el_ty:
+            case iree_ir.IntegerType():
+                match el_ty.width:
+                    case 8:
+                        return np.uint8 if el_ty.is_unsigned else np.int8
+                    case 16:
+                        return np.uint16 if el_ty.is_unsigned else np.int16
+                    case 32:
+                        return np.uint32 if el_ty.is_unsigned else np.int32
+                    case 64:
+                        return np.uint64 if el_ty.is_unsigned else np.int64
+                    case _:
+                        raise ValueError(f"NYI integer width: {el_ty.width}")
+            case iree_ir.F64Type():
+                return np.float64
+            case iree_ir.F32Type():
+                return np.float32
+            case iree_ir.F16Type():
+                return np.float16
+            case iree_ir.BF16Type():
+                return ml_dtypes.bfloat16
+            case iree_ir.Float8E4M3FNUZType():
+                return ml_dtypes.float8_e4m3fnuz
+            case iree_ir.Float8E4M3FNType():
+                return ml_dtypes.float8_e4m3fn
+            case _:
+                raise ValueError(f"NYI floating point type: {el_ty}")
 
     def join(self):
         self._check_imports()
@@ -185,11 +187,10 @@ class RandomIRPAArtifact(Artifact):
 
                 # ml_dtypes are registered as np.generic, not np.floating, so we have
                 # to explicitly register them.
-                if (
-                    np.issubdtype(np_dtype, np.floating)
-                    or np_dtype == ml_dtypes.bfloat16
-                    or np_dtype == ml_dtypes.float8_e4m3fnuz
-                    or np_dtype == ml_dtypes.float8_e4m3fn
+                if np.issubdtype(np_dtype, np.floating) or np_dtype in (
+                    ml_dtypes.bfloat16,
+                    ml_dtypes.float8_e4m3fnuz,
+                    ml_dtypes.float8_e4m3fn,
                 ):
                     # For floats, sample from a normal distribution with mean
                     # 0.0 and stddev 0.01.
