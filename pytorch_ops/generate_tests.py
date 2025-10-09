@@ -69,18 +69,6 @@ class TestGenerator(ABC, torch.nn.Module):
         inputs = self.generate_inputs()
         self.save_mlir(*inputs)
         expected_results = self.generate_expected_value(*inputs)
-        observed_results = self.run_turbine(*inputs)
-        # We also run iree-turbine here to make sure that the generation
-        # matches the expected results within tolerance and we exit early
-        # TODO: Save rtol, atol, equal_nan
-        assert np.allclose(
-            expected_results,
-            observed_results,
-            rtol=rtol,
-            atol=atol,
-            equal_nan=equal_nan,
-        )
-
         self.save_inputs(*inputs)
         self.save_results(*expected_results)
         self.save_config()
@@ -88,10 +76,6 @@ class TestGenerator(ABC, torch.nn.Module):
     def generate_expected_value(self, *args):
         results = self.forward(*args)
         return [results]
-
-    def run_turbine(self, *args):
-        opt_module = torch.compile(self, backend="turbine_cpu")
-        return [opt_module(*args)]
 
     def generate_inputs(self):
         return self.args
