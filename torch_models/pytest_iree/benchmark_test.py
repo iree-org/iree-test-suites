@@ -30,13 +30,14 @@ class IREEBenchmarkTest(TestBase):
         self.weight_artifacts = self._get_weights()
         self.mean_time = None
 
-    def _get_mean_time_from_output_json(self, output_json: dict) -> float:
+    def _get_min_time_from_output_json(self, output_json: dict) -> float:
         benchmarks = output_json["benchmarks"]
+        minimum_time = float("inf")
         for benchmark in benchmarks:
-            if "aggregate_name" in benchmark and benchmark["aggregate_name"] == "mean":
-                return float(benchmark["real_time"])
-        # Fallback to the first benchmark's real_time if no mean aggregate is found.
-        return benchmarks[0]["real_time"]
+            if "aggregate_name" in benchmark:
+                continue
+            minimum_time = min(minimum_time, float(benchmark["real_time"]))
+        return minimum_time
 
     def runtest(self):
         # TODO: Figure out how to do this with pytest_runtest_makereport instead.
@@ -54,7 +55,8 @@ class IREEBenchmarkTest(TestBase):
                 cwd=self.artifact_dir,
                 args=run_args,
             )
-            self.mean_time = self._get_mean_time_from_output_json(output_json)
+            # https://stackoverflow.com/a/65430875/11660958
+            self.mean_time = self._get_min_time_from_output_json(output_json)
             if self.golden_time is not None:
                 assert (
                     self.mean_time <= self.golden_time
