@@ -9,9 +9,10 @@
     ],
     "weights": [
         {
-            "type": "url",
+            "type": "random",
             "scope": "model",
-            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-prompt-encoder/real_weights.irpa"
+            "module": "examples/modules/clip_cpu",
+            "seed": 42
         }
     ],
     "inputs": [
@@ -34,3 +35,4 @@
       "--device_allocator=caching"
     ]
 }
+

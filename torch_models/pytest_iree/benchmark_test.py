@@ -25,6 +25,7 @@ class IREEBenchmarkTest(TestBase):
         self.add_marker("benchmark")
         self.golden_time = test_data.get("golden_time_ms", None)
         self.module_artifacts = self._get_modules()
+        self.weight_artifacts = self._get_weights()
         self.mean_time = None
 
     def _get_mean_time_from_output_json(self, output_json: dict) -> float:
@@ -44,7 +45,7 @@ class IREEBenchmarkTest(TestBase):
             for module in self.module_artifacts:
                 module.join()
             # Get common run arguments.
-            run_args = self._get_common_run_args()
+            run_args = self._get_common_run_args(self.weight_artifacts)
             # Run the model.
             output_json = iree_benchmark_module(
                 modules=[m.path for m in self.module_artifacts],

@@ -10,6 +10,7 @@
     ],
     "weights": [
         {
+            "type": "url",
             "scope": "model",
             "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/real_weights.irpa"
         }

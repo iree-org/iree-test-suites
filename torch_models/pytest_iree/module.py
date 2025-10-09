@@ -1,6 +1,5 @@
 from pathlib import Path
 import logging
-import logging
 import json
 from pytest_iree.artifact import Artifact
 from pytest_iree.azure import AzureArtifact
@@ -24,9 +23,6 @@ class ModuleArtifact(Artifact):
                 <module2>.vmfb
                 ...
     """
-
-    def _clean_module_name(self, module: str) -> str:
-        return module.replace("/", "_").replace("\\", "_")
 
     def __init__(
         self,
@@ -54,6 +50,7 @@ class ModuleArtifact(Artifact):
         super().__init__(module_artifact_dir, name)
 
         self.artifact_base_dir = artifact_base_dir
+        self.module_name = module
         self.module_json = module_json
         self.module_artifact_dir = module_artifact_dir
         self.external_file_dir = external_file_dir
@@ -72,14 +69,9 @@ class ModuleArtifact(Artifact):
         if not self._needs_recompile():
             logger.info(f"  Skipping '{self.path}' download - file exists")
             return
-        module_data = json.loads(self.module_json.read_text())
-        mlir_url = module_data["mlir"]
-        assert (
-            "blob.core.windows.net" in mlir_url
-        ), "Only Azure Blob Storage is supported currently."
-        mlir_artifact = AzureArtifact(self.artifact_base_dir, mlir_url)
-        mlir_artifact.join()
         # Compile the MLIR file to a VMFB file.
+        mlir_path = self.get_mlir_path()
+        module_data = json.loads(self.module_json.read_text())
         compiler_flags = module_data.get("compiler_flags", [])
         # Add compilation stats path and format.
         compiler_flags += [
@@ -87,7 +79,7 @@ class ModuleArtifact(Artifact):
             "--iree-scheduling-dump-statistics-format=json",
         ]
         iree_compile(
-            source=mlir_artifact.path,
+            source=mlir_path,
             output=self.path,
             cwd=self.external_file_dir,
             args=compiler_flags,
@@ -101,3 +93,14 @@ class ModuleArtifact(Artifact):
         ), f"Compilation stats file '{self.compstat_path}' does not exist."
         compstats = json.loads(self.compstat_path.read_text())
         return compstats
+
+    def get_mlir_path(self) -> Path:
+        """Get the path to the MLIR file used to generate this module."""
+        module_data = json.loads(self.module_json.read_text())
+        mlir_url = module_data["mlir"]
+        assert (
+            "blob.core.windows.net" in mlir_url
+        ), "Only Azure Blob Storage is supported currently."
+        self.mlir_artifact = AzureArtifact(self.artifact_base_dir, mlir_url)
+        self.mlir_artifact.join()
+        return self.mlir_artifact.path

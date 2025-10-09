@@ -24,6 +24,7 @@ class IREEQualityTest(TestBase):
         super().__init__(test_data=test_data, **kwargs)
         self.add_marker("quality")
         self.module_artifacts = self._get_modules()
+        self.weight_artifacts = self._get_weights()
 
     def runtest(self):
         # TODO: Figure out how to do this with pytest_runtest_makereport instead.
@@ -34,7 +35,7 @@ class IREEQualityTest(TestBase):
             for module in self.module_artifacts:
                 module.join()
             # Get common run arguments.
-            run_args = self._get_common_run_args()
+            run_args = self._get_common_run_args(self.weight_artifacts)
             # Run the model.
             iree_run_module(
                 modules=[m.path for m in self.module_artifacts],
