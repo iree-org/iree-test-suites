@@ -1,4 +1,4 @@
 --input=@input0.npy
 --input=@input1.npy
 --input=@input2.npy
---output=@expected_result0.npy
+--output=@observed_result0.npy
