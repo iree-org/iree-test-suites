@@ -46,7 +46,7 @@ class TestGenerator(ABC, torch.nn.Module):
     def save_results(self, *args):
         expected_outputs = []
         for idx, result in enumerate(args):
-            fname = f"result{idx}.npy"
+            fname = f"expected_result{idx}.npy"
             path = self.path / fname
             np.save(path, result)
             expected_outputs.append(fname)
@@ -56,9 +56,8 @@ class TestGenerator(ABC, torch.nn.Module):
         with open(self.path / "run_module_io_flags.txt", "w") as config:
             for file in self.test_config["inputs"]:
                 print("--input=@" + str(file), file=config)
-            for file in self.test_config["expected_outputs"]:
-                print("--output=@expected_" + str(file), file=config)
-                # print("--expected_output=@" + str(file), file=config)
+            for idx, file in enumerate(self.test_config["expected_outputs"]):
+                print(f"--output=@observed_result{idx}.npy", file=config)
 
     def generate_test(self):
         inputs = self.generate_inputs()

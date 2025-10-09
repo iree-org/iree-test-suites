@@ -354,20 +354,13 @@ class IreeCompileRunItem(pytest.Item):
             )
 
         expected = glob.glob(str(cwd / "expected_result*.npy"))
-        observed = glob.glob(str(cwd / "result*.npy"))
+        observed = glob.glob(str(cwd / "observed_result*.npy"))
         expected.sort()
         observed.sort()
-        for exp, obs in zip(expected, observed):
+        for exp, obs in zip(expected, observed, strict=True):
             exp_arr = np.load(exp)
             obs_arr = np.load(obs)
-            if not np.allclose(exp_arr, obs_arr):
-                raise IreeRunException(
-                    process=proc,
-                    cwd=cwd,
-                    input_mlir_name=self.spec.input_mlir_name,
-                    compile_cmd=self.compile_cmd,
-                    run_cmd=self.run_cmd,
-                )
+            assert np.allclose(exp_arr, obs_arr)
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
