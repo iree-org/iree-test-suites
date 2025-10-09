@@ -1,4 +1,4 @@
-# Copyright 2024 The IREE Authors
+# Copyright 2025 The IREE Authors
 #
 # Licensed under the Apache License v2.0 with LLVM Exceptions.
 # See https://llvm.org/LICENSE.txt for license information.
@@ -54,7 +54,7 @@ jobs:
           python3 -m pip install -r pytorch_ops/requirements-iree.txt
 
       # Run tests and output new config files as needed.
-      - name: Run ONNX ops test suite
+      - name: Run Torch ops test suite
         continue-on-error: true
         run: |
           source ${VENV_DIR}/bin/activate
