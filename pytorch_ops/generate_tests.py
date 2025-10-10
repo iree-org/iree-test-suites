@@ -112,6 +112,14 @@ class AB(TestGenerator):
         return left @ right
 
 
+class AB_bfloat16(TestGenerator):
+    def forward(self, left, right):
+        left = left.to(torch.bfloat16)
+        right = right.to(torch.bfloat16)
+        res = left @ right
+        return res.to(torch.float32)
+
+
 class ATB(TestGenerator):
     def forward(self, left, right):
         return left.t() @ right
@@ -138,6 +146,18 @@ class GeluABPlusC(TestGenerator):
 
 
 # TODO: Future PR, itertools.product where it makes sense
+for dtype in [torch.float32]:
+    for cls in [AB_bfloat16]:
+        random = RandomSession()
+        inputs = (random.rand(64, 64, dtype=dtype), random.rand(64, 64, dtype=dtype))
+        dyn_dim = torch.export.Dim("N")
+        dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
+        instance = cls(
+            *inputs,
+            name=cls.__name__,
+            export_kwargs={"dynamic_shapes": dynamic_shapes},
+        )
+        instance.generate_test(atol=1e-2, rtol=1e-2)
 for dtype in [torch.float32, torch.float16]:
     for cls in [AB]:
         random = RandomSession()
