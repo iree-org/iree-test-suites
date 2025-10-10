@@ -60,6 +60,7 @@ class TestGenerator(ABC, torch.nn.Module):
     def save_config(self):
         with open(self.path / "run_module_io_flags.json", "w") as config:
             json.dump(self.test_config, config, indent=4)
+            print("", file=config)
 
     def generate_test(self, rtol=1e-05, atol=1e-08, equal_nan=False):
         """
