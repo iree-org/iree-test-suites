@@ -193,7 +193,9 @@ for dtype in [torch.float32, torch.float16]:
             random.rand(64, 64, dtype=dtype) * 0.1 - 0.05,
         )
         instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
-        if cls == GeluABPlusC and dtype == torch.float32:
-            instance.generate_test(atol=1e-5, rtol=1e-4)
-        if cls == GeluABPlusC and dtype == torch.float16:
-            instance.generate_test(atol=1e-3, rtol=1e-3)
+        if cls == GeluABPlusC:
+            match dtype:
+                case torch.float32:
+                    instance.generate_test(atol=1e-5, rtol=1e-4)
+                case torch.float16:
+                    instance.generate_test(atol=1e-3, rtol=1e-3)
