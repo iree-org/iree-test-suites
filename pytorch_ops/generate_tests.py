@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from pathlib import Path
 from dataclasses import dataclass
+import json
 
 import torch
 import iree.turbine.aot as aot
@@ -45,22 +46,34 @@ class TestGenerator(ABC, torch.nn.Module):
 
     def save_results(self, *args):
         expected_outputs = []
+        observed_outputs = []
         for idx, result in enumerate(args):
-            fname = f"expected_result{idx}.npy"
-            path = self.path / fname
+            fname_expected = f"expected_result{idx}.npy"
+            fname_observed = f"observed_result{idx}.npy"
+            path = self.path / fname_expected
             np.save(path, result)
-            expected_outputs.append(fname)
+            expected_outputs.append(fname_expected)
+            observed_outputs.append(fname_observed)
         self.test_config["expected_outputs"] = expected_outputs
+        self.test_config["observed_outputs"] = observed_outputs
 
     def save_config(self):
-        with open(self.path / "run_module_io_flags.txt", "w") as config:
-            for file in self.test_config["inputs"]:
-                print("--input=@" + str(file), file=config)
-            for idx, file in enumerate(self.test_config["expected_outputs"]):
-                print(f"--output=@observed_result{idx}.npy", file=config)
+        with open(self.path / "run_module_io_flags.json", "w") as config:
+            json.dump(self.test_config, config, indent=4)
 
-    def generate_test(self):
+    def generate_test(self, rtol=1e-05, atol=1e-08, equal_nan=False):
+        """
+        The default values for rtol, atol, and equal_nan come from the
+        numpy.allclose's default values listed in the link below.
+        https://numpy.org/devdocs/reference/generated/numpy.allclose.html
+
+        These values will be saved in the json file and be used when
+        running the test.
+        """
         inputs = self.generate_inputs()
+        self.test_config["rtol"] = rtol
+        self.test_config["atol"] = atol
+        self.test_config["equal_nan"] = equal_nan
         self.save_mlir(*inputs)
         expected_results = self.generate_expected_value(*inputs)
         self.save_inputs(*inputs)
@@ -150,3 +163,15 @@ for dtype in [torch.float32, torch.float16]:
         )
         instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
         instance.generate_test()
+    for cls in [GeluABPlusC]:
+        random = RandomSession()
+        inputs = (
+            random.rand(64, 64, dtype=dtype) * 0.1 - 0.05,
+            random.rand(64, 64, dtype=dtype) * 0.1 - 0.05,
+            random.rand(64, 64, dtype=dtype) * 0.1 - 0.05,
+        )
+        instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
+        if cls == GeluABPlusC and dtype == torch.float32:
+            instance.generate_test(atol=1e-5, rtol=1e-4)
+        if cls == GeluABPlusC and dtype == torch.float16:
+            instance.generate_test(atol=1e-3, rtol=1e-3)

@@ -16,7 +16,7 @@ import glob
 import numpy as np
 
 THIS_DIR = Path(__file__).parent
-TEST_DATA_FLAGFILE_NAME = "run_module_io_flags.txt"
+TEST_DATA_FLAGFILE_NAME = "run_module_io_flags.json"
 
 
 def pytest_addoption(parser):
@@ -262,8 +262,14 @@ class IreeCompileRunItem(pytest.Item):
 
         run_args = ["iree-run-module", f"--module={vmfb_name}"]
         run_args.extend(self.spec.iree_run_module_flags)
-        run_args.append(f"--flagfile={self.spec.data_flagfile_name}")
+        with open(self.test_cwd / self.spec.data_flagfile_name, "r") as config:
+            json = pyjson5.load(config)
+        for input in json["inputs"]:
+            run_args.append(f"--input=@{input}")
+        for output in json["observed_outputs"]:
+            run_args.append(f"--output=@{output}")
         self.run_cmd = subprocess.list2cmdline(run_args)
+        self.run_options = json
 
     def runtest(self):
         # We want to test two phases: 'compile', and 'run'.
@@ -343,6 +349,7 @@ class IreeCompileRunItem(pytest.Item):
             f"Launching run command:\n"
             f"cd {cwd} && {self.run_cmd}"  #
         )
+
         proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
         if proc.returncode != 0:
             raise IreeRunException(
@@ -353,14 +360,17 @@ class IreeCompileRunItem(pytest.Item):
                 run_cmd=self.run_cmd,
             )
 
-        expected = glob.glob(str(cwd / "expected_result*.npy"))
-        observed = glob.glob(str(cwd / "observed_result*.npy"))
+        observed = self.run_options["observed_outputs"]
+        expected = self.run_options["expected_outputs"]
         expected.sort()
         observed.sort()
+        rtol = self.run_options["rtol"]
+        atol = self.run_options["atol"]
+        equal_nan = self.run_options["equal_nan"]
         for exp, obs in zip(expected, observed, strict=True):
-            exp_arr = np.load(exp)
-            obs_arr = np.load(obs)
-            assert np.allclose(exp_arr, obs_arr)
+            exp_arr = np.load(cwd / exp)
+            obs_arr = np.load(cwd / obs)
+            assert np.allclose(exp_arr, obs_arr, rtol=rtol, atol=atol, equal_nan=equal_nan)
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""

@@ -1,3 +1,0 @@
---input=@input0.npy
---input=@input1.npy
---output=@observed_result0.npy
