@@ -329,8 +329,7 @@ class IreeCompileRunItem(pytest.Item):
     def test_compile(self):
         cwd = self.test_cwd
         logging.getLogger().info(
-            f"Launching compile command:\n"
-            f"cd {cwd} && {self.compile_cmd}"  #
+            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
         )
         proc = subprocess.run(
             self.compile_cmd, shell=True, capture_output=True, cwd=cwd
@@ -346,8 +345,7 @@ class IreeCompileRunItem(pytest.Item):
     def test_run(self):
         cwd = self.test_cwd
         logging.getLogger().info(
-            f"Launching run command:\n"
-            f"cd {cwd} && {self.run_cmd}"  #
+            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
         )
 
         proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
@@ -370,7 +368,9 @@ class IreeCompileRunItem(pytest.Item):
         for exp, obs in zip(expected, observed, strict=True):
             exp_arr = np.load(cwd / exp)
             obs_arr = np.load(cwd / obs)
-            assert np.allclose(exp_arr, obs_arr, rtol=rtol, atol=atol, equal_nan=equal_nan)
+            assert np.allclose(
+                exp_arr, obs_arr, rtol=rtol, atol=atol, equal_nan=equal_nan
+            )
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""

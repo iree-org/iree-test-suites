@@ -88,7 +88,8 @@ class TestGenerator(ABC, torch.nn.Module):
         return self.args
 
     @abstractmethod
-    def forward(self, *args): ...
+    def forward(self, *args):
+        ...
 
 
 @dataclass
