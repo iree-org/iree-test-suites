@@ -3,6 +3,8 @@
   "compiler_flags": [
     "--iree-hal-target-device=local",
     "--iree-hal-local-target-device-backends=llvm-cpu",
-    "--iree-llvmcpu-target-cpu=host"
+    "--iree-llvmcpu-target-cpu-features=host",
+    "--iree-opt-level=O3",
+    "--iree-opt-data-tiling"
   ]
 }
