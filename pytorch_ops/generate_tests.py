@@ -17,7 +17,7 @@ def camel_to_snake(name):
     return result
 
 
-class TestGenerator(ABC, torch.nn.Module):
+class TestGenerator(torch.nn.Module, ABC):
     def __init__(self, *args, name=None, export_kwargs=None, **kwargs):
         assert name
         self.export_kwargs = export_kwargs
