@@ -1,4 +1,5 @@
 {
+  "type" : "azure",
   "mlir": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-prompt-encoder/model.mlir",
     "compiler_flags": [
         "--iree-hal-local-target-device-backends=llvm-cpu",
