@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 from dataclasses import dataclass
 import json
+import functools
 
 import torch
 import iree.turbine.aot as aot
@@ -18,12 +19,7 @@ def camel_to_snake(name):
 
 
 class TestGenerator(torch.nn.Module, ABC):
-    def __init__(self, *args, name=None, **kwargs):
-        assert name
-        self.args = args
-        self.kwargs = kwargs
-        self.path = Path(camel_to_snake("Test" + name))
-        self.path.mkdir(exist_ok=True)
+    def __init__(self):
         self.test_config = {}
         super().__init__()
 
@@ -31,39 +27,39 @@ class TestGenerator(torch.nn.Module, ABC):
         # Default implementation is that exported kwargs is an empty dictionary.
         return {}
 
-    def save_mlir(self, *args):
+    def save_mlir(self, path, *args, **_kwargs):
         export_kwargs = self.get_export_kwargs()
         exported_module = aot.export(self, *args, **export_kwargs)
-        exported_module.save_mlir(self.path / "test.mlir")
+        exported_module.save_mlir(path / "test.mlir")
 
-    def save_inputs(self, *args):
+    def save_inputs(self, root_path, *args):
         inputs = []
         for idx, input in enumerate(args):
             fname = f"input{idx}.npy"
-            path = self.path / fname
+            path = root_path / fname
             np.save(path, input)
             inputs.append(fname)
         self.test_config["inputs"] = inputs
 
-    def save_results(self, *args):
+    def save_results(self, root_path, *args):
         expected_outputs = []
         observed_outputs = []
         for idx, result in enumerate(args):
             fname_expected = f"expected_result{idx}.npy"
             fname_observed = f"observed_result{idx}.npy"
-            path = self.path / fname_expected
+            path = root_path / fname_expected
             np.save(path, result)
             expected_outputs.append(fname_expected)
             observed_outputs.append(fname_observed)
         self.test_config["expected_outputs"] = expected_outputs
         self.test_config["observed_outputs"] = observed_outputs
 
-    def save_config(self):
-        with open(self.path / "run_module_io_flags.json", "w") as config:
+    def save_config(self, root_path):
+        with open(root_path / "run_module_io_flags.json", "w") as config:
             json.dump(self.test_config, config, indent=4)
             print("", file=config)
 
-    def generate_test(self, rtol=1e-05, atol=1e-08, equal_nan=False):
+    def generate_tests(self):
         """
         The default values for rtol, atol, and equal_nan come from the
         numpy.allclose's default values listed in the link below.
@@ -72,46 +68,94 @@ class TestGenerator(torch.nn.Module, ABC):
         These values will be saved in the json file and be used when
         running the test.
         """
-        inputs = self.generate_inputs()
-        self.test_config["rtol"] = rtol
-        self.test_config["atol"] = atol
-        self.test_config["equal_nan"] = equal_nan
-        self.save_mlir(*inputs)
-        expected_results = self.generate_expected_value(*inputs)
-        self.save_inputs(*inputs)
-        self.save_results(*expected_results)
-        self.save_config()
+        for name in sorted(dir(self)):
+            if not name.startswith("test_"):
+                continue
+
+            attr = getattr(self, name)
+            if not callable(attr):
+                continue
+
+            pathname = f"test_{camel_to_snake(self._get_name())}_{name[5:]}"
+            path = Path(pathname)
+            path.mkdir(exist_ok=True)
+            inputs_to_forward = attr
+
+            args, kwargs, test_kwargs = inputs_to_forward()
+            self.test_config["rtol"] = test_kwargs["rtol"]
+            self.test_config["atol"] = test_kwargs["atol"]
+            self.test_config["equal_nan"] = test_kwargs["equal_nan"]
+            self.save_mlir(path, *args, **kwargs)
+            expected_results = self.generate_expected_value(*args, **kwargs)
+            self.save_inputs(path, *args)
+            self.save_results(path, *expected_results)
+            self.save_config(path)
 
     def generate_expected_value(self, *args):
         results = self.forward(*args)
         return [results]
 
-    def generate_inputs(self):
-        return self.args
-
     @abstractmethod
     def forward(self, *args):
         ...
 
-
-@dataclass
-class RandomSession:
-    generator: torch.Generator = torch.Generator()
-    seed: int = 0
-
-    def __post_init__(self):
-        self.generator.manual_seed(self.seed)
-
     def rand(self, *args, **kwargs):
         if kwargs.get("generator"):
-            raise ValueError("RandomSession uses its own generator")
+            raise ValueError("Set generator with parameter to test function.")
         kwargs["generator"] = self.generator
         return torch.rand(*args, **kwargs)
+
+
+def test(
+    function=None, generator=None, seed=0, rtol=1e-05, atol=1e-08, equal_nan=False
+):
+    """
+    Decorator used to denote that a particular method corresponds
+    to test input used in the forward method.
+
+    The default values for rtol, atol, and equal_nan come from the
+    numpy.allclose's default values listed in the link below.
+    https://numpy.org/devdocs/reference/generated/numpy.allclose.html
+
+    The generator will be seeded with seed and later be passed on
+    to a torch.rand wrapper.
+
+    These values will be saved in the json file and be used when
+    running the test.
+    """
+    if not generator:
+        generator = torch.Generator()
+
+    test_kwargs = {"rtol": rtol, "atol": atol, "equal_nan": equal_nan}
+
+    if function:
+
+        def wrapper(self):
+            self.generator = generator
+            self.generator.manual_seed(seed)
+            args, kwargs = function(self)
+            return args, kwargs, test_kwargs
+
+        return wrapper
+
+    return functools.partial(test, **test_kwargs)
 
 
 class AB(TestGenerator):
     def forward(self, left, right):
         return left @ right
+
+    @test(seed=0)
+    def test_float32(self):
+        left = self.rand(64, 64, dtype=torch.float32)
+        right = self.rand(64, 64, dtype=torch.float32)
+        return ((left, right), {})
+
+    @test(seed=1)
+    def test_float16(self):
+        left = self.rand(64, 64, dtype=torch.float16)
+        right = self.rand(64, 64, dtype=torch.float16)
+        return ((left, right), {})
 
     def get_export_kwargs(self):
         dyn_dim = torch.export.Dim("N")
@@ -126,6 +170,12 @@ class AB_bfloat16(TestGenerator):
         res = left @ right
         return res.to(torch.float32)
 
+    @test(atol=1e-2, rtol=1e-2, seed=2)
+    def test_from_float32(self):
+        left = self.rand(64, 64, dtype=torch.float32)
+        right = self.rand(64, 64, dtype=torch.float32)
+        return ((left, right), {})
+
     def get_export_kwargs(self):
         dyn_dim = torch.export.Dim("N")
         dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
@@ -136,65 +186,117 @@ class ATB(TestGenerator):
     def forward(self, left, right):
         return left.t() @ right
 
+    @test(seed=3)
+    def test_float32(self):
+        left = self.rand(64, 64, dtype=torch.float32)
+        right = self.rand(64, 64, dtype=torch.float32)
+        return ((left, right), {})
+
+    @test(seed=4)
+    def test_float16(self):
+        left = self.rand(64, 64, dtype=torch.float16)
+        right = self.rand(64, 64, dtype=torch.float16)
+        return ((left, right), {})
+
 
 class ABT(TestGenerator):
     def forward(self, left, right):
         return left @ right.t()
 
+    @test(seed=5)
+    def test_float32(self):
+        left = self.rand(64, 64, dtype=torch.float32)
+        right = self.rand(64, 64, dtype=torch.float32)
+        return ((left, right), {})
 
-class ABplusC(TestGenerator):
+    @test(seed=6)
+    def test_float16(self):
+        left = self.rand(64, 64, dtype=torch.float16)
+        right = self.rand(64, 64, dtype=torch.float16)
+        return ((left, right), {})
+
+
+class ABPlusC(TestGenerator):
     def forward(self, A, B, C):
         return A @ B + C
+
+    @test(seed=7)
+    def test_float32(self):
+        return (
+            (
+                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
+                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
+                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
+            ),
+            {},
+        )
+
+    @test(seed=8)
+    def test_float16(self):
+        return (
+            (
+                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
+                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
+                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
+            ),
+            {},
+        )
 
 
 class ReluABPlusC(TestGenerator):
     def forward(self, A, B, C):
         return torch.relu(A @ B + C)
 
+    @test(seed=9)
+    def test_float32(self):
+        return (
+            (
+                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
+                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
+                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
+            ),
+            {},
+        )
+
+    @test(seed=10)
+    def test_float16(self):
+        return (
+            (
+                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
+                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
+                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
+            ),
+            {},
+        )
+
 
 class GeluABPlusC(TestGenerator):
     def forward(self, A, B, C):
         return torch.ops.aten.gelu.default(A @ B + C)
 
+    @test(seed=11, atol=1e-5, rtol=1e-4)
+    def test_float32(self):
+        return (
+            (
+                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
+                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
+                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
+            ),
+            {},
+        )
 
-# TODO: Future PR, itertools.product where it makes sense
-for dtype in [torch.float32]:
-    for cls in [AB_bfloat16]:
-        random = RandomSession()
-        inputs = (random.rand(64, 64, dtype=dtype), random.rand(64, 64, dtype=dtype))
-        instance = cls(*inputs, name=cls.__name__)
-        instance.generate_test(atol=1e-2, rtol=1e-2)
-for dtype in [torch.float32, torch.float16]:
-    for cls in [AB]:
-        random = RandomSession()
-        inputs = (random.rand(64, 64, dtype=dtype), random.rand(64, 64, dtype=dtype))
-        instance = cls(*inputs, name=cls.__name__ + str(dtype))
-        instance.generate_test()
-    for cls in [ATB, ABT]:
-        random = RandomSession()
-        inputs = (random.rand(64, 64, dtype=dtype), random.rand(64, 64, dtype=dtype))
-        instance = cls(*inputs, name=cls.__name__ + str(dtype))
-        instance.generate_test()
-    for cls in [ABplusC, ReluABPlusC, GeluABPlusC]:
-        random = RandomSession()
-        inputs = (
-            random.rand(64, 64, dtype=dtype) * 2 - 1,
-            random.rand(64, 64, dtype=dtype) * 2 - 1,
-            random.rand(64, 64, dtype=dtype) * 2 - 1,
+    @test(seed=12, atol=1e-3, rtol=1e-3)
+    def test_float16(self):
+        return (
+            (
+                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
+                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
+                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
+            ),
+            {},
         )
-        instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
-        instance.generate_test()
-    for cls in [GeluABPlusC]:
-        random = RandomSession()
-        inputs = (
-            random.rand(64, 64, dtype=dtype) * 0.1 - 0.05,
-            random.rand(64, 64, dtype=dtype) * 0.1 - 0.05,
-            random.rand(64, 64, dtype=dtype) * 0.1 - 0.05,
-        )
-        instance = cls(*inputs, name=cls.__name__ + "_" + str(dtype))
-        if cls == GeluABPlusC:
-            match dtype:
-                case torch.float32:
-                    instance.generate_test(atol=1e-5, rtol=1e-4)
-                case torch.float16:
-                    instance.generate_test(atol=1e-3, rtol=1e-3)
+
+
+for cls in [AB, AB_bfloat16, ATB, ABT, ABPlusC, ReluABPlusC, GeluABPlusC]:
+    instance = cls()
+    instance.generate_tests()
