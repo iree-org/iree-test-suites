@@ -31,7 +31,6 @@ class TestGenerator(torch.nn.Module, ABC):
         super().__init__()
 
     def save_mlir(self, *args):
-        # TODO: export_kwargs should influence name?
         exported_module = aot.export(self, *args, **self.export_kwargs)
         exported_module.save_mlir(self.path / "test.mlir")
 
