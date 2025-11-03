@@ -18,11 +18,8 @@ def camel_to_snake(name):
 
 
 class TestGenerator(torch.nn.Module, ABC):
-    def __init__(self, *args, name=None, export_kwargs=None, **kwargs):
+    def __init__(self, *args, name=None, **kwargs):
         assert name
-        self.export_kwargs = export_kwargs
-        if not self.export_kwargs:
-            self.export_kwargs = {}
         self.args = args
         self.kwargs = kwargs
         self.path = Path(camel_to_snake("Test" + name))
@@ -30,8 +27,13 @@ class TestGenerator(torch.nn.Module, ABC):
         self.test_config = {}
         super().__init__()
 
+    def get_export_kwargs(self):
+        # Default implementation is that exported kwargs is an empty dictionary.
+        return {}
+
     def save_mlir(self, *args):
-        exported_module = aot.export(self, *args, **self.export_kwargs)
+        export_kwargs = self.get_export_kwargs()
+        exported_module = aot.export(self, *args, **export_kwargs)
         exported_module.save_mlir(self.path / "test.mlir")
 
     def save_inputs(self, *args):
@@ -111,6 +113,11 @@ class AB(TestGenerator):
     def forward(self, left, right):
         return left @ right
 
+    def get_export_kwargs(self):
+        dyn_dim = torch.export.Dim("N")
+        dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
+        return {"dynamic_shapes": dynamic_shapes}
+
 
 class AB_bfloat16(TestGenerator):
     def forward(self, left, right):
@@ -118,6 +125,11 @@ class AB_bfloat16(TestGenerator):
         right = right.to(torch.bfloat16)
         res = left @ right
         return res.to(torch.float32)
+
+    def get_export_kwargs(self):
+        dyn_dim = torch.export.Dim("N")
+        dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
+        return {"dynamic_shapes": dynamic_shapes}
 
 
 class ATB(TestGenerator):
@@ -150,25 +162,13 @@ for dtype in [torch.float32]:
     for cls in [AB_bfloat16]:
         random = RandomSession()
         inputs = (random.rand(64, 64, dtype=dtype), random.rand(64, 64, dtype=dtype))
-        dyn_dim = torch.export.Dim("N")
-        dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
-        instance = cls(
-            *inputs,
-            name=cls.__name__,
-            export_kwargs={"dynamic_shapes": dynamic_shapes},
-        )
+        instance = cls(*inputs, name=cls.__name__)
         instance.generate_test(atol=1e-2, rtol=1e-2)
 for dtype in [torch.float32, torch.float16]:
     for cls in [AB]:
         random = RandomSession()
         inputs = (random.rand(64, 64, dtype=dtype), random.rand(64, 64, dtype=dtype))
-        dyn_dim = torch.export.Dim("N")
-        dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
-        instance = cls(
-            *inputs,
-            name=cls.__name__ + str(dtype),
-            export_kwargs={"dynamic_shapes": dynamic_shapes},
-        )
+        instance = cls(*inputs, name=cls.__name__ + str(dtype))
         instance.generate_test()
     for cls in [ATB, ABT]:
         random = RandomSession()
