@@ -106,3 +106,56 @@ class MyTest(TestGenerator):
 # the test.
 MyTest().generate_tests()
 ```
+
+## Test case structure
+
+Each test case is a folder containing a few files:
+
+```text
+[test case name]/
+  test.mlir
+  input0.npy
+  input1.npy
+  ...
+  expected_output0.npy
+  expected_output1.npy
+  ...
+  run_module_io_flags.json
+```
+
+* `test.mlir` is in torch-mlir dialect.
+* `input0.npy` and `expected_output.npy` files correspond to any of number of program
+  inputs and outputs for one test case
+* `run_module_io_flags.json` is a json file similar the flagfile.
+  However, this file is a json file and supports additional metadata.
+  For example,
+    * `rtol` is relative tolerance,
+    * `atol` is absolute tolerance, and
+    * `equal_nan` which correpond to the parameters given to `numpy.allclose`.
+    * Additionally, `ovserved_outputs` corresponds to the option passed to the `output` flag
+      when using iree-run-module.
+
+```json
+{
+    "rtol": 1e-05,
+    "atol": 1e-08,
+    "equal_nan": false,
+    "inputs": [
+        "input0.npy",
+        "input1.npy"
+    ],
+    "expected_outputs": [
+        "expected_result0.npy"
+    ],
+    "observed_outputs": [
+        "observed_result0.npy"
+    ]
+}
+```
+
+### Advanced pytest usage
+
+* The `--ignore-xfails` option will ignore any expected compile or runtime
+  failures.
+* The `--skip-all-runs` option will only `iree-compile` tests, not
+  `iree-run-module` tests.
