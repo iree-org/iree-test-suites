@@ -1,0 +1,7 @@
+# Requirements for using IREE from nightly packages.
+
+# Include base requirements.
+-r requirements.txt
+
+iree-turbine
+torch

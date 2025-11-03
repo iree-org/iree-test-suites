@@ -250,7 +250,6 @@ class IreeCompileRunItem(pytest.Item):
         self.user_properties.append(("input_mlir_name", self.spec.input_mlir_name))
         self.user_properties.append(("test_name", self.spec.test_name))
 
-        # TODO(scotttodd): swap cwd for a temp path?
         self.test_cwd = self.spec.test_directory
 
         vmfb_name = f"{self.spec.input_mlir_stem}_{self.spec.test_name}.vmfb"
@@ -418,7 +417,6 @@ class IreeCompileException(Exception):
             + cwd.relative_to(THIS_DIR).as_posix()
         )
 
-        # TODO(scotttodd): handle large sources somehow (truncate, skip, link to source, etc.)
         with open(cwd / input_mlir_name) as f:
             input_mlir = f.read()
 
@@ -461,7 +459,6 @@ class IreeRunException(Exception):
             + cwd.relative_to(THIS_DIR).as_posix()
         )
 
-        # TODO(scotttodd): handle large sources somehow (truncate, skip, link to source, etc.)
         with open(cwd / input_mlir_name) as f:
             input_mlir = f.read()
 
