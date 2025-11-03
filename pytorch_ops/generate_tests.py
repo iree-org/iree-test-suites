@@ -21,6 +21,7 @@ def camel_to_snake(name):
 class TestGenerator(torch.nn.Module, ABC):
     def __init__(self):
         self.test_config = {}
+        self.generator = None
         super().__init__()
 
     def get_export_kwargs(self):
@@ -32,16 +33,17 @@ class TestGenerator(torch.nn.Module, ABC):
         exported_module = aot.export(self, *args, **export_kwargs)
         exported_module.save_mlir(path / "test.mlir")
 
-    def save_inputs(self, root_path, *args):
+    def save_inputs(self, root_path, test_config, *args):
         inputs = []
         for idx, input in enumerate(args):
             fname = f"input{idx}.npy"
             path = root_path / fname
             np.save(path, input)
             inputs.append(fname)
-        self.test_config["inputs"] = inputs
+        test_config["inputs"] = inputs
+        return test_config
 
-    def save_results(self, root_path, *args):
+    def save_results(self, root_path, test_config, *args):
         expected_outputs = []
         observed_outputs = []
         for idx, result in enumerate(args):
@@ -51,23 +53,16 @@ class TestGenerator(torch.nn.Module, ABC):
             np.save(path, result)
             expected_outputs.append(fname_expected)
             observed_outputs.append(fname_observed)
-        self.test_config["expected_outputs"] = expected_outputs
-        self.test_config["observed_outputs"] = observed_outputs
+        test_config["expected_outputs"] = expected_outputs
+        test_config["observed_outputs"] = observed_outputs
+        return test_config
 
-    def save_config(self, root_path):
+    def save_config(self, root_path, test_config):
         with open(root_path / "run_module_io_flags.json", "w") as config:
-            json.dump(self.test_config, config, indent=4)
+            json.dump(test_config, config, indent=4)
             print("", file=config)
 
     def generate_tests(self):
-        """
-        The default values for rtol, atol, and equal_nan come from the
-        numpy.allclose's default values listed in the link below.
-        https://numpy.org/devdocs/reference/generated/numpy.allclose.html
-
-        These values will be saved in the json file and be used when
-        running the test.
-        """
         for name in sorted(dir(self)):
             if not name.startswith("test_"):
                 continue
@@ -76,20 +71,22 @@ class TestGenerator(torch.nn.Module, ABC):
             if not callable(attr):
                 continue
 
+            test_config = {}
             pathname = f"test_{camel_to_snake(self._get_name())}_{name[5:]}"
             path = Path(pathname)
             path.mkdir(exist_ok=True)
             inputs_to_forward = attr
 
             args, kwargs, test_kwargs = inputs_to_forward()
-            self.test_config["rtol"] = test_kwargs["rtol"]
-            self.test_config["atol"] = test_kwargs["atol"]
-            self.test_config["equal_nan"] = test_kwargs["equal_nan"]
+            test_config["rtol"] = test_kwargs["rtol"]
+            test_config["atol"] = test_kwargs["atol"]
+            test_config["equal_nan"] = test_kwargs["equal_nan"]
+
             self.save_mlir(path, *args, **kwargs)
             expected_results = self.generate_expected_value(*args, **kwargs)
-            self.save_inputs(path, *args)
-            self.save_results(path, *expected_results)
-            self.save_config(path)
+            test_config = self.save_inputs(path, test_config, *args)
+            test_config = self.save_results(path, test_config, *expected_results)
+            self.save_config(path, test_config)
 
     def generate_expected_value(self, *args):
         results = self.forward(*args)
@@ -134,6 +131,7 @@ def test(
             self.generator = generator
             self.generator.manual_seed(seed)
             args, kwargs = function(self)
+            self.generator = None
             return args, kwargs, test_kwargs
 
         return wrapper
