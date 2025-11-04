@@ -8,3 +8,4 @@ pytest-html
 pytest-reportlog
 pytest-timeout
 pytest-xdist
+numpy
