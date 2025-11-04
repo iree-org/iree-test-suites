@@ -79,7 +79,7 @@ When writing new tests take into account the following guidelines.
 # as a base class for a torch Module,
 # use this class instead.
 #             V
-class MyTest(TestGenerator):
+class MyTest(QualityTestGenerator):
 
   def forward(self, left, right):
     return left @ right

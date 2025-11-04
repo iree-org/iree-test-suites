@@ -18,7 +18,7 @@ def camel_to_snake(name):
     return result
 
 
-class TestGenerator(torch.nn.Module, ABC):
+class QualityTestGenerator(torch.nn.Module, ABC):
     """
     Class used to generate correctness tests
     for `torch.nn.Module`s. These tests are MLIR modules that have
@@ -32,7 +32,7 @@ class TestGenerator(torch.nn.Module, ABC):
     # Instead of using torch.nn.Module
     # as a base class for a torch Module,
     # use this class instead.
-    class MyTest(TestGenerator):
+    class MyTest(QualityTestGenerator):
 
       def forward(self, left, right):
         return left @ right
@@ -208,7 +208,7 @@ def test(
     return functools.partial(test, **test_kwargs)
 
 
-class AB(TestGenerator):
+class AB(QualityTestGenerator):
     def forward(self, left, right):
         return left @ right
 
@@ -230,7 +230,7 @@ class AB(TestGenerator):
         return {"dynamic_shapes": dynamic_shapes}
 
 
-class AB_bfloat16(TestGenerator):
+class AB_bfloat16(QualityTestGenerator):
     def forward(self, left, right):
         left = left.to(torch.bfloat16)
         right = right.to(torch.bfloat16)
@@ -249,7 +249,7 @@ class AB_bfloat16(TestGenerator):
         return {"dynamic_shapes": dynamic_shapes}
 
 
-class ATB(TestGenerator):
+class ATB(QualityTestGenerator):
     def forward(self, left, right):
         return left.t() @ right
 
@@ -266,7 +266,7 @@ class ATB(TestGenerator):
         return ((left, right), {})
 
 
-class ABT(TestGenerator):
+class ABT(QualityTestGenerator):
     def forward(self, left, right):
         return left @ right.t()
 
@@ -283,7 +283,7 @@ class ABT(TestGenerator):
         return ((left, right), {})
 
 
-class ABPlusC(TestGenerator):
+class ABPlusC(QualityTestGenerator):
     def forward(self, A, B, C):
         return A @ B + C
 
@@ -310,7 +310,7 @@ class ABPlusC(TestGenerator):
         )
 
 
-class ReluABPlusC(TestGenerator):
+class ReluABPlusC(QualityTestGenerator):
     def forward(self, A, B, C):
         return torch.relu(A @ B + C)
 
@@ -337,7 +337,7 @@ class ReluABPlusC(TestGenerator):
         )
 
 
-class GeluABPlusC(TestGenerator):
+class GeluABPlusC(QualityTestGenerator):
     def forward(self, A, B, C):
         return torch.ops.aten.gelu.default(A @ B + C)
 
