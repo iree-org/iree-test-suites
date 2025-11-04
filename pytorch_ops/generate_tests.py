@@ -65,7 +65,14 @@ class QualityTestGenerator(torch.nn.Module, ABC):
         super().__init__()
 
     def get_export_kwargs(self):
-        """Default implementation returns an empty dictionary."""
+        """Default implementation returns an empty dictionary.
+
+        This dictionary will be passed to IREE's aot.export.
+        See here for aot.export's documentation on possible kwargs
+        https://github.com/iree-org/iree-turbine/blob/fabcbad626860d190623d1a1ee432efcf9174315/iree/turbine/aot/exporter.py#L228-L233
+        and here for torch.export's documentation
+        https://docs.pytorch.org/docs/stable/export/api_reference.html
+        """
         return {}
 
     def save_mlir(self, path, *args):
