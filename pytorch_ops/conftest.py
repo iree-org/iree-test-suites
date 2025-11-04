@@ -413,7 +413,7 @@ class IreeCompileException(Exception):
             outs = str(process.stdout)
 
         test_github_url = (
-            "https://github.com/iree-org/iree-test-suites/blob/main/onnx_ops/"
+            "https://github.com/iree-org/iree-test-suites/blob/main/pytorch_ops/"
             + cwd.relative_to(THIS_DIR).as_posix()
         )
 
@@ -455,7 +455,7 @@ class IreeRunException(Exception):
             outs = str(process.stdout)
 
         test_github_url = (
-            "https://github.com/iree-org/iree-test-suites/blob/main/onnx_ops/"
+            "https://github.com/iree-org/iree-test-suites/blob/main/pytorch_ops/"
             + cwd.relative_to(THIS_DIR).as_posix()
         )
 
