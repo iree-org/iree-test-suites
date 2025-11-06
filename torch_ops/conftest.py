@@ -53,7 +53,7 @@ def pytest_addoption(parser):
     ]
     if not default_config_files:
         default_config_files = [
-            THIS_DIR / "configs" / "pytorch_ops_cpu_llvm_sync.json",
+            THIS_DIR / "configs" / "torch_ops_cpu_llvm_sync.json",
         ]
     parser.addoption(
         "--config-files",
@@ -413,7 +413,7 @@ class IreeCompileException(Exception):
             outs = str(process.stdout)
 
         test_github_url = (
-            "https://github.com/iree-org/iree-test-suites/blob/main/pytorch_ops/"
+            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
             + cwd.relative_to(THIS_DIR).as_posix()
         )
 
@@ -455,7 +455,7 @@ class IreeRunException(Exception):
             outs = str(process.stdout)
 
         test_github_url = (
-            "https://github.com/iree-org/iree-test-suites/blob/main/pytorch_ops/"
+            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
             + cwd.relative_to(THIS_DIR).as_posix()
         )
 

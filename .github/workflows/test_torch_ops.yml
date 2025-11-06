@@ -10,12 +10,12 @@ on:
     branches:
       - main
     paths:
-      - ".github/workflows/test_pytorch_ops.yml"
-      - "pytorch_ops/**"
+      - ".github/workflows/test_torch_ops.yml"
+      - "torch_ops/**"
   pull_request:
     paths:
-      - ".github/workflows/test_pytorch_ops.yml"
-      - "pytorch_ops/**"
+      - ".github/workflows/test_torch_ops.yml"
+      - "torch_ops/**"
   workflow_dispatch:
   schedule:
     # Runs at 3:00 PM UTC, which is 8:00 AM PST
@@ -35,8 +35,8 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       VENV_DIR: ${{ github.workspace }}/.venv
-      CONFIG_FILE_PATH: pytorch_ops/configs/pytorch_ops_cpu_llvm_sync.json
-      HTML_REPORT_PATH: pytorch_ops/pytorch_ops_test_report_cpu_llvm_sync.html
+      CONFIG_FILE_PATH: torch_ops/configs/torch_ops_cpu_llvm_sync.json
+      HTML_REPORT_PATH: torch_ops/torch_ops_test_report_cpu_llvm_sync.html
     steps:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -51,24 +51,24 @@ jobs:
       - name: Install IREE nightly release Python packages
         run: |
           source ${VENV_DIR}/bin/activate
-          python3 -m pip install -r pytorch_ops/requirements-iree.txt
+          python3 -m pip install -r torch_ops/requirements-iree.txt
 
       # Run tests and output new config files as needed.
       - name: Run Torch ops test suite
         continue-on-error: true
         run: |
           source ${VENV_DIR}/bin/activate
-          pytest pytorch_ops/ \
+          pytest torch_ops/ \
             -n auto \
             -rA \
             --timeout=30 \
             --durations=10 \
             --html=${HTML_REPORT_PATH} \
             --self-contained-html \
-            --report-log=/tmp/pytorch_ops_cpu_logs.json \
+            --report-log=/tmp/torch_ops_cpu_logs.json \
             --config-files=${CONFIG_FILE_PATH}
       - name: Upload HTML report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: pytorch_ops_test_report_cpu_llvm_sync.html
+          name: torch_ops_test_report_cpu_llvm_sync.html
           path: ${{ env.HTML_REPORT_PATH }}
