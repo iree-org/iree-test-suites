@@ -30,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-pytorch-ops:
+  test-torch-ops:
     if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
     runs-on: ubuntu-24.04
     env:
