@@ -138,8 +138,8 @@ class QualityTestGenerator(torch.nn.Module, ABC):
 
             test_config = {}
             pathname = f"test_{camel_to_snake(self._get_name())}_{name[5:]}"
-            path = Path(pathname)
-            path.mkdir(exist_ok=True)
+            path = "generated" / Path(pathname)
+            path.mkdir(parents=True, exist_ok=True)
             inputs_to_forward = attr
 
             args, kwargs, test_kwargs = inputs_to_forward()
