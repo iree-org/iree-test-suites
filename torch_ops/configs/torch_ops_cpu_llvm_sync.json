@@ -4,6 +4,7 @@
     "--iree-hal-target-device=local",
     "--iree-hal-target-backends=llvm-cpu",
     "--iree-llvmcpu-target-cpu=host"
+  ],
   "iree_run_module_flags": [],
   "skip_compile_tests": [],
   "skip_run_tests": [],
