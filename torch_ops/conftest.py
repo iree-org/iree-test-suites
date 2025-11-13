@@ -7,6 +7,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
+import csv
 import logging
 import pyjson5
 import os
@@ -286,7 +287,7 @@ class IreeBaseTest(pytest.Item):
             run_args.append(f"--input=@{input}")
         for output in json["observed_outputs"]:
             run_args.append(f"--output=@{output}")
-        self.run_cmd = subprocess.list2cmdline(run_args)
+        self.run_cmd = run_args
         self.run_options = json
 
     def test_compile(self):
@@ -325,10 +326,6 @@ class IreeBaseTest(pytest.Item):
     # Defining this for pytest-retry to avoid an AttributeError.
     def _initrequest(self):
         pass
-
-
-class IreeCompileRunItem(IreeBaseTest):
-    """Test invocation item for an IREE compile + run test case."""
 
     def runtest(self):
         # We want to test two phases: 'compile', and 'run'.
@@ -385,12 +382,17 @@ class IreeCompileRunItem(IreeBaseTest):
                 raise IreeXFailCompileRunException from e
             raise e
 
+
+class IreeCompileRunItem(IreeBaseTest):
+    """Test invocation item for an IREE compile + run test case."""
+
     def test_run(self):
         cwd = self.test_cwd
         logging.getLogger().info(
             f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
         )
 
+        self.run_cmd = subprocess.list2cmdline(self.run_cmd)
         proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
         if proc.returncode != 0:
             raise IreeRunException(
@@ -419,8 +421,50 @@ class IreeCompileRunItem(IreeBaseTest):
 class IreeBenchmarkItem(IreeBaseTest):
     """Test invocation item for an IREE compile + run test case."""
 
-    def runtest(self):
-        assert False
+    def test_run(self):
+        cwd = self.test_cwd
+        logging.getLogger().info(
+            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
+        )
+
+        # TODO(@amd-eochoalo): investigate how to use the json
+        # format.
+        outfile = "test"
+        self.run_cmd = [
+            "rocprofv3",
+            "--kernel-trace",
+            "--output-file",
+            outfile,
+            "--output-format",
+            "csv",
+            "--",
+        ] + self.run_cmd
+        self.run_cmd = subprocess.list2cmdline(self.run_cmd)
+
+        # appended automatically by rocprofv3
+        outfile = outfile + "_kernel_trace.csv"
+        outfile = cwd / outfile
+        proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
+
+        # Unit is ns according to
+        # https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/docs-6.2.1/how-to/using-rocprofv3.html#output-file-fields
+        agg_gpu_timestamp_ns = 0
+
+        with open(outfile, "r") as f:
+            perfdata = csv.DictReader(f)
+            for row in perfdata:
+                agg_gpu_timestamp_ns += int(row["End_Timestamp"]) - int(
+                    row["Start_Timestamp"]
+                )
+
+        if proc.returncode != 0:
+            raise IreeRunException(
+                process=proc,
+                cwd=cwd,
+                input_mlir_name=self.spec.input_mlir_name,
+                compile_cmd=self.compile_cmd,
+                run_cmd=self.run_cmd,
+            )
 
 
 class IreeCompileException(Exception):
