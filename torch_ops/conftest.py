@@ -446,6 +446,15 @@ class IreeBenchmarkItem(IreeBaseTest):
         outfile = cwd / outfile
         proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
 
+        if proc.returncode != 0:
+            raise IreeRunException(
+                process=proc,
+                cwd=cwd,
+                input_mlir_name=self.spec.input_mlir_name,
+                compile_cmd=self.compile_cmd,
+                run_cmd=self.run_cmd,
+            )
+
         # Unit is ns according to
         # https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/docs-6.2.1/how-to/using-rocprofv3.html#output-file-fields
         agg_gpu_timestamp_ns = 0
@@ -457,14 +466,8 @@ class IreeBenchmarkItem(IreeBaseTest):
                     row["Start_Timestamp"]
                 )
 
-        if proc.returncode != 0:
-            raise IreeRunException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-                run_cmd=self.run_cmd,
-            )
+        # TODO(@amd-eochoalo): Compare against golden time
+        # for a specific machine.
 
 
 class IreeCompileException(Exception):
