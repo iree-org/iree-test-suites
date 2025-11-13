@@ -1,4 +1,14 @@
 {
+    "markers": {
+        "benchmark": {
+            "args": [],
+            "kwargs": {}
+        },
+        "correctness": {
+            "args": [],
+            "kwargs": {}
+        }
+    },
     "rtol": 1e-05,
     "atol": 1e-08,
     "equal_nan": false,

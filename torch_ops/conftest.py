@@ -7,6 +7,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
+import csv
 import logging
 import pyjson5
 import os
@@ -229,11 +230,29 @@ class MlirCompileRunTest(pytest.File):
                     expect_run_success=expect_run_success,
                     skip_run=skip_run,
                 )
-                yield IreeCompileRunItem.from_parent(self, name=item_name, spec=spec)
+                with open(test_directory / spec.data_flagfile_name, "r") as config:
+                    json = pyjson5.load(config)
+
+                markers = json["markers"]
+
+                for marker_name, args_kwargs in markers.items():
+                    marker_callable = getattr(pytest.mark, marker_name)
+                    marker_args = args_kwargs["args"]
+                    marker_kwargs = args_kwargs["kwargs"]
+                    if marker_name == "correctness":
+                        test = IreeCompileRunItem.from_parent(
+                            self, name=item_name, spec=spec
+                        )
+                    elif marker_name == "benchmark":
+                        test = IreeBenchmarkItem.from_parent(
+                            self, name=item_name, spec=spec
+                        )
+                    test.add_marker(marker_callable(*marker_args, **marker_kwargs))
+                    yield test
 
 
-class IreeCompileRunItem(pytest.Item):
-    """Test invocation item for an IREE compile + run test case."""
+class IreeBaseTest(pytest.Item):
+    """Test invocation item for an IREE test case."""
 
     spec: IreeCompileAndRunTestSpec
 
@@ -263,12 +282,50 @@ class IreeCompileRunItem(pytest.Item):
         run_args.extend(self.spec.iree_run_module_flags)
         with open(self.test_cwd / self.spec.data_flagfile_name, "r") as config:
             json = pyjson5.load(config)
+        self.markers = json["markers"]
         for input in json["inputs"]:
             run_args.append(f"--input=@{input}")
         for output in json["observed_outputs"]:
             run_args.append(f"--output=@{output}")
-        self.run_cmd = subprocess.list2cmdline(run_args)
+        self.run_cmd = run_args
         self.run_options = json
+
+    def test_compile(self):
+        cwd = self.test_cwd
+        logging.getLogger().info(
+            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
+        )
+        proc = subprocess.run(
+            self.compile_cmd, shell=True, capture_output=True, cwd=cwd
+        )
+        if proc.returncode != 0:
+            raise IreeCompileException(
+                process=proc,
+                cwd=cwd,
+                input_mlir_name=self.spec.input_mlir_name,
+                compile_cmd=self.compile_cmd,
+            )
+
+    def repr_failure(self, excinfo):
+        """Called when self.runtest() raises an exception."""
+        if isinstance(excinfo.value, (IreeCompileException, IreeRunException)):
+            return "\n".join(excinfo.value.args)
+        if isinstance(excinfo.value, IreeXFailCompileRunException):
+            return (
+                "Expected compile failure but run failed (move to 'expected_run_failures'):\n"
+                + "\n".join(excinfo.value.__cause__.args)
+            )
+        return super().repr_failure(excinfo)
+
+    def reportinfo(self):
+        display_name = (
+            f"{self.path.parent.name}::{self.spec.input_mlir_name}::{self.name}"
+        )
+        return self.path, 0, f"IREE compile and run: {display_name}"
+
+    # Defining this for pytest-retry to avoid an AttributeError.
+    def _initrequest(self):
+        pass
 
     def runtest(self):
         # We want to test two phases: 'compile', and 'run'.
@@ -325,21 +382,9 @@ class IreeCompileRunItem(pytest.Item):
                 raise IreeXFailCompileRunException from e
             raise e
 
-    def test_compile(self):
-        cwd = self.test_cwd
-        logging.getLogger().info(
-            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
-        )
-        proc = subprocess.run(
-            self.compile_cmd, shell=True, capture_output=True, cwd=cwd
-        )
-        if proc.returncode != 0:
-            raise IreeCompileException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-            )
+
+class IreeCompileRunItem(IreeBaseTest):
+    """Test invocation item for an IREE compile + run test case."""
 
     def test_run(self):
         cwd = self.test_cwd
@@ -347,6 +392,7 @@ class IreeCompileRunItem(pytest.Item):
             f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
         )
 
+        self.run_cmd = subprocess.list2cmdline(self.run_cmd)
         proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
         if proc.returncode != 0:
             raise IreeRunException(
@@ -371,26 +417,57 @@ class IreeCompileRunItem(pytest.Item):
                 exp_arr, obs_arr, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
 
-    def repr_failure(self, excinfo):
-        """Called when self.runtest() raises an exception."""
-        if isinstance(excinfo.value, (IreeCompileException, IreeRunException)):
-            return "\n".join(excinfo.value.args)
-        if isinstance(excinfo.value, IreeXFailCompileRunException):
-            return (
-                "Expected compile failure but run failed (move to 'expected_run_failures'):\n"
-                + "\n".join(excinfo.value.__cause__.args)
-            )
-        return super().repr_failure(excinfo)
 
-    def reportinfo(self):
-        display_name = (
-            f"{self.path.parent.name}::{self.spec.input_mlir_name}::{self.name}"
+class IreeBenchmarkItem(IreeBaseTest):
+    """Test invocation item for an IREE compile + run test case."""
+
+    def test_run(self):
+        cwd = self.test_cwd
+        logging.getLogger().info(
+            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
         )
-        return self.path, 0, f"IREE compile and run: {display_name}"
 
-    # Defining this for pytest-retry to avoid an AttributeError.
-    def _initrequest(self):
-        pass
+        # TODO(@amd-eochoalo): investigate how to use the json
+        # format.
+        outfile = "test"
+        self.run_cmd = [
+            "rocprofv3",
+            "--kernel-trace",
+            "--output-file",
+            outfile,
+            "--output-format",
+            "csv",
+            "--",
+        ] + self.run_cmd
+        self.run_cmd = subprocess.list2cmdline(self.run_cmd)
+
+        # appended automatically by rocprofv3
+        outfile = outfile + "_kernel_trace.csv"
+        outfile = cwd / outfile
+        proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
+
+        if proc.returncode != 0:
+            raise IreeRunException(
+                process=proc,
+                cwd=cwd,
+                input_mlir_name=self.spec.input_mlir_name,
+                compile_cmd=self.compile_cmd,
+                run_cmd=self.run_cmd,
+            )
+
+        # Unit is ns according to
+        # https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/docs-6.2.1/how-to/using-rocprofv3.html#output-file-fields
+        agg_gpu_timestamp_ns = 0
+
+        with open(outfile, "r") as f:
+            perfdata = csv.DictReader(f)
+            for row in perfdata:
+                agg_gpu_timestamp_ns += int(row["End_Timestamp"]) - int(
+                    row["Start_Timestamp"]
+                )
+
+        # TODO(@amd-eochoalo): Compare against golden time
+        # for a specific machine.
 
 
 class IreeCompileException(Exception):
