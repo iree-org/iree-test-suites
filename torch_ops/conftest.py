@@ -263,12 +263,19 @@ class IreeCompileRunItem(pytest.Item):
         run_args.extend(self.spec.iree_run_module_flags)
         with open(self.test_cwd / self.spec.data_flagfile_name, "r") as config:
             json = pyjson5.load(config)
+        self.markers = json["markers"]
         for input in json["inputs"]:
             run_args.append(f"--input=@{input}")
         for output in json["observed_outputs"]:
             run_args.append(f"--output=@{output}")
         self.run_cmd = subprocess.list2cmdline(run_args)
         self.run_options = json
+
+        for marker_name, args_kwargs in self.markers.items():
+            marker_callable = getattr(pytest.mark, marker_name)
+            marker_args = args_kwargs["args"]
+            marker_kwargs = args_kwargs["kwargs"]
+            self.add_marker(marker_callable(*marker_args, **marker_kwargs))
 
     def runtest(self):
         # We want to test two phases: 'compile', and 'run'.
