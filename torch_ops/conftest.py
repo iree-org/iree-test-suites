@@ -232,8 +232,8 @@ class MlirCompileRunTest(pytest.File):
                 yield IreeCompileRunItem.from_parent(self, name=item_name, spec=spec)
 
 
-class IreeCompileRunItem(pytest.Item):
-    """Test invocation item for an IREE compile + run test case."""
+class IreeBaseTest(pytest.Item):
+    """Test invocation item for an IREE test case."""
 
     spec: IreeCompileAndRunTestSpec
 
@@ -276,6 +276,47 @@ class IreeCompileRunItem(pytest.Item):
             marker_args = args_kwargs["args"]
             marker_kwargs = args_kwargs["kwargs"]
             self.add_marker(marker_callable(*marker_args, **marker_kwargs))
+
+    def test_compile(self):
+        cwd = self.test_cwd
+        logging.getLogger().info(
+            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
+        )
+        proc = subprocess.run(
+            self.compile_cmd, shell=True, capture_output=True, cwd=cwd
+        )
+        if proc.returncode != 0:
+            raise IreeCompileException(
+                process=proc,
+                cwd=cwd,
+                input_mlir_name=self.spec.input_mlir_name,
+                compile_cmd=self.compile_cmd,
+            )
+
+    def repr_failure(self, excinfo):
+        """Called when self.runtest() raises an exception."""
+        if isinstance(excinfo.value, (IreeCompileException, IreeRunException)):
+            return "\n".join(excinfo.value.args)
+        if isinstance(excinfo.value, IreeXFailCompileRunException):
+            return (
+                "Expected compile failure but run failed (move to 'expected_run_failures'):\n"
+                + "\n".join(excinfo.value.__cause__.args)
+            )
+        return super().repr_failure(excinfo)
+
+    def reportinfo(self):
+        display_name = (
+            f"{self.path.parent.name}::{self.spec.input_mlir_name}::{self.name}"
+        )
+        return self.path, 0, f"IREE compile and run: {display_name}"
+
+    # Defining this for pytest-retry to avoid an AttributeError.
+    def _initrequest(self):
+        pass
+
+
+class IreeCompileRunItem(IreeBaseTest):
+    """Test invocation item for an IREE compile + run test case."""
 
     def runtest(self):
         # We want to test two phases: 'compile', and 'run'.
@@ -332,22 +373,6 @@ class IreeCompileRunItem(pytest.Item):
                 raise IreeXFailCompileRunException from e
             raise e
 
-    def test_compile(self):
-        cwd = self.test_cwd
-        logging.getLogger().info(
-            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
-        )
-        proc = subprocess.run(
-            self.compile_cmd, shell=True, capture_output=True, cwd=cwd
-        )
-        if proc.returncode != 0:
-            raise IreeCompileException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-            )
-
     def test_run(self):
         cwd = self.test_cwd
         logging.getLogger().info(
@@ -377,27 +402,6 @@ class IreeCompileRunItem(pytest.Item):
             assert np.allclose(
                 exp_arr, obs_arr, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
-
-    def repr_failure(self, excinfo):
-        """Called when self.runtest() raises an exception."""
-        if isinstance(excinfo.value, (IreeCompileException, IreeRunException)):
-            return "\n".join(excinfo.value.args)
-        if isinstance(excinfo.value, IreeXFailCompileRunException):
-            return (
-                "Expected compile failure but run failed (move to 'expected_run_failures'):\n"
-                + "\n".join(excinfo.value.__cause__.args)
-            )
-        return super().repr_failure(excinfo)
-
-    def reportinfo(self):
-        display_name = (
-            f"{self.path.parent.name}::{self.spec.input_mlir_name}::{self.name}"
-        )
-        return self.path, 0, f"IREE compile and run: {display_name}"
-
-    # Defining this for pytest-retry to avoid an AttributeError.
-    def _initrequest(self):
-        pass
 
 
 class IreeCompileException(Exception):
