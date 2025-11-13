@@ -1,5 +1,9 @@
 {
     "markers": {
+        "benchmark": {
+            "args": [],
+            "kwargs": {}
+        },
         "correctness": {
             "args": [],
             "kwargs": {}

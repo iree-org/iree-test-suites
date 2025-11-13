@@ -147,7 +147,9 @@ class QualityTestGenerator(torch.nn.Module, ABC):
 
             markers_dict = {}
             for marker in markers:
-                markers_dict.update({ marker.name: { "args" : marker.args, "kwargs" : marker.kwargs }})
+                markers_dict.update(
+                    {marker.name: {"args": marker.args, "kwargs": marker.kwargs}}
+                )
 
             test_config = {"markers": markers_dict}
             pathname = f"test_{camel_to_snake(self._get_name())}_{name[5:]}"
@@ -230,6 +232,7 @@ def test(
 
 
 @pytest.mark.correctness
+@pytest.mark.benchmark
 class AB(QualityTestGenerator):
     def forward(self, left, right):
         return left @ right

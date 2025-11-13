@@ -229,7 +229,25 @@ class MlirCompileRunTest(pytest.File):
                     expect_run_success=expect_run_success,
                     skip_run=skip_run,
                 )
-                yield IreeCompileRunItem.from_parent(self, name=item_name, spec=spec)
+                with open(test_directory / spec.data_flagfile_name, "r") as config:
+                    json = pyjson5.load(config)
+
+                markers = json["markers"]
+
+                for marker_name, args_kwargs in markers.items():
+                    marker_callable = getattr(pytest.mark, marker_name)
+                    marker_args = args_kwargs["args"]
+                    marker_kwargs = args_kwargs["kwargs"]
+                    if marker_name == "correctness":
+                        test = IreeCompileRunItem.from_parent(
+                            self, name=item_name, spec=spec
+                        )
+                    elif marker_name == "benchmark":
+                        test = IreeBenchmarkItem.from_parent(
+                            self, name=item_name, spec=spec
+                        )
+                    test.add_marker(marker_callable(*marker_args, **marker_kwargs))
+                    yield test
 
 
 class IreeBaseTest(pytest.Item):
@@ -270,12 +288,6 @@ class IreeBaseTest(pytest.Item):
             run_args.append(f"--output=@{output}")
         self.run_cmd = subprocess.list2cmdline(run_args)
         self.run_options = json
-
-        for marker_name, args_kwargs in self.markers.items():
-            marker_callable = getattr(pytest.mark, marker_name)
-            marker_args = args_kwargs["args"]
-            marker_kwargs = args_kwargs["kwargs"]
-            self.add_marker(marker_callable(*marker_args, **marker_kwargs))
 
     def test_compile(self):
         cwd = self.test_cwd
@@ -402,6 +414,13 @@ class IreeCompileRunItem(IreeBaseTest):
             assert np.allclose(
                 exp_arr, obs_arr, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
+
+
+class IreeBenchmarkItem(IreeBaseTest):
+    """Test invocation item for an IREE compile + run test case."""
+
+    def runtest(self):
+        assert False
 
 
 class IreeCompileException(Exception):
