@@ -4,6 +4,7 @@ from pathlib import Path
 from dataclasses import dataclass
 import json
 import functools
+import pytest
 
 import torch
 import iree.turbine.aot as aot
@@ -136,7 +137,19 @@ class QualityTestGenerator(torch.nn.Module, ABC):
             if not callable(attr):
                 continue
 
-            test_config = {}
+            # This is for when the class was annotated
+            # with pytest.mark
+            markers = [] if not hasattr(self, "pytestmark") else self.pytestmark
+            if hasattr(attr, "pytestmark"):
+                # This is for when the function was annotated with
+                # pytest.mark
+                markers = attr.pytestmark
+
+            markers_dict = {}
+            for marker in markers:
+                markers_dict.update({ marker.name: { "args" : marker.args, "kwargs" : marker.kwargs }})
+
+            test_config = {"markers": markers_dict}
             pathname = f"test_{camel_to_snake(self._get_name())}_{name[5:]}"
             path = "generated" / Path(pathname)
             path.mkdir(parents=True, exist_ok=True)
@@ -203,6 +216,7 @@ def test(
         if not function.__name__.startswith("test_"):
             raise ValueError("The name of test functions should start with test_")
 
+        @functools.wraps(function)
         def wrapper(self):
             self.generator = generator
             self.generator.manual_seed(seed)
@@ -215,6 +229,7 @@ def test(
     return functools.partial(test, **test_kwargs)
 
 
+@pytest.mark.correctness
 class AB(QualityTestGenerator):
     def forward(self, left, right):
         return left @ right
@@ -237,6 +252,7 @@ class AB(QualityTestGenerator):
         return {"dynamic_shapes": dynamic_shapes}
 
 
+@pytest.mark.correctness
 class AB_bfloat16(QualityTestGenerator):
     def forward(self, left, right):
         left = left.to(torch.bfloat16)
@@ -256,6 +272,7 @@ class AB_bfloat16(QualityTestGenerator):
         return {"dynamic_shapes": dynamic_shapes}
 
 
+@pytest.mark.correctness
 class ATB(QualityTestGenerator):
     def forward(self, left, right):
         return left.t() @ right
@@ -273,6 +290,7 @@ class ATB(QualityTestGenerator):
         return ((left, right), {})
 
 
+@pytest.mark.correctness
 class ABT(QualityTestGenerator):
     def forward(self, left, right):
         return left @ right.t()
@@ -290,6 +308,7 @@ class ABT(QualityTestGenerator):
         return ((left, right), {})
 
 
+@pytest.mark.correctness
 class ABPlusC(QualityTestGenerator):
     def forward(self, A, B, C):
         return A @ B + C
@@ -317,6 +336,7 @@ class ABPlusC(QualityTestGenerator):
         )
 
 
+@pytest.mark.correctness
 class ReluABPlusC(QualityTestGenerator):
     def forward(self, A, B, C):
         return torch.relu(A @ B + C)
@@ -344,6 +364,7 @@ class ReluABPlusC(QualityTestGenerator):
         )
 
 
+@pytest.mark.correctness
 class GeluABPlusC(QualityTestGenerator):
     def forward(self, A, B, C):
         return torch.ops.aten.gelu.default(A @ B + C)

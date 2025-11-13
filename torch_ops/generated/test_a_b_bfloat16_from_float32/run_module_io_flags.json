@@ -1,4 +1,10 @@
 {
+    "markers": {
+        "correctness": {
+            "args": [],
+            "kwargs": {}
+        }
+    },
     "rtol": 0.01,
     "atol": 0.01,
     "equal_nan": false,
