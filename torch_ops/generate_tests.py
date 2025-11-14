@@ -189,6 +189,15 @@ class QualityTestGenerator(torch.nn.Module, ABC):
         return torch.rand(*args, **kwargs)
 
 
+# TODO(@amd-eochoalo): I think this can be made into a pytest.mark.correctness
+# Also, I think one could do something like:
+#
+# - /generated/${model}/
+# - /generated/${model}/model.mlir
+# - /generated/${model}/test_${inputs}/
+# - /generated/${model}/test_${inputs}/config.json
+#
+# And have config.json be the PyTestItem.
 def test(
     function=None, generator=None, seed=0, rtol=1e-05, atol=1e-08, equal_nan=False
 ):
@@ -231,8 +240,8 @@ def test(
     return functools.partial(test, **test_kwargs)
 
 
+@pytest.mark.benchmark(seed=0xbadc0ffee)
 @pytest.mark.correctness
-@pytest.mark.benchmark
 class AB(QualityTestGenerator):
     def forward(self, left, right):
         return left @ right

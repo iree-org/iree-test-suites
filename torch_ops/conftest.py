@@ -418,6 +418,9 @@ class IreeCompileRunItem(IreeBaseTest):
             )
 
 
+# TODO(@amd-eochoalo): Have a version of this that does not depend
+# on rocprofv3 for different targets. Once gpu timestamp is available
+# Remove rocprofv3 dependency and use iree-benchmark-{module,executable}
 class IreeBenchmarkItem(IreeBaseTest):
     """Test invocation item for an IREE compile + run test case."""
 
@@ -427,16 +430,26 @@ class IreeBenchmarkItem(IreeBaseTest):
             f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
         )
 
+        # For this one, we won't be running using a subprocess.
+        import os
+        pid = os.getpid()
+
         # TODO(@amd-eochoalo): investigate how to use the json
         # format.
         outfile = "test"
         self.run_cmd = [
             "rocprofv3",
             "--kernel-trace",
-            "--output-file",
-            outfile,
+
+            # We need CSV as it reports different things from json.
             "--output-format",
             "csv",
+
+            "--kernel-exclude-regex",
+            "__amd_*", # includes __amd_rocclr_copyBuffer
+
+            "--output-file",
+            outfile,
             "--",
         ] + self.run_cmd
         self.run_cmd = subprocess.list2cmdline(self.run_cmd)
@@ -465,6 +478,7 @@ class IreeBenchmarkItem(IreeBaseTest):
                 agg_gpu_timestamp_ns += int(row["End_Timestamp"]) - int(
                     row["Start_Timestamp"]
                 )
+            print(agg_gpu_timestamp_ns)
 
         # TODO(@amd-eochoalo): Compare against golden time
         # for a specific machine.
