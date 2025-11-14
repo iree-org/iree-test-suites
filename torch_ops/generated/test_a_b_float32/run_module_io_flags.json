@@ -1,10 +1,10 @@
 {
     "markers": {
-        "benchmark": {
+        "correctness": {
             "args": [],
             "kwargs": {}
         },
-        "correctness": {
+        "benchmark": {
             "args": [],
             "kwargs": {}
         }
