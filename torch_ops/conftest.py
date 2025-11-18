@@ -505,19 +505,13 @@ class IreeBenchmarkItem(IreeBaseTest):
         with open(vmfb, "rb") as f:
             binary = f.read()
 
-        from iree import runtime as ireert
-        config = ireert.Config(driver_name="hip")
-        instance = config.vm_instance
-        vm_modules = ireert.load_vm_modules(ireert.VmModule.copy_buffer(instance, binary), config=config)
-        function = getattr(vm_modules[-1], self.entry_point)
         items = find_procs_by_name("rocprov3")
 
         args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
         input_npy_files, input_kwargs = self.generate_input_npy_files(*args, **kwargs)
         inputs = []
         for input_npy_file in input_npy_files:
-            inputs.append("--input")
-            inputs.append(str(input_npy_file))
+            inputs.append(f"--input=@{input_npy_file}")
 
         if not items:
             # TODO(@amd-eochoalo): Figure out how to attach
@@ -530,22 +524,22 @@ class IreeBenchmarkItem(IreeBaseTest):
             command = [
                 "rocprofv3",
                 "--kernel-trace",
-
                 # We need CSV as it reports different things from json.
                 "--output-format",
                 "csv",
-
                 "--kernel-exclude-regex",
                 "__amd_*", # includes __amd_rocclr_copyBuffer
+                "--",
                 "iree-run-module",
-                str(self.spec.input_mlir_file),
+                f"--module={str(vmfb)}",
                 *inputs,
+                f"--function={self.entry_point}",
+                "--device=hip",
             ] 
-            print(command)
             breakpoint()
-
-
-        result = result.to_host()
+            command = subprocess.list2cmdline(command)
+            x = subprocess.run(command, shell=True)
+            print(x)
 
 
 class IreeCompileException(Exception):
