@@ -477,11 +477,15 @@ class IreeCompileRunItem(IreeBaseTest):
 class IreeBenchmarkItem(IreeBaseTest):
     """Test invocation item for an IREE compile + run test case."""
 
+    def initialize_benchmark_test(self):
+        marker = self.get_closest_marker("benchmark_test")
+        np.random.seed(marker.kwargs["seed"])
+        self.entry_point = marker.kwargs["entry_point"]
+
     def test_run(self, vmfb):
 
 
-        self.initialize_correctness_test()
-        args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
+        self.initialize_benchmark_test()
         with open(vmfb, "rb") as f:
             binary = f.read()
 
@@ -490,39 +494,30 @@ class IreeBenchmarkItem(IreeBaseTest):
         instance = config.vm_instance
         vm_modules = ireert.load_vm_modules(ireert.VmModule.copy_buffer(instance, binary), config=config)
         function = getattr(vm_modules[-1], self.entry_point)
+        items = find_procs_by_name("rocprov3")
+        if not items:
+            # Attach rocprofv3 to the current running process
+            
+            command = [
+                "rocprofv3",
+                "--kernel-trace",
+
+                # We need CSV as it reports different things from json.
+                "--output-format",
+                "csv",
+
+                "--kernel-exclude-regex",
+                "__amd_*", # includes __amd_rocclr_copyBuffer
+                "--attach",
+                f"{os.getpid()}",
+            ] 
+            print(command)
+            breakpoint()
+
         result = function(*args, **kwargs)
+        popen.kill()
+
         result = result.to_host()
-        return
-        # format.
-        outfile = "test"
-        self.run_cmd = [
-            "rocprofv3",
-            "--kernel-trace",
-
-            # We need CSV as it reports different things from json.
-            "--output-format",
-            "csv",
-
-            "--kernel-exclude-regex",
-            "__amd_*", # includes __amd_rocclr_copyBuffer
-
-            "--output-file",
-            outfile,
-            "--",
-        ] + self.run_cmd
-        self.run_cmd = subprocess.list2cmdline(self.run_cmd)
-
-
-        with open(outfile, "r") as f:
-            perfdata = csv.DictReader(f)
-            for row in perfdata:
-                agg_gpu_timestamp_ns += int(row["End_Timestamp"]) - int(
-                    row["Start_Timestamp"]
-                )
-            print(agg_gpu_timestamp_ns)
-
-        # TODO(@amd-eochoalo): Compare against golden time
-        # for a specific machine.
 
 
 class IreeCompileException(Exception):
