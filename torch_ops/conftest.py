@@ -31,8 +31,6 @@ def find_procs_by_name(name):
             ls.append(p)
     return ls
 
-
-
 def pytest_addoption(parser):
     # List of configuration files following this schema:
     #   {
@@ -115,8 +113,6 @@ def pytest_sessionstart(session):
 def pytest_collect_file(parent, file_path):
     if file_path.name == TEST_DATA_FLAGFILE_NAME:
         return MlirCompileRunTest.from_parent(parent, path=file_path)
-
-
 
 
 @dataclass(frozen=True)
@@ -536,96 +532,6 @@ class IreeBenchmarkItem(IreeBaseTest):
                 f"--function={self.entry_point}",
                 "--device=hip",
             ] 
-            breakpoint()
             command = subprocess.list2cmdline(command)
             x = subprocess.run(command, shell=True)
-            print(x)
 
-
-class IreeCompileException(Exception):
-    """Compiler exception that preserves the command line and output."""
-
-    def __init__(
-        self,
-        process: subprocess.CompletedProcess,
-        cwd: Path,
-        input_mlir_name: Path,
-        compile_cmd: str,
-    ):
-        try:
-            errs = process.stderr.decode("utf-8")
-        except:
-            errs = str(process.stderr)
-        try:
-            outs = process.stdout.decode("utf-8")
-        except:
-            outs = str(process.stdout)
-
-        test_github_url = (
-            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
-            + cwd.relative_to(THIS_DIR).as_posix()
-        )
-
-        with open(cwd / input_mlir_name) as f:
-            input_mlir = f.read()
-
-            super().__init__(
-                f"Error invoking iree-compile\n"
-                f"Error code: {process.returncode}\n"
-                f"Stderr diagnostics:\n{errs}\n\n"
-                f"Stdout diagnostics:\n{outs}\n\n"
-                f"Test case source:\n"
-                f"  {test_github_url}\n\n"
-                f"Input program:\n"
-                f"```\n{input_mlir}```\n\n"
-                f"Compiled with:\n"
-                f"  cd {cwd} && {compile_cmd}\n\n"
-            )
-
-
-class IreeRunException(Exception):
-    """Runtime exception that preserves the command line and output."""
-
-    def __init__(
-        self,
-        process: subprocess.CompletedProcess,
-        cwd: Path,
-        input_mlir_name: Path,
-        compile_cmd: str,
-        run_cmd: str,
-    ):
-        try:
-            errs = process.stderr.decode("utf-8")
-        except:
-            errs = str(process.stderr)
-        try:
-            outs = process.stdout.decode("utf-8")
-        except:
-            outs = str(process.stdout)
-
-        test_github_url = (
-            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
-            + cwd.relative_to(THIS_DIR).as_posix()
-        )
-
-        with open(cwd / input_mlir_name) as f:
-            input_mlir = f.read()
-
-            super().__init__(
-                f"Error invoking iree-run-module\n"
-                f"Error code: {process.returncode}\n"
-                f"Stderr diagnostics:\n{errs}\n"
-                f"Stdout diagnostics:\n{outs}\n"
-                f"Test case source:\n"
-                f"  {test_github_url}\n\n"
-                f"Input program:\n"
-                f"```\n{input_mlir}```\n\n"
-                f"Compiled with:\n"
-                f"  cd {cwd} && {compile_cmd}\n\n"
-                f"Run with:\n"
-                f"  cd {cwd} && {run_cmd}\n\n"
-            )
-
-
-class IreeXFailCompileRunException(Exception):
-    pass
