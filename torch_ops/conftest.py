@@ -16,9 +16,21 @@ import pytest
 import subprocess
 import glob
 import numpy as np
+import psutil
+import os
 
 THIS_DIR = Path(__file__).parent
 TEST_DATA_FLAGFILE_NAME = "run_module_io_flags.json"
+
+def find_procs_by_name(name):
+    ls = []
+    for p in psutil.process_iter(attrs=["name", "exe", "cmdline"]):
+        if name == p.info['name'] or \
+                p.info['exe'] and os.path.basename(p.info['exe']) == name or \
+                p.info['cmdline'] and p.info['cmdline'][0] == name:
+            ls.append(p)
+    return ls
+
 
 
 def pytest_addoption(parser):
@@ -465,17 +477,22 @@ class IreeCompileRunItem(IreeBaseTest):
 class IreeBenchmarkItem(IreeBaseTest):
     """Test invocation item for an IREE compile + run test case."""
 
-    def test_run(self):
-        cwd = self.test_cwd
-        logging.getLogger().info(
-            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
-        )
+    def test_run(self, vmfb):
 
-        # For this one, we won't be running using a subprocess.
-        import os
-        pid = os.getpid()
 
-        # TODO(@amd-eochoalo): investigate how to use the json
+        self.initialize_correctness_test()
+        args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
+        with open(vmfb, "rb") as f:
+            binary = f.read()
+
+        from iree import runtime as ireert
+        config = ireert.Config(driver_name="hip")
+        instance = config.vm_instance
+        vm_modules = ireert.load_vm_modules(ireert.VmModule.copy_buffer(instance, binary), config=config)
+        function = getattr(vm_modules[-1], self.entry_point)
+        result = function(*args, **kwargs)
+        result = result.to_host()
+        return
         # format.
         outfile = "test"
         self.run_cmd = [
@@ -495,23 +512,6 @@ class IreeBenchmarkItem(IreeBaseTest):
         ] + self.run_cmd
         self.run_cmd = subprocess.list2cmdline(self.run_cmd)
 
-        # appended automatically by rocprofv3
-        outfile = outfile + "_kernel_trace.csv"
-        outfile = cwd / outfile
-        proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
-
-        if proc.returncode != 0:
-            raise IreeRunException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-                run_cmd=self.run_cmd,
-            )
-
-        # Unit is ns according to
-        # https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/docs-6.2.1/how-to/using-rocprofv3.html#output-file-fields
-        agg_gpu_timestamp_ns = 0
 
         with open(outfile, "r") as f:
             perfdata = csv.DictReader(f)
