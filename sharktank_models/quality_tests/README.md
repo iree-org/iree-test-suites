@@ -27,7 +27,7 @@ pytest iree-test-suites/sharktank_models/quality_tests/ \
     --external-file-directory=${PATH_TO_EXTERNAL_FILES}
 ```
 
-Important Note: you should point it to `sharktank_models/quality_tests` directory if you want to run benchmark tests.
+Important Note: you should point it to `sharktank_models/quality_tests` directory if you want to run quality tests.
 
 ### Required and optional fields for the JSON model file
 
