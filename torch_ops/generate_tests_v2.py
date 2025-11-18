@@ -40,6 +40,9 @@ class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Formula):
             return obj.toJSONEncoder()
+        if isinstance(obj, pytest.Mark):
+            mark = obj
+            return {"name": mark.name, "args": mark.args, "kwargs": mark.kwargs}
         return super().default(obj)
 
 @dataclasses.dataclass(frozen=True)
@@ -123,11 +126,11 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
         input = {}
         input["args"] = args
         input["kwargs"] = kwargs
-        input["marker"] = "correctness"
-        input.update(marker.kwargs)
+        input["marker"] = marker
 
         name = func.__name__
-        root_test = self.mlir_folder / name / input["marker"]
+        root_test = self.mlir_folder / name / input["marker"].name
+        np.random.seed(marker.kwargs.get("seed", 0))
         root_test.mkdir(exist_ok=True, parents=True)
 
         args_torch = []
@@ -164,11 +167,10 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
         input = {}
         input["args"] = args
         input["kwargs"] = kwargs
-        input["marker"] = "benchmark"
-        input.update(marker.kwargs)
+        input["marker"] = marker
 
         name = func.__name__
-        root_test = self.mlir_folder / name / input["marker"]
+        root_test = self.mlir_folder / name / input["marker"].name
         root_test.mkdir(exist_ok=True, parents=True)
 
         # Save each json file into its own directory

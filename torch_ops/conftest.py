@@ -6,10 +6,11 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+import typing
+import numbers
 import csv
 import logging
-import pyjson5
+import json
 import os
 import pytest
 import subprocess
@@ -83,7 +84,7 @@ def pytest_sessionstart(session):
     session.config.iree_test_configs = []
     for config_file in session.config.getoption("config_files"):
         with open(config_file) as f:
-            test_config = pyjson5.load(f)
+            test_config = json.load(f)
 
             # Sanity check the config file structure before going any further.
             def check_field(field_name):
@@ -103,11 +104,7 @@ def pytest_collect_file(parent, file_path):
     if file_path.name == TEST_DATA_FLAGFILE_NAME:
         return MlirCompileRunTest.from_parent(parent, path=file_path)
 
-    if file_path.suffix == ".json":
-        with open(file_path) as f:
-            test_cases_json = pyjson5.load(f)
-            if test_cases_json.get("file_format", "") == "test_cases_v0":
-                return MlirCompileRunTest.from_parent(parent, path=file_path)
+
 
 
 @dataclass(frozen=True)
@@ -134,11 +131,11 @@ class IreeCompileAndRunTestSpec:
     test_name: str
 
     # Flags to pass to `iree-compile`, e.g. ["--iree-hal-target-backends=llvm-cpu"].
-    iree_compile_flags: List[str]
+    iree_compile_flags: typing.List[str]
 
     # Flags to pass to `iree-run-module`, e.g. ["--device=local-task"].
     # These will be passed in addition to `--flagfile={data_flagfile_name}`.
-    iree_run_module_flags: List[str]
+    iree_run_module_flags: typing.List[str]
 
     # True if compilation is expected to succeed. If false, the test will be marked XFAIL.
     expect_compile_success: bool
@@ -159,10 +156,18 @@ class MlirCompileRunTest(pytest.File):
         runtime_flagfile: str
 
     def discover_test_cases(self):
-        """Discovers test cases with run_module_io_flags.txt files."""
+        """Discovers test cases with run_module_io_flags.txt files.
+
+        We expect the following structure
+
+        generated/${CLASSNAME}/${FILE}.mlir
+        generated/${CLASSNAME}/{correctness,benchmark}/${TESTNAME}/${TEST_DATA_FLAGFILE_NAME}
+
+        Multiple correctness and benchmark tests may share an MLIR module.
+        """
         test_cases = []
 
-        mlir_files = sorted(self.path.parent.glob("*.mlir*"))
+        mlir_files = sorted(self.path.parent.parent.parent.glob("*.mlir*"))
         assert len(mlir_files) <= 1, "Test directories may only contain one .mlir file"
         mlir_file = mlir_files[0]
 
@@ -231,24 +236,22 @@ class MlirCompileRunTest(pytest.File):
                     skip_run=skip_run,
                 )
                 with open(test_directory / spec.data_flagfile_name, "r") as config:
-                    json = pyjson5.load(config)
+                    json_obj = json.load(config, object_hook=from_dict)
 
-                markers = json["markers"]
+                marker = json_obj["marker"]
 
-                for marker_name, args_kwargs in markers.items():
-                    marker_callable = getattr(pytest.mark, marker_name)
-                    marker_args = args_kwargs["args"]
-                    marker_kwargs = args_kwargs["kwargs"]
-                    if marker_name == "correctness":
-                        test = IreeCompileRunItem.from_parent(
-                            self, name=item_name, spec=spec
-                        )
-                    elif marker_name == "benchmark":
-                        test = IreeBenchmarkItem.from_parent(
-                            self, name=item_name, spec=spec
-                        )
-                    test.add_marker(marker_callable(*marker_args, **marker_kwargs))
-                    yield test
+                marker_name, marker_args, marker_kwargs = marker.values()
+                marker_callable = getattr(pytest.mark, marker_name)
+                if marker_name == "correctness_test":
+                    test = IreeCompileRunItem.from_parent(
+                        self, name=item_name, spec=spec
+                    )
+                elif marker_name == "benchmark_test":
+                    test = IreeBenchmarkItem.from_parent(
+                        self, name=item_name, spec=spec
+                    )
+                test.add_marker(marker_callable(*marker_args, **marker_kwargs))
+                yield test
 
 
 class IreeBaseTest(pytest.Item):
@@ -268,43 +271,26 @@ class IreeBaseTest(pytest.Item):
         )
         self.user_properties.append(("input_mlir_name", self.spec.input_mlir_name))
         self.user_properties.append(("test_name", self.spec.test_name))
-
+        self.vmfb_name = f"{self.spec.input_mlir_stem}_{self.spec.test_name}.vmfb"
         self.test_cwd = self.spec.test_directory
 
-        vmfb_name = f"{self.spec.input_mlir_stem}_{self.spec.test_name}.vmfb"
-
-        compile_args = ["iree-compile", self.spec.input_mlir_name]
-        compile_args.extend(self.spec.iree_compile_flags)
-        compile_args.extend(["-o", vmfb_name])
-        self.compile_cmd = subprocess.list2cmdline(compile_args)
-
-        run_args = ["iree-run-module", f"--module={vmfb_name}"]
-        run_args.extend(self.spec.iree_run_module_flags)
         with open(self.test_cwd / self.spec.data_flagfile_name, "r") as config:
-            json = pyjson5.load(config)
-        self.markers = json["markers"]
-        for input in json["inputs"]:
-            run_args.append(f"--input=@{input}")
-        for output in json["observed_outputs"]:
-            run_args.append(f"--output=@{output}")
-        self.run_cmd = run_args
-        self.run_options = json
+            # TODO(@amd-eochoalo): deduplicate
+            json_obj = json.load(config, object_hook=from_dict)
+
+        self.pregen_args = json_obj["args"]
+        self.pregen_kwargs = json_obj["kwargs"]
+        self.json = json_obj
 
     def test_compile(self):
-        cwd = self.test_cwd
-        logging.getLogger().info(
-            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
-        )
-        proc = subprocess.run(
-            self.compile_cmd, shell=True, capture_output=True, cwd=cwd
-        )
-        if proc.returncode != 0:
-            raise IreeCompileException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-            )
+        from iree import compiler as ireec 
+        # We want to output this to a file to facilitate debugging.
+        # E.g., something went wrong and people may want to run iree-run-module
+        input_file = self.spec.input_mlir_name
+        output_file = self.spec.test_directory / self.vmfb_name
+        extra_args = self.spec.iree_compile_flags
+        ireec.tools.compile_file(input_file, extra_args=extra_args, output_file=output_file)
+        return output_file
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
@@ -316,6 +302,7 @@ class IreeBaseTest(pytest.Item):
                 + "\n".join(excinfo.value.__cause__.args)
             )
         return super().repr_failure(excinfo)
+
 
     def reportinfo(self):
         display_name = (
@@ -370,51 +357,105 @@ class IreeBaseTest(pytest.Item):
                 )
             )
 
-        self.test_compile()
+        vmfb = self.test_compile()
 
         if self.spec.skip_run:
             return
 
         try:
-            self.test_run()
+            self.test_run(vmfb)
         except IreeRunException as e:
             if not self.spec.expect_compile_success:
                 raise IreeXFailCompileRunException from e
             raise e
 
+# TODO(@amd-eochoalo): move to a common file
+@dataclass(frozen=True, kw_only=True)
+class Formula:
+    """
+    Represents the formula:
+
+    (coeff * numpy.random.rand(*shape) + offset).astype(dtype)
+    """
+    shape: typing.Tuple[int, ...]
+    dtype: type = np.dtype("float32")
+    coeff: numbers.Number = 1
+    offset: numbers.Number = 0
+
+    def numpy(self):
+        return (self.coeff * np.random.rand(*self.shape) + self.offset).astype(self.dtype)
+
+    def torch(self):
+        return torch.from_numpy(self.numpy())
+
+    def toJSONEncoder(self):
+        """
+        Ensure all fields in dataclass are able to be encoded into JSON.
+
+        self.dtype:type cannot be encoded into JSON
+        """
+        return {"Formula": {"shape": self.shape, "dtype": self.dtype.name, "coeff": self.coeff, "offset": self.offset}}
+
+def from_dict(d):
+    if kwargs := d.get("Formula"):
+        return Formula(**kwargs)
+    return d
 
 class IreeCompileRunItem(IreeBaseTest):
     """Test invocation item for an IREE compile + run test case."""
 
-    def test_run(self):
-        cwd = self.test_cwd
-        logging.getLogger().info(
-            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
-        )
+    def generate_values(self, *pregen_args, **pregen_kwargs):
+        args = []
+        for pregen_arg in pregen_args:
+            if isinstance(pregen_arg, Formula):
+                args.append(pregen_arg.numpy())
+            else:
+                args.append(pregen_arg)
 
-        self.run_cmd = subprocess.list2cmdline(self.run_cmd)
-        proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
-        if proc.returncode != 0:
-            raise IreeRunException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-                run_cmd=self.run_cmd,
-            )
+        kwargs = {}
+        for pregen_key, pregen_val in pregen_kwargs.items():
+            if isinstance(pregen_val, Formula):
+                kwargs[pregen_key] = pregen_val.numpy()
+            else:
+                kwargs[pregen_key] = pregen_val
 
-        observed = self.run_options["observed_outputs"]
-        expected = self.run_options["expected_outputs"]
-        expected.sort()
-        observed.sort()
-        rtol = self.run_options["rtol"]
-        atol = self.run_options["atol"]
-        equal_nan = self.run_options["equal_nan"]
+        return args, kwargs
+
+    def initialize_correctness_test(self):
+        marker = self.get_closest_marker("correctness_test")
+        np.random.seed(marker.kwargs["seed"])
+        self.entry_point = marker.kwargs["entry_point"]
+        self.rtol = marker.kwargs.get("rtol", 1e-05)
+        self.atol = marker.kwargs.get("atol", 1e-08)
+        self.equal_nan = marker.kwargs.get("equal_nan", False)
+        self.expected_results = self.json["expected_results"]
+
+
+    def test_run(self, vmfb):
+        self.initialize_correctness_test()
+        args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
+        with open(vmfb, "rb") as f:
+            binary = f.read()
+
+        from iree import runtime as ireert
+        config = ireert.Config(driver_name="hip")
+        instance = config.vm_instance
+        vm_modules = ireert.load_vm_modules(ireert.VmModule.copy_buffer(instance, binary), config=config)
+        function = getattr(vm_modules[-1], self.entry_point)
+        result = function(*args, **kwargs)
+        result = result.to_host()
+
+        observed = [result]
+        expected = []
+        for result in self.expected_results:
+            expected.append(self.test_cwd / result)
+        rtol = self.rtol
+        atol = self.atol
+        equal_nan = self.equal_nan
         for exp, obs in zip(expected, observed, strict=True):
-            exp_arr = np.load(cwd / exp)
-            obs_arr = np.load(cwd / obs)
+            exp_arr = np.load(exp)
             assert np.allclose(
-                exp_arr, obs_arr, rtol=rtol, atol=atol, equal_nan=equal_nan
+                exp_arr, obs, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
 
 
