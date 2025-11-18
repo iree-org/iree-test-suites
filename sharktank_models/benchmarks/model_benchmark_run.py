@@ -272,6 +272,7 @@ class ModelBenchmarkRunItem(pytest.Item):
 
         # golden size check
         if self.golden_size:
+            breakpoint()
             module_path = f"{directory_compile}/model.{self.file_suffix}.vmfb"
             binary_size = Path(module_path).stat().st_size
 

@@ -126,6 +126,9 @@ class IreeCompileAndRunTestSpec:
     # Directory where test input files are located.
     test_directory: Path
 
+    # full path to file
+    input_mlir_file: Path
+
     # Name of input MLIR file in a format accepted by IREE (e.g. torch, tosa, or linalg dialect).
     # Including file suffix, e.g. 'model.mlir' or 'model.mlirbc'.
     input_mlir_name: str
@@ -164,7 +167,7 @@ class MlirCompileRunTest(pytest.File):
 
     @dataclass(frozen=True)
     class TestCase:
-        mlir_file: str
+        mlir_file: Path
         runtime_flagfile: str
 
     def discover_test_cases(self):
@@ -181,7 +184,7 @@ class MlirCompileRunTest(pytest.File):
 
         mlir_files = sorted(self.path.parent.parent.parent.glob("*.mlir*"))
         assert len(mlir_files) <= 1, "Test directories may only contain one .mlir file"
-        mlir_file = mlir_files[0]
+        mlir_file = mlir_files[0].resolve()
 
         if self.path.name == TEST_DATA_FLAGFILE_NAME:
             test_cases.append(
@@ -237,6 +240,7 @@ class MlirCompileRunTest(pytest.File):
 
                 spec = IreeCompileAndRunTestSpec(
                     test_directory=test_directory,
+                    input_mlir_file=mlir_file,
                     input_mlir_name=mlir_file.name,
                     input_mlir_stem=mlir_file.stem,
                     data_flagfile_name=test_case.runtime_flagfile,
@@ -281,7 +285,7 @@ class IreeBaseTest(pytest.Item):
         self.user_properties.append(
             ("relative_test_directory_name", relative_test_directory)
         )
-        self.user_properties.append(("input_mlir_name", self.spec.input_mlir_name))
+        self.user_properties.append(("input_mlir_name", self.spec.input_mlir_file))
         self.user_properties.append(("test_name", self.spec.test_name))
         self.vmfb_name = f"{self.spec.input_mlir_stem}_{self.spec.test_name}.vmfb"
         self.test_cwd = self.spec.test_directory
@@ -298,7 +302,7 @@ class IreeBaseTest(pytest.Item):
         from iree import compiler as ireec 
         # We want to output this to a file to facilitate debugging.
         # E.g., something went wrong and people may want to run iree-run-module
-        input_file = self.spec.input_mlir_name
+        input_file = self.spec.input_mlir_file
         output_file = self.spec.test_directory / self.vmfb_name
         extra_args = self.spec.iree_compile_flags
         ireec.tools.compile_file(input_file, extra_args=extra_args, output_file=output_file)
@@ -325,6 +329,23 @@ class IreeBaseTest(pytest.Item):
     # Defining this for pytest-retry to avoid an AttributeError.
     def _initrequest(self):
         pass
+
+    def generate_values(self, *pregen_args, **pregen_kwargs):
+        args = []
+        for pregen_arg in pregen_args:
+            if isinstance(pregen_arg, Formula):
+                args.append(pregen_arg.numpy())
+            else:
+                args.append(pregen_arg)
+
+        kwargs = {}
+        for pregen_key, pregen_val in pregen_kwargs.items():
+            if isinstance(pregen_val, Formula):
+                kwargs[pregen_key] = pregen_val.numpy()
+            else:
+                kwargs[pregen_key] = pregen_val
+
+        return args, kwargs
 
     def runtest(self):
         # We want to test two phases: 'compile', and 'run'.
@@ -416,23 +437,6 @@ def from_dict(d):
 class IreeCompileRunItem(IreeBaseTest):
     """Test invocation item for an IREE compile + run test case."""
 
-    def generate_values(self, *pregen_args, **pregen_kwargs):
-        args = []
-        for pregen_arg in pregen_args:
-            if isinstance(pregen_arg, Formula):
-                args.append(pregen_arg.numpy())
-            else:
-                args.append(pregen_arg)
-
-        kwargs = {}
-        for pregen_key, pregen_val in pregen_kwargs.items():
-            if isinstance(pregen_val, Formula):
-                kwargs[pregen_key] = pregen_val.numpy()
-            else:
-                kwargs[pregen_key] = pregen_val
-
-        return args, kwargs
-
     def initialize_correctness_test(self):
         marker = self.get_closest_marker("correctness_test")
         np.random.seed(marker.kwargs["seed"])
@@ -482,6 +486,18 @@ class IreeBenchmarkItem(IreeBaseTest):
         np.random.seed(marker.kwargs["seed"])
         self.entry_point = marker.kwargs["entry_point"]
 
+    def generate_input_npy_files(self, *args, **kwargs):
+        if kwargs:
+            raise ValueError("Cannot handle kwargs yet")
+
+        new_args = []
+        for idx, arg in enumerate(args):
+            path = self.test_cwd / f"input_{idx}.npy"
+            np.save(path, arg)
+            new_args.append(path)
+
+        return new_args, {}
+
     def test_run(self, vmfb):
 
 
@@ -495,8 +511,21 @@ class IreeBenchmarkItem(IreeBaseTest):
         vm_modules = ireert.load_vm_modules(ireert.VmModule.copy_buffer(instance, binary), config=config)
         function = getattr(vm_modules[-1], self.entry_point)
         items = find_procs_by_name("rocprov3")
+
+        args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
+        input_npy_files, input_kwargs = self.generate_input_npy_files(*args, **kwargs)
+        inputs = []
+        for input_npy_file in input_npy_files:
+            inputs.append("--input")
+            inputs.append(str(input_npy_file))
+
         if not items:
+            # TODO(@amd-eochoalo): Figure out how to attach
+            # rocprofv3 in a way that doesn't produce a segfault
+            # here....
             # Attach rocprofv3 to the current running process
+            # Run this using iree-run-module
+            # Which means also writing the input to a file...
             
             command = [
                 "rocprofv3",
@@ -508,14 +537,13 @@ class IreeBenchmarkItem(IreeBaseTest):
 
                 "--kernel-exclude-regex",
                 "__amd_*", # includes __amd_rocclr_copyBuffer
-                "--attach",
-                f"{os.getpid()}",
+                "iree-run-module",
+                str(self.spec.input_mlir_file),
+                *inputs,
             ] 
             print(command)
             breakpoint()
 
-        result = function(*args, **kwargs)
-        popen.kill()
 
         result = result.to_host()
 
