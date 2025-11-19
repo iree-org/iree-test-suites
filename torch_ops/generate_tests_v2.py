@@ -115,6 +115,8 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
                 export_variant = attr
                 export_kwargs = export_variant()
 
+                import functools
+
                 @self.export_program(**export_kwargs)
                 def entry_point(module, *args, **kwargs):
                     return module.forward(*args, **kwargs)
@@ -304,5 +306,86 @@ class AB(torch.nn.Module):
         args = [Formula(shape=(64, 64), dtype=np.dtype("float16"))] * 2
         return args, {}
 
+class AB_bfloat16(torch.nn.Module):
+    def forward(self, left, right):
+        left = left.to(torch.bfloat16)
+        right = right.to(torch.bfloat16)
+        res = left @ right
+        return res.to(torch.float32)
 
-TestProgramsBuilder(AB()).generate_tests()
+    @export_variant(seed=0)
+    def from_float32(self):
+        arg = Formula(shape=(64, 64), dtype=np.dtype("float32"))
+        args = (arg.torch(), arg.torch())
+
+        dynamic_shapes = {"args":
+            ((64, torch.export.Dim("K")),
+            (torch.export.Dim("K"), 64))
+        }
+
+        return {"args": args, "dynamic_shapes": dynamic_shapes}
+
+    @pytest.mark.correctness_test(entry_point="from_float32", seed=0, rtol=1e-2, atol=1e-2)
+    def test_from_float32(self):
+        arg = Formula(shape=(64, 64), dtype=np.dtype("float32"))
+        args = (arg, arg)
+        return args, {}
+
+class ATB(torch.nn.Module):
+    def forward(self, left, right):
+        return left.t() @ right
+
+    @export_variant(seed=3)
+    def float32(self):
+        left = Formula(shape=(64, 64), dtype=np.dtype("float32")).torch()
+        right = Formula(shape=(64, 64), dtype=np.dtype("float32")).torch()
+        return {"args": (left, right)}
+
+    @pytest.mark.correctness_test(entry_point="float32", seed=3)
+    def test_float_32(self):
+        left = Formula(shape=(64, 64), dtype=np.dtype("float32"))
+        right = Formula(shape=(64, 64), dtype=np.dtype("float32"))
+        return (left, right), {}
+
+    @export_variant(seed=5)
+    def float16(self):
+        left = Formula(shape=(64, 64), dtype=np.dtype("float16")).torch()
+        right = Formula(shape=(64, 64), dtype=np.dtype("float16")).torch()
+        return {"args": (left, right)}
+
+    @pytest.mark.correctness_test(entry_point="float16", seed=5)
+    def test_float_16(self):
+        left = Formula(shape=(64, 64), dtype=np.dtype("float16"))
+        right = Formula(shape=(64, 64), dtype=np.dtype("float16"))
+        return (left, right), {}
+
+class ABT(torch.nn.Module):
+    def forward(self, left, right):
+        return left @ right.t()
+
+    @export_variant(seed=5)
+    def float32(self):
+        left = Formula(shape=(64, 64), dtype=np.dtype("float32")).torch()
+        right = Formula(shape=(64, 64), dtype=np.dtype("float32")).torch()
+        return {"args": (left, right)}
+
+    @pytest.mark.correctness_test(entry_point="float32", seed=5)
+    def test_float_32(self):
+        left = Formula(shape=(64, 64), dtype=np.dtype("float32"))
+        right = Formula(shape=(64, 64), dtype=np.dtype("float32"))
+        return (left, right), {}
+
+    @export_variant(seed=6)
+    def float16(self):
+        left = Formula(shape=(64, 64), dtype=np.dtype("float16")).torch()
+        right = Formula(shape=(64, 64), dtype=np.dtype("float16")).torch()
+        return {"args": (left, right)}
+
+    @pytest.mark.correctness_test(entry_point="float16", seed=6)
+    def test_float_16(self):
+        left = Formula(shape=(64, 64), dtype=np.dtype("float16"))
+        right = Formula(shape=(64, 64), dtype=np.dtype("float16"))
+        return (left, right), {}
+
+for cls in [AB, AB_bfloat16, ATB, ABT]:
+    TestProgramsBuilder(cls()).generate_tests()
