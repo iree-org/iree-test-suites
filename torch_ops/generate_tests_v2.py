@@ -61,21 +61,56 @@ def export_variant(function=None, seed=0):
 
 
 class TestProgramsBuilder(aot.FxProgramsBuilder):
-    def __init__(self, *args, root_generated=None, **kwargs):
-        if not root_generated:
-            self.root_generated = pathlib.Path("generated")
-            self.root_generated.mkdir(exist_ok=True)
+    def __init__(self, root_module, directory=None):
+        """
+        Args:
+            root_module (torch.nn.Module): module to be exported.
+            kwargs: keyword arguments forwarded to the base class.
+            directory (None | str | pathlib.Path): path to the
+                generated directory that will hold generated tests.
+                Defaults to "generated".
+
+        Side-effects:
+            Creates directory ${directory}.
+            Creates directory ${directory}/${root_module} which holds the
+                mlir module generated.
+        """
+        if not directory:
+            directory = "generated"
+
+        if isinstance(directory, str):
+            directory = pathlib.Path(directory)
+
+        self.directory = directory
+        self.directory.mkdir(exist_ok=True)
         self.mlir_folder = None
 
-        super().__init__(*args, **kwargs)
+        super().__init__(root_module)
 
         name = self.root_module._get_name()
-        self.mlir_folder = self.root_generated / name
+        self.mlir_folder = self.directory / name
         self.mlir_folder.mkdir(exist_ok=True)
 
-    def generate_mlir_module(self):
-        for attr_name in dir(self.root_module):
-            attr = getattr(self.root_module, attr_name)
+    def generate_mlir_module(self, module, directory, name=None):
+        """
+        Export module to ${directory}/${name}.mlir.
+
+        Args:
+            module (torch.nn.Module): module to be exported.
+            directory (pathlib.Path): path to the directory where the mlir file will be saved.
+            name (None | str): name of the mlir file. Defaults to module._get_name().
+
+        Returns:
+            mlir_file (pathlib.Path): path to the created mlir file.
+
+        Side-effects:
+            Creates file ${directory}/${name}.mlir.
+        """
+        if not name:
+            name = module._get_name()
+
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
             if isinstance(attr, ExportVariant):
                 export_variant = attr
                 export_kwargs = export_variant()
@@ -85,23 +120,42 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
                     return module.forward(*args, **kwargs)
 
         exported_module = aot.export(self)
-        name = self.root_module._get_name()
-        mlir_file = self.mlir_folder / f"{name}.mlir"
+        mlir_file = directory / f"{name}.mlir"
         exported_module.save_mlir(mlir_file)
+        return mlir_file
 
-    def generate_correctness_test(self, func, marker):
-        args, kwargs = func()
+    def generate_config_files(self, module, directory):
+        """
+        Args:
+            module (torch.nn.Module): the module containing the tests.
+            directory (pathlib.Path): path to the directory where the mlir file will be saved.
 
-        input = {}
-        input["args"] = args
-        input["kwargs"] = kwargs
-        input["marker"] = marker
+        Side-effects:
+            Creates directories ${directory}/${tests}/{correctness,benchmark}
+            which correspond to tests.
+        """
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if not callable(attr):
+                continue
 
-        name = func.__name__
-        root_test = self.mlir_folder / name / input["marker"].name
-        np.random.seed(marker.kwargs.get("seed", 0))
-        root_test.mkdir(exist_ok=True, parents=True)
+            func = attr
+            if not hasattr(func, "pytestmark"):
+                continue
 
+            markers = func.pytestmark
+            for marker in markers:
+                if marker.name == "correctness_test":
+                    self.generate_correctness_test(directory, module, func, marker)
+                if marker.name == "benchmark_test":
+                    self.generate_benchmark_test(directory, func, marker)
+
+    @staticmethod
+    def _forward(module, *args, **kwargs):
+        """
+        Wrapper around module.forward that converts args and kwargs of
+        type Formula to torch tensors.
+        """
         args_torch = []
         for arg in args:
             if isinstance(arg, Formula):
@@ -113,9 +167,52 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
         for k, v in kwargs:
             kwargs_torch[k] = v.to_torch()
 
-        expected_output = self.root_module.forward(*args_torch, **kwargs_torch)
+        expected_output = module.forward(*args_torch, **kwargs_torch)
+
         if type(expected_output) != list:
             expected_output = [expected_output]
+
+        return expected_output
+
+    def generate_correctness_test(self, directory, module, func, marker):
+        """
+        Generate correctness tests for module in ${directory}/${func.__name__}/correctness.
+
+        Args:
+            directory (pathlib.Path): path to the directory that will contain
+                the tests.
+            module (torch.nn.Module): the module containing tests to be generated.
+            func (callable): a function that will return the input args, kwargs
+                needed to run the module's forward function. These are expected to
+                be Formula, not torch tensors.
+            marker (pytest.Mark): A pytest marker containing meta-information needed
+                for generating and running the test. The correctness test accepts
+                the following keyword arguments in the correctness_test mark:
+                    * seed (int): Seed sent to numpy's rng.
+                    * entry_point (str): Function being tested.
+                    * rtol (None | float): Relative tolerance.
+                    * atol (None | float): Absolute tolerance.
+                    * equal_nan (None | bool): whether nan's are equal to each other.
+                For rtol, atol, and equal_nan, the default values match those of np.allclose.
+
+        Side-effects:
+            Creates ${directory}/${func.__name__}/correctness folder with files:
+                * expected_result_${idx}.npy
+                * run_module_io.json
+        """
+        args, kwargs = func()
+
+        input = {}
+        input["args"] = args
+        input["kwargs"] = kwargs
+        input["marker"] = marker
+
+        name = func.__name__
+        root_test = directory / name / input["marker"].name
+        np.random.seed(marker.kwargs.get("seed", 0))
+        root_test.mkdir(exist_ok=True, parents=True)
+
+        expected_output = TestProgramsBuilder._forward(module, *args, **kwargs)
 
         expected_results = []
         for idx, output in enumerate(expected_output):
@@ -130,7 +227,26 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
             json.dump(input, config, indent=4, cls=CustomJSONEncoder)
             print("", file=config)
 
-    def generate_benchmark_test(self, func, marker):
+    def generate_benchmark_test(self, directory, func, marker):
+        """
+        Generate benchmark tests for the current module in ${directory}/${func.__name__}/benchmark
+
+        Args:
+            directory (pathlib.Path): path to the directory that will contain
+                the tests.
+            func (callable): a function that will return the input args, kwargs
+                needed to run the module's forward function. These are expected
+                to be Formula not torch tensors.
+            marker (pytest.Mark): A pytest marker containing meta-information needed
+                for generating and running the test. The benchmark test accepts
+                the following keyword arguments in the benchmark_test mark:
+                    * seed (int): Seed sent to numpy's rng.
+                    * entry_point (str): Function being benchmarked.
+
+        Side-effects:
+            Creates ${directory}/${func.__name__}/benchmark folder with file:
+                * run_module_io.json
+        """
         args, kwargs = func()
 
         input = {}
@@ -139,7 +255,7 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
         input["marker"] = marker
 
         name = func.__name__
-        root_test = self.mlir_folder / name / input["marker"].name
+        root_test = directory / name / input["marker"].name
         root_test.mkdir(exist_ok=True, parents=True)
 
         # Save each json file into its own directory
@@ -147,26 +263,16 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
             json.dump(input, config, indent=4, cls=CustomJSONEncoder)
             print("", file=config)
 
-    def generate_config_files(self):
-        for attr_name in dir(self.root_module):
-            attr = getattr(self.root_module, attr_name)
-            if not callable(attr):
-                continue
-
-            func = attr
-            if not hasattr(func, "pytestmark"):
-                continue
-
-            markers = func.pytestmark
-            for marker in markers:
-                if marker.name == "correctness_test":
-                    self.generate_correctness_test(func, marker)
-                if marker.name == "benchmark_test":
-                    self.generate_benchmark_test(func, marker)
 
     def generate_tests(self):
-        self.generate_mlir_module()
-        self.generate_config_files()
+        """
+        Generates tests in the current root_module.
+
+        Side-effects:
+            Creates directory ${directory}.
+        """
+        self.generate_mlir_module(self.root_module, self.mlir_folder)
+        self.generate_config_files(self.root_module, self.mlir_folder)
 
 
 class AB(torch.nn.Module):
