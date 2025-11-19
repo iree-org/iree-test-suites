@@ -33,6 +33,9 @@ pytest sharktank_models/benchmarks/ \
     --external-file-directory=${PATH_TO_EXTERNAL_FILES}
 ```
 
+See [sharktank_models/README.md](../README.md) for more details on how to run
+benchmark tests with different backends and chips.
+
 Important Note: you should point it to `sharktank_models/benchmarks` directory if you want to run benchmark tests.
 
 ### Required and optional fields for the JSON model file
