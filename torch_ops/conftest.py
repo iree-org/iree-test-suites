@@ -123,7 +123,7 @@ def pytest_collect_file(parent, file_path):
 class IreeCompileAndRunTestSpec:
     """Specification for an IREE "compile and run" test."""
 
-    # Directory where test input files are located.
+    # full path containing the test (i.e., run_io_module.json file).
     test_directory: Path
 
     # full path to file
@@ -161,6 +161,22 @@ class IreeCompileAndRunTestSpec:
     # True to only compile the test and skip running.
     skip_run: bool
 
+    # Json decoded dictionary
+    json_obj: typing.Dict
+
+    # Arguments to be passed to the function being tested.
+    args: None | typing.List[typing.Any]
+
+    # Key word arguments to be passed to the function being tested.
+    kwargs: None | typing.Dict
+
+
+@dataclass(frozen=True)
+class IreeCorrectnessTestSpec(IreeCompileAndRunTestSpec):
+    # List of expected output.
+    # We expect a list of npy files.
+    expected_output: typing.List[str]
+
 
 class MlirCompileRunTest(pytest.File):
     """Collector for MLIR -> compile -> run tests anchored on a file."""
@@ -197,15 +213,10 @@ class MlirCompileRunTest(pytest.File):
         return test_cases
 
     def collect(self):
-        # Expected directory structure:
-        #   path/to/test_abs/
-        #     - *.mlir[bc]
-        #     - run_module_io_flags.txt
-        #   path/to/test_add/
-        #     - *.mlir[bc]
-        #     - run_module_io_flags.txt
+        # This test directory corresponds to the path
+        # generated/${CLASSNAME}/{correctness,benchmark}/${TESTNAME}/
+        test_directory = self.path.parent.resolve()
 
-        test_directory = self.path.parent
         relative_test_directory = test_directory.relative_to(THIS_DIR).as_posix()
         test_directory_name = test_directory.name
 
@@ -238,6 +249,9 @@ class MlirCompileRunTest(pytest.File):
                 name_parts = [e for e in [mlir_file.name, config_name] if e]
                 item_name = "::".join(name_parts)
 
+                with open(test_directory / self.path, "r") as json_file:
+                    json_obj = json.load(json_file, object_hook=customJSONDecoder)
+
                 spec = IreeCompileAndRunTestSpec(
                     test_directory=test_directory,
                     input_mlir_file=mlir_file,
@@ -250,9 +264,10 @@ class MlirCompileRunTest(pytest.File):
                     expect_compile_success=expect_compile_success,
                     expect_run_success=expect_run_success,
                     skip_run=skip_run,
+                    args=json_obj["args"],
+                    kwargs=json_obj["kwargs"],
+                    json_obj=json_obj,
                 )
-                with open(test_directory / spec.data_flagfile_name, "r") as config:
-                    json_obj = json.load(config, object_hook=customJSONDecoder)
 
                 marker = json_obj["marker"]
 
@@ -290,13 +305,9 @@ class IreeBaseTest(pytest.Item):
         self.vmfb_name = f"{self.spec.input_mlir_stem}_{self.spec.test_name}.vmfb"
         self.test_cwd = self.spec.test_directory
 
-        with open(self.test_cwd / self.spec.data_flagfile_name, "r") as config:
-            # TODO(@amd-eochoalo): deduplicate
-            json_obj = json.load(config, object_hook=customJSONDecoder)
-
-        self.pregen_args = json_obj["args"]
-        self.pregen_kwargs = json_obj["kwargs"]
-        self.json = json_obj
+        self.pregen_args = self.spec.args
+        self.pregen_kwargs = self.spec.kwargs
+        self.json_obj = self.spec.json_obj
 
     def test_compile(self):
         # We want to output this to a file to facilitate debugging.
@@ -396,12 +407,13 @@ class IreeCompileRunItem(IreeBaseTest):
 
     def initialize_correctness_test(self):
         marker = self.get_closest_marker("correctness_test")
+
         np.random.seed(marker.kwargs["seed"])
         self.entry_point = marker.kwargs["entry_point"]
         self.rtol = marker.kwargs.get("rtol", 1e-05)
         self.atol = marker.kwargs.get("atol", 1e-08)
         self.equal_nan = marker.kwargs.get("equal_nan", False)
-        self.expected_results = self.json["expected_results"]
+        self.expected_results = self.json_obj["expected_results"]
 
     def test_run(self, vmfb):
         self.initialize_correctness_test()
