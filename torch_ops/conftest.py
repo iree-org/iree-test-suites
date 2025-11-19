@@ -502,7 +502,7 @@ class IreeBenchmarkItem(IreeBaseTest):
 
     def test_run(self, vmfb):
         self.initialize_benchmark_test()
-        run_args = ["iree-benchmark-module", f"--module={str(vmfb)}"]
+        run_args = ["iree-benchmark-module", "--benchmark_format=json", f"--module={str(vmfb)}"]
         run_args.extend(self.spec.iree_run_module_flags)
         run_args.extend([f"--function={self.entry_point}"])
 
@@ -529,6 +529,9 @@ class IreeBenchmarkItem(IreeBaseTest):
                 compile_cmd=self.compile_cmd,
                 run_cmd=self.run_cmd,
             )
+
+        json_obj = json.loads(proc.stdout.decode("utf-8"))
+        print(json_obj["benchmarks"][0]["real_time"])
 
 
 class IreeCompileException(Exception):
