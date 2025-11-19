@@ -13,21 +13,6 @@ import torch
 from utils import CustomJSONEncoder, Formula
 
 
-@dataclasses.dataclass(frozen=True)
-class ExportVariant:
-    """ExportVariant class.
-
-    This is just a wrapper around callable. Useful to denote
-    a specific type of function inside a class.
-    """
-
-    function: callable
-    name: str
-
-    def __call__(self, *args, **kwargs):
-        return self.function(self, *args, **kwargs)
-
-
 def export_variant(function=None, seed=0):
     """
     Args:
@@ -55,17 +40,18 @@ def export_variant(function=None, seed=0):
                 export_kwargs["name"] = function.__name__
             return export_kwargs
 
-        return ExportVariant(wrapper, wrapper.__name__)
+        wrapper._export_variant = True
+        return wrapper
 
     return functools.partial(export_variant, seed=seed)
 
 
 class TestProgramsBuilder(aot.FxProgramsBuilder):
-    def __init__(self, root_module, directory=None):
+    def __init__(self, root_module, name=None, directory=None):
         """
         Args:
             root_module (torch.nn.Module): module to be exported.
-            kwargs: keyword arguments forwarded to the base class.
+            name (None | str): name of mlir file
             directory (None | str | pathlib.Path): path to the
                 generated directory that will hold generated tests.
                 Defaults to "generated".
@@ -84,6 +70,7 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
         self.directory = directory
         self.directory.mkdir(exist_ok=True)
         self.mlir_folder = None
+        self.name = name
 
         super().__init__(root_module)
 
@@ -111,7 +98,7 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
 
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
-            if isinstance(attr, ExportVariant):
+            if callable(attr) and hasattr(attr, "_export_variant"):
                 export_variant = attr
                 export_kwargs = export_variant()
 
@@ -273,7 +260,7 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
         Side-effects:
             Creates directory ${directory}.
         """
-        self.generate_mlir_module(self.root_module, self.mlir_folder)
+        self.generate_mlir_module(self.root_module, self.mlir_folder, self.name)
         self.generate_config_files(self.root_module, self.mlir_folder)
 
 
@@ -484,6 +471,41 @@ class GeluABPlusC(torch.nn.Module):
         C = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=0.1, offset=-0.05)
         return (A, B, C), {}
 
-
 for cls in [AB, AB_bfloat16, ATB, ABT, ABPlusC, ReluABPlusC, GeluABPlusC]:
     TestProgramsBuilder(cls()).generate_tests()
+
+class ABGemmBench(torch.nn.Module):
+
+    def __init__(self, m, n, k):
+        self.m, self.n, self.k = m, n, k
+        super().__init__()
+
+    def forward(self, A, B):
+        return A @ B
+
+    @export_variant
+    def entry_point(self):
+        A = Formula(shape=(self.m, self.n), dtype=np.dtype("float32")).torch()
+        B = Formula(shape=(self.n, self.k), dtype=np.dtype("float32")).torch()
+        return {"args": (A, B)}
+
+    @pytest.mark.benchmark_test(entry_point="entry_point", seed=14)
+    def test_entry_point(self):
+        A = Formula(shape=(self.m, self.n), dtype=np.dtype("float32"))
+        B = Formula(shape=(self.n, self.k), dtype=np.dtype("float32"))
+        return (A, B), {}
+
+SQUARE = [
+    # M, N, K
+    (128, 128, 128),
+    (256, 256, 256),
+    (512, 512, 512),
+    (1024, 1024, 1024),
+    (2048, 2048, 2048),
+    (4096, 4096, 4096),
+    (8192, 8192, 8192),
+]
+
+for m, n, k in SQUARE:
+    name = f"SquareGemmBenc{m}x{m}"
+    TestProgramsBuilder(ABGemmBench(m, n, k), directory=name, name=name).generate_tests()
