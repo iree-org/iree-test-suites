@@ -8,12 +8,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-IREE_COMPILE_QOL_FLAGS = [
-    "--mlir-timing",
-    "--mlir-timing-display=list",
-    "--iree-consteval-jit-debug",
-]
-
 
 class IreeCompileException(RuntimeError):
     pass
@@ -27,16 +21,12 @@ def iree_compile(source: Path, output: Path, cwd: Path, args: Sequence[str]):
     sep = "\n  "
     logger.info("**************************************************************")
     logger.info(f"  {sep.join(args)}")
-    exec_args = (
-        [
-            "iree-compile",
-            str(source.absolute()),
-            "-o",
-            str(output.absolute()),
-        ]
-        + IREE_COMPILE_QOL_FLAGS
-        + list(args)
-    )
+    exec_args = [
+        "iree-compile",
+        str(source.absolute()),
+        "-o",
+        str(output.absolute()),
+    ] + list(args)
     logger.info("Exec: " + " ".join(exec_args))
     start_time = time.time()
     ret = subprocess.run(exec_args, capture_output=True, cwd=cwd)
