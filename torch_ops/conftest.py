@@ -309,16 +309,27 @@ class IreeBaseTest(pytest.Item):
         self.pregen_kwargs = self.spec.kwargs
         self.json_obj = self.spec.json_obj
 
+        compile_args = ["iree-compile", self.spec.input_mlir_file]
+        compile_args.extend(self.spec.iree_compile_flags)
+        compile_args.extend(["-o", self.vmfb_name])
+        self.compile_cmd = subprocess.list2cmdline(compile_args)
+
     def test_compile(self):
-        # We want to output this to a file to facilitate debugging.
-        # E.g., something went wrong and people may want to run iree-run-module
-        input_file = self.spec.input_mlir_file
-        output_file = self.spec.test_directory / self.vmfb_name
-        extra_args = self.spec.iree_compile_flags
-        ireec.tools.compile_file(
-            input_file, extra_args=extra_args, output_file=output_file
+        cwd = self.test_cwd
+        logging.getLogger().info(
+            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
         )
-        return output_file
+        proc = subprocess.run(
+            self.compile_cmd, shell=True, capture_output=True, cwd=cwd
+        )
+        if proc.returncode != 0:
+            raise IreeCompileException(
+                process=proc,
+                cwd=cwd,
+                input_mlir_file=self.spec.input_mlir_file,
+                compile_cmd=self.compile_cmd,
+            )
+        return self.vmfb_name
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
@@ -461,7 +472,7 @@ class IreeCompileRunItem(IreeBaseTest):
                 cwd=cwd,
                 process=proc,
                 input_mlir_file=self.spec.input_mlir_file,
-                compile_cmd="dummy-compile-command",
+                compile_cmd=self.compile_cmd,
                 run_cmd=self.run_cmd,
             )
 
@@ -491,39 +502,33 @@ class IreeBenchmarkItem(IreeBaseTest):
 
     def test_run(self, vmfb):
         self.initialize_benchmark_test()
-        with open(vmfb, "rb") as f:
-            binary = f.read()
+        run_args = ["iree-benchmark-module", f"--module={str(vmfb)}"]
+        run_args.extend(self.spec.iree_run_module_flags)
+        run_args.extend([f"--function={self.entry_point}"])
 
         args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
         input_npy_files, input_kwargs = self.generate_input_npy_files(*args, **kwargs)
-        inputs = []
-        for input_npy_file in input_npy_files:
-            inputs.append(f"--input=@{input_npy_file}")
 
-        # TODO(@amd-eochoalo): Figure out how to attach
-        # rocprofv3 in a way that doesn't produce a segfault
-        # here....
-        # Attach rocprofv3 to the current running process
-        # Run this using iree-run-module
-        # Which means also writing the input to a file...
+        for input in input_npy_files:
+            run_args.append(f"--input=@{input}")
 
-        command = [
-            "rocprofv3",
-            "--kernel-trace",
-            # We need CSV as it reports different things from json.
-            "--output-format",
-            "csv",
-            "--kernel-exclude-regex",
-            "__amd_*",  # includes __amd_rocclr_copyBuffer
-            "--",
-            "iree-run-module",
-            f"--module={str(vmfb)}",
-            *inputs,
-            f"--function={self.entry_point}",
-            "--device=hip",
-        ]
-        command = subprocess.list2cmdline(command)
-        x = subprocess.run(command, shell=True)
+        cwd = self.test_cwd
+
+        self.run_cmd = subprocess.list2cmdline(run_args)
+
+        logging.getLogger().info(
+            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
+        )
+
+        proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
+        if proc.returncode != 0:
+            raise IreeRunException(
+                cwd=cwd,
+                process=proc,
+                input_mlir_file=self.spec.input_mlir_file,
+                compile_cmd=self.compile_cmd,
+                run_cmd=self.run_cmd,
+            )
 
 
 class IreeCompileException(Exception):
@@ -533,7 +538,7 @@ class IreeCompileException(Exception):
         self,
         process: subprocess.CompletedProcess,
         cwd: Path,
-        input_mlir_name: Path,
+        input_mlir_file: Path,
         compile_cmd: str,
     ):
         try:
@@ -550,7 +555,7 @@ class IreeCompileException(Exception):
             + cwd.relative_to(THIS_DIR).as_posix()
         )
 
-        with open(cwd / input_mlir_name) as f:
+        with open(input_mlir_file) as f:
             input_mlir = f.read()
 
             super().__init__(
