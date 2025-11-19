@@ -10,40 +10,8 @@ import typing
 import iree.turbine.aot as aot
 import torch
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class Formula:
-    """
-    Represents the formula:
+from utils import CustomJSONEncoder, Formula
 
-    (coeff * numpy.random.rand(*shape) + offset).astype(dtype)
-    """
-    shape: typing.Tuple[int, ...]
-    dtype: type = np.dtype("float32")
-    coeff: numbers.Number = 1
-    offset: numbers.Number = 0
-
-    def numpy(self):
-        return (self.coeff * np.random.rand(*self.shape) + self.offset).astype(self.dtype)
-
-    def torch(self):
-        return torch.from_numpy(self.numpy())
-
-    def toJSONEncoder(self):
-        """
-        Ensure all fields in dataclass are able to be encoded into JSON.
-
-        self.dtype:type cannot be encoded into JSON
-        """
-        return {"Formula": {"shape": self.shape, "dtype": self.dtype.name, "coeff": self.coeff, "offset": self.offset}}
-
-class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Formula):
-            return obj.toJSONEncoder()
-        if isinstance(obj, pytest.Mark):
-            mark = obj
-            return {"name": mark.name, "args": mark.args, "kwargs": mark.kwargs}
-        return super().default(obj)
 
 @dataclasses.dataclass(frozen=True)
 class ExportVariant:
@@ -52,11 +20,13 @@ class ExportVariant:
     This is just a wrapper around callable. Useful to denote
     a specific type of function inside a class.
     """
+
     function: callable
     name: str
 
     def __call__(self, *args, **kwargs):
         return self.function(self, *args, **kwargs)
+
 
 def export_variant(function=None, seed=0):
     """
@@ -67,7 +37,7 @@ def export_variant(function=None, seed=0):
             to return name to disambiguate between different functions.
             See up-to date documentation for parameters expected by
             FxProgramsBuilder.export_program
-            
+
             https://github.com/iree-org/iree-turbine/blob/51a22c97945b049fc79816f38108b5a8f12d2610/iree/turbine/aot/fx_programs.py#L174-L179
 
             By default name will be the name of the function which is annotated with export_variant
@@ -102,7 +72,6 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
         name = self.root_module._get_name()
         self.mlir_folder = self.root_generated / name
         self.mlir_folder.mkdir(exist_ok=True)
-
 
     def generate_mlir_module(self):
         for attr_name in dir(self.root_module):
@@ -206,16 +175,16 @@ class AB(torch.nn.Module):
 
     @export_variant(seed=0)
     def float32(self):
-        left = Formula(shape=(64,64)).torch()
-        right = Formula(shape=(64,64)).torch()
-        export_kwargs = {"args" : (left, right)}
+        left = Formula(shape=(64, 64)).torch()
+        right = Formula(shape=(64, 64)).torch()
+        export_kwargs = {"args": (left, right)}
         return export_kwargs
 
     @export_variant(seed=0)
     def float16(self):
-        left = Formula(shape=(64,64), dtype=np.dtype("float16")).torch()
-        right = Formula(shape=(64,64), dtype=np.dtype("float16")).torch()
-        export_kwargs = {"args" : (left, right)}
+        left = Formula(shape=(64, 64), dtype=np.dtype("float16")).torch()
+        right = Formula(shape=(64, 64), dtype=np.dtype("float16")).torch()
+        export_kwargs = {"args": (left, right)}
         return export_kwargs
 
     @pytest.mark.benchmark_test(entry_point="float32", seed=0)

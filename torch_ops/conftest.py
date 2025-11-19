@@ -16,20 +16,14 @@ import pytest
 import subprocess
 import glob
 import numpy as np
-import psutil
 import os
+
+from iree import compiler as ireec
+from utils import customJSONDecoder, Formula
 
 THIS_DIR = Path(__file__).parent
 TEST_DATA_FLAGFILE_NAME = "run_module_io_flags.json"
 
-def find_procs_by_name(name):
-    ls = []
-    for p in psutil.process_iter(attrs=["name", "exe", "cmdline"]):
-        if name == p.info['name'] or \
-                p.info['exe'] and os.path.basename(p.info['exe']) == name or \
-                p.info['cmdline'] and p.info['cmdline'][0] == name:
-            ls.append(p)
-    return ls
 
 def pytest_addoption(parser):
     # List of configuration files following this schema:
@@ -111,6 +105,16 @@ def pytest_sessionstart(session):
 
 
 def pytest_collect_file(parent, file_path):
+    """A test corresponds to a file named ${TEST_DATA_FLAGFILE_NAME}.
+
+    In order for the test to succeed though, the test should have the
+    folder structure expected. Which is:
+
+    ../${MODULE_NAME}/${TEST_NAME}/{correcntess,benchmark}/${TEST_DATA_FLAGFILE_NAME}
+
+    The ${MODULE_NAME} corresponds to the MLIR module and this is where the MLIR module
+    should be stored.
+    """
     if file_path.name == TEST_DATA_FLAGFILE_NAME:
         return MlirCompileRunTest.from_parent(parent, path=file_path)
 
@@ -248,7 +252,7 @@ class MlirCompileRunTest(pytest.File):
                     skip_run=skip_run,
                 )
                 with open(test_directory / spec.data_flagfile_name, "r") as config:
-                    json_obj = json.load(config, object_hook=from_dict)
+                    json_obj = json.load(config, object_hook=customJSONDecoder)
 
                 marker = json_obj["marker"]
 
@@ -288,33 +292,26 @@ class IreeBaseTest(pytest.Item):
 
         with open(self.test_cwd / self.spec.data_flagfile_name, "r") as config:
             # TODO(@amd-eochoalo): deduplicate
-            json_obj = json.load(config, object_hook=from_dict)
+            json_obj = json.load(config, object_hook=customJSONDecoder)
 
         self.pregen_args = json_obj["args"]
         self.pregen_kwargs = json_obj["kwargs"]
         self.json = json_obj
 
     def test_compile(self):
-        from iree import compiler as ireec 
         # We want to output this to a file to facilitate debugging.
         # E.g., something went wrong and people may want to run iree-run-module
         input_file = self.spec.input_mlir_file
         output_file = self.spec.test_directory / self.vmfb_name
         extra_args = self.spec.iree_compile_flags
-        ireec.tools.compile_file(input_file, extra_args=extra_args, output_file=output_file)
+        ireec.tools.compile_file(
+            input_file, extra_args=extra_args, output_file=output_file
+        )
         return output_file
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
-        if isinstance(excinfo.value, (IreeCompileException, IreeRunException)):
-            return "\n".join(excinfo.value.args)
-        if isinstance(excinfo.value, IreeXFailCompileRunException):
-            return (
-                "Expected compile failure but run failed (move to 'expected_run_failures'):\n"
-                + "\n".join(excinfo.value.__cause__.args)
-            )
         return super().repr_failure(excinfo)
-
 
     def reportinfo(self):
         display_name = (
@@ -391,44 +388,8 @@ class IreeBaseTest(pytest.Item):
         if self.spec.skip_run:
             return
 
-        try:
-            self.test_run(vmfb)
-        except IreeRunException as e:
-            if not self.spec.expect_compile_success:
-                raise IreeXFailCompileRunException from e
-            raise e
+        self.test_run(vmfb)
 
-# TODO(@amd-eochoalo): move to a common file
-@dataclass(frozen=True, kw_only=True)
-class Formula:
-    """
-    Represents the formula:
-
-    (coeff * numpy.random.rand(*shape) + offset).astype(dtype)
-    """
-    shape: typing.Tuple[int, ...]
-    dtype: type = np.dtype("float32")
-    coeff: numbers.Number = 1
-    offset: numbers.Number = 0
-
-    def numpy(self):
-        return (self.coeff * np.random.rand(*self.shape) + self.offset).astype(self.dtype)
-
-    def torch(self):
-        return torch.from_numpy(self.numpy())
-
-    def toJSONEncoder(self):
-        """
-        Ensure all fields in dataclass are able to be encoded into JSON.
-
-        self.dtype:type cannot be encoded into JSON
-        """
-        return {"Formula": {"shape": self.shape, "dtype": self.dtype.name, "coeff": self.coeff, "offset": self.offset}}
-
-def from_dict(d):
-    if kwargs := d.get("Formula"):
-        return Formula(**kwargs)
-    return d
 
 class IreeCompileRunItem(IreeBaseTest):
     """Test invocation item for an IREE compile + run test case."""
@@ -442,7 +403,6 @@ class IreeCompileRunItem(IreeBaseTest):
         self.equal_nan = marker.kwargs.get("equal_nan", False)
         self.expected_results = self.json["expected_results"]
 
-
     def test_run(self, vmfb):
         self.initialize_correctness_test()
         args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
@@ -450,9 +410,12 @@ class IreeCompileRunItem(IreeBaseTest):
             binary = f.read()
 
         from iree import runtime as ireert
+
         config = ireert.Config(driver_name="hip")
         instance = config.vm_instance
-        vm_modules = ireert.load_vm_modules(ireert.VmModule.copy_buffer(instance, binary), config=config)
+        vm_modules = ireert.load_vm_modules(
+            ireert.VmModule.copy_buffer(instance, binary), config=config
+        )
         function = getattr(vm_modules[-1], self.entry_point)
         result = function(*args, **kwargs)
         result = result.to_host()
@@ -466,9 +429,7 @@ class IreeCompileRunItem(IreeBaseTest):
         equal_nan = self.equal_nan
         for exp, obs in zip(expected, observed, strict=True):
             exp_arr = np.load(exp)
-            assert np.allclose(
-                exp_arr, obs, rtol=rtol, atol=atol, equal_nan=equal_nan
-            )
+            assert np.allclose(exp_arr, obs, rtol=rtol, atol=atol, equal_nan=equal_nan)
 
 
 # TODO(@amd-eochoalo): Have a version of this that does not depend
@@ -495,13 +456,9 @@ class IreeBenchmarkItem(IreeBaseTest):
         return new_args, {}
 
     def test_run(self, vmfb):
-
-
         self.initialize_benchmark_test()
         with open(vmfb, "rb") as f:
             binary = f.read()
-
-        items = find_procs_by_name("rocprov3")
 
         args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
         input_npy_files, input_kwargs = self.generate_input_npy_files(*args, **kwargs)
@@ -509,29 +466,27 @@ class IreeBenchmarkItem(IreeBaseTest):
         for input_npy_file in input_npy_files:
             inputs.append(f"--input=@{input_npy_file}")
 
-        if not items:
-            # TODO(@amd-eochoalo): Figure out how to attach
-            # rocprofv3 in a way that doesn't produce a segfault
-            # here....
-            # Attach rocprofv3 to the current running process
-            # Run this using iree-run-module
-            # Which means also writing the input to a file...
-            
-            command = [
-                "rocprofv3",
-                "--kernel-trace",
-                # We need CSV as it reports different things from json.
-                "--output-format",
-                "csv",
-                "--kernel-exclude-regex",
-                "__amd_*", # includes __amd_rocclr_copyBuffer
-                "--",
-                "iree-run-module",
-                f"--module={str(vmfb)}",
-                *inputs,
-                f"--function={self.entry_point}",
-                "--device=hip",
-            ] 
-            command = subprocess.list2cmdline(command)
-            x = subprocess.run(command, shell=True)
+        # TODO(@amd-eochoalo): Figure out how to attach
+        # rocprofv3 in a way that doesn't produce a segfault
+        # here....
+        # Attach rocprofv3 to the current running process
+        # Run this using iree-run-module
+        # Which means also writing the input to a file...
 
+        command = [
+            "rocprofv3",
+            "--kernel-trace",
+            # We need CSV as it reports different things from json.
+            "--output-format",
+            "csv",
+            "--kernel-exclude-regex",
+            "__amd_*",  # includes __amd_rocclr_copyBuffer
+            "--",
+            "iree-run-module",
+            f"--module={str(vmfb)}",
+            *inputs,
+            f"--function={self.entry_point}",
+            "--device=hip",
+        ]
+        command = subprocess.list2cmdline(command)
+        x = subprocess.run(command, shell=True)
