@@ -264,9 +264,9 @@ class MlirCompileRunTest(pytest.File):
                     expect_compile_success=expect_compile_success,
                     expect_run_success=expect_run_success,
                     skip_run=skip_run,
+                    json_obj=json_obj,
                     args=json_obj["args"],
                     kwargs=json_obj["kwargs"],
-                    json_obj=json_obj,
                 )
 
                 marker = json_obj["marker"]
@@ -351,6 +351,18 @@ class IreeBaseTest(pytest.Item):
 
         return args, kwargs
 
+    def generate_input_npy_files(self, *args, **kwargs):
+        if kwargs:
+            raise ValueError("Cannot handle kwargs yet")
+
+        new_args = []
+        for idx, arg in enumerate(args):
+            path = self.test_cwd / f"input_{idx}.npy"
+            np.save(path, arg)
+            new_args.append(path)
+
+        return new_args, {}
+
     def runtest(self):
         # We want to test two phases: 'compile', and 'run'.
         # A test can be marked as expected to fail at either stage, with these
@@ -417,31 +429,53 @@ class IreeCompileRunItem(IreeBaseTest):
 
     def test_run(self, vmfb):
         self.initialize_correctness_test()
+        run_args = ["iree-run-module", f"--module={str(vmfb)}"]
+        run_args.extend(self.spec.iree_run_module_flags)
+        run_args.extend([f"--function={self.entry_point}"])
+
         args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
-        with open(vmfb, "rb") as f:
-            binary = f.read()
+        input_npy_files, input_kwargs = self.generate_input_npy_files(*args, **kwargs)
 
-        from iree import runtime as ireert
+        for input in input_npy_files:
+            run_args.append(f"--input=@{input}")
 
-        config = ireert.Config(driver_name="hip")
-        instance = config.vm_instance
-        vm_modules = ireert.load_vm_modules(
-            ireert.VmModule.copy_buffer(instance, binary), config=config
+        cwd = self.test_cwd
+
+        observed = []
+        for idx, expected_result in enumerate(self.expected_results):
+            observed_results_file = f"observed_outputs{idx}.npy"
+            observed.append(f"{observed_results_file}")
+
+        for obs in observed:
+            run_args.append(f"--output=@{obs}")
+
+        self.run_cmd = subprocess.list2cmdline(run_args)
+
+        logging.getLogger().info(
+            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
         )
-        function = getattr(vm_modules[-1], self.entry_point)
-        result = function(*args, **kwargs)
-        result = result.to_host()
 
-        observed = [result]
-        expected = []
-        for result in self.expected_results:
-            expected.append(self.test_cwd / result)
-        rtol = self.rtol
-        atol = self.atol
-        equal_nan = self.equal_nan
+        proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
+        if proc.returncode != 0:
+            raise IreeRunException(
+                cwd=cwd,
+                process=proc,
+                input_mlir_file=self.spec.input_mlir_file,
+                compile_cmd="dummy-compile-command",
+                run_cmd=self.run_cmd,
+            )
+
+        expected = self.expected_results
         for exp, obs in zip(expected, observed, strict=True):
-            exp_arr = np.load(exp)
-            assert np.allclose(exp_arr, obs, rtol=rtol, atol=atol, equal_nan=equal_nan)
+            exp_arr = np.load(cwd / exp)
+            obs_arr = np.load(cwd / obs)
+            assert np.allclose(
+                exp_arr,
+                obs_arr,
+                rtol=self.rtol,
+                atol=self.atol,
+                equal_nan=self.equal_nan,
+            )
 
 
 # TODO(@amd-eochoalo): Have a version of this that does not depend
@@ -454,18 +488,6 @@ class IreeBenchmarkItem(IreeBaseTest):
         marker = self.get_closest_marker("benchmark_test")
         np.random.seed(marker.kwargs["seed"])
         self.entry_point = marker.kwargs["entry_point"]
-
-    def generate_input_npy_files(self, *args, **kwargs):
-        if kwargs:
-            raise ValueError("Cannot handle kwargs yet")
-
-        new_args = []
-        for idx, arg in enumerate(args):
-            path = self.test_cwd / f"input_{idx}.npy"
-            np.save(path, arg)
-            new_args.append(path)
-
-        return new_args, {}
 
     def test_run(self, vmfb):
         self.initialize_benchmark_test()
@@ -502,3 +524,92 @@ class IreeBenchmarkItem(IreeBaseTest):
         ]
         command = subprocess.list2cmdline(command)
         x = subprocess.run(command, shell=True)
+
+
+class IreeCompileException(Exception):
+    """Compiler exception that preserves the command line and output."""
+
+    def __init__(
+        self,
+        process: subprocess.CompletedProcess,
+        cwd: Path,
+        input_mlir_name: Path,
+        compile_cmd: str,
+    ):
+        try:
+            errs = process.stderr.decode("utf-8")
+        except:
+            errs = str(process.stderr)
+        try:
+            outs = process.stdout.decode("utf-8")
+        except:
+            outs = str(process.stdout)
+
+        test_github_url = (
+            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
+            + cwd.relative_to(THIS_DIR).as_posix()
+        )
+
+        with open(cwd / input_mlir_name) as f:
+            input_mlir = f.read()
+
+            super().__init__(
+                f"Error invoking iree-compile\n"
+                f"Error code: {process.returncode}\n"
+                f"Stderr diagnostics:\n{errs}\n\n"
+                f"Stdout diagnostics:\n{outs}\n\n"
+                f"Test case source:\n"
+                f"  {test_github_url}\n\n"
+                f"Input program:\n"
+                f"```\n{input_mlir}```\n\n"
+                f"Compiled with:\n"
+                f"  cd {cwd} && {compile_cmd}\n\n"
+            )
+
+
+class IreeRunException(Exception):
+    """Runtime exception that preserves the command line and output."""
+
+    def __init__(
+        self,
+        cwd: Path,
+        process: subprocess.CompletedProcess,
+        input_mlir_file: Path,
+        compile_cmd: str,
+        run_cmd: str,
+    ):
+        try:
+            errs = process.stderr.decode("utf-8")
+        except:
+            errs = str(process.stderr)
+        try:
+            outs = process.stdout.decode("utf-8")
+        except:
+            outs = str(process.stdout)
+
+        test_github_url = (
+            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
+            + cwd.relative_to(THIS_DIR).as_posix()
+        )
+
+        with open(input_mlir_file) as f:
+            input_mlir = f.read()
+
+            super().__init__(
+                f"Error invoking iree-run-module\n"
+                f"Error code: {process.returncode}\n"
+                f"Stderr diagnostics:\n{errs}\n"
+                f"Stdout diagnostics:\n{outs}\n"
+                f"Test case source:\n"
+                f"  {test_github_url}\n\n"
+                f"Input program:\n"
+                f"```\n{input_mlir}```\n\n"
+                f"Compiled with:\n"
+                f"  cd {cwd} && {compile_cmd}\n\n"
+                f"Run with:\n"
+                f"  cd {cwd} && {run_cmd}\n\n"
+            )
+
+
+class IreeXFailCompileRunException(Exception):
+    pass
