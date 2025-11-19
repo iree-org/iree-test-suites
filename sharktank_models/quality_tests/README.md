@@ -16,6 +16,10 @@ git clone https://github.com/iree-org/iree.git
 export PATH_TO_TESTS=iree/tests/external/iree-test-suites/sharktank_models/quality_tests
 export PATH_TO_EXTERNAL_FILES=iree/tests/external/iree-test-suites/test_suite_files
 
+# Set the env variable to point to the directory where vmfb files will be
+# stored.
+export TEST_OUTPUT_ARTIFACTS=/tmp/model_output_artifacts
+
 # Running quality tests
 git clone https://github.com/iree-org/iree-test-suites.git
 pytest iree-test-suites/sharktank_models/quality_tests/ \

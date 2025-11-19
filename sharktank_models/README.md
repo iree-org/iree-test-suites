@@ -52,6 +52,10 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
     See https://docs.pytest.org/en/stable/how-to/usage.html for other options.
 
+If you are looking for IREE quality tests or benchmark tests, please refer to
+the [Quality tests README](quality_tests/README.md) and [Benchmark tests
+README](benchmarks/README.md).
+
 ## Advanced pytest usage
 
 * The `log-cli-level` level can also be set to `debug`, `warning`, or `error`.
