@@ -11,7 +11,7 @@
 # Retrieving test files and external test files
 git clone https://github.com/iree-org/iree.git
 export PATH_TO_TESTS=iree/tests/external/iree-test-suites/sharktank_models/benchmarks
-export PATH_TO_EXTERNAL_FILES=iree/build_tools/pkgci/external_test_suite
+export PATH_TO_EXTERNAL_FILES=iree/tests/external/iree-test-suites/test_suite_files
 
 # running benchmark tests
 git clone https://github.com/iree-org/iree-test-suites.git
@@ -22,6 +22,8 @@ pytest sharktank_models/benchmarks/ \
     --test-file-directory=${PATH_TO_TESTS} \
     --external-file-directory=${PATH_TO_EXTERNAL_FILES}
 ```
+
+Important Note: you should point it to `sharktank_models/benchmarks` directory if you want to run benchmark tests.
 
 ### Required and optional fields for the JSON model file
 
