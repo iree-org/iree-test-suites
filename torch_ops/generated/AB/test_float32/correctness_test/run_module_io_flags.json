@@ -1,0 +1,38 @@
+{
+    "args": [
+        {
+            "Formula": {
+                "shape": [
+                    64,
+                    64
+                ],
+                "dtype": "float32",
+                "coeff": 1,
+                "offset": 0
+            }
+        },
+        {
+            "Formula": {
+                "shape": [
+                    64,
+                    64
+                ],
+                "dtype": "float32",
+                "coeff": 1,
+                "offset": 0
+            }
+        }
+    ],
+    "kwargs": {},
+    "marker": {
+        "name": "correctness_test",
+        "args": [],
+        "kwargs": {
+            "entry_point": "float32",
+            "seed": 0
+        }
+    },
+    "expected_results": [
+        "expected_result_0.npy"
+    ]
+}
