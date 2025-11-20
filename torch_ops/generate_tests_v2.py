@@ -70,13 +70,14 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
         self.directory = directory
         self.directory.mkdir(exist_ok=True)
         self.mlir_folder = None
-        self.name = name
 
         super().__init__(root_module)
 
-        name = self.root_module._get_name()
+        if not name:
+            name = self.root_module._get_name()
         self.mlir_folder = self.directory / name
         self.mlir_folder.mkdir(exist_ok=True)
+        self.name = name
 
     def generate_mlir_module(self, module, directory, name=None):
         """
@@ -508,4 +509,4 @@ SQUARE = [
 
 for m, n, k in SQUARE:
     name = f"SquareGemmBench{m}x{m}"
-    TestProgramsBuilder(ABGemmBench(m, n, k), directory=f"generated/{name}", name=name).generate_tests()
+    TestProgramsBuilder(ABGemmBench(m, n, k), directory=f"generated", name=name).generate_tests()

@@ -158,6 +158,9 @@ class IreeCompileAndRunTestSpec:
     # True if running is expected to succeed. If false, the test will be marked XFAIL.
     expect_run_success: bool
 
+    # Golden time for benchmark runs
+    golden_time_ms : typing.Dict[str,float]
+
     # True to only compile the test and skip running.
     skip_run: bool
 
@@ -263,6 +266,7 @@ class MlirCompileRunTest(pytest.File):
                     iree_run_module_flags=config["iree_run_module_flags"],
                     expect_compile_success=expect_compile_success,
                     expect_run_success=expect_run_success,
+                    golden_time_ms=config["golden_times_ms"],
                     skip_run=skip_run,
                     json_obj=json_obj,
                     args=json_obj["args"],
@@ -502,6 +506,9 @@ class IreeBenchmarkItem(IreeBaseTest):
 
     def test_run(self, vmfb):
         self.initialize_benchmark_test()
+        parent = self.test_cwd.parent
+        grand_parent = parent.parent
+        golden_time_key = f"{grand_parent.name}/{parent.name}"
         run_args = ["iree-benchmark-module", "--benchmark_format=json", f"--module={str(vmfb)}"]
         run_args.extend(self.spec.iree_run_module_flags)
         run_args.extend([f"--function={self.entry_point}"])
@@ -531,7 +538,9 @@ class IreeBenchmarkItem(IreeBaseTest):
             )
 
         json_obj = json.loads(proc.stdout.decode("utf-8"))
-        print(json_obj["benchmarks"][0]["real_time"])
+        observed_time = json_obj["benchmarks"][0]["real_time"]
+        expected_golden_time = self.spec.golden_time_ms[golden_time_key]
+        assert observed_time <= expected_golden_time
 
 
 class IreeCompileException(Exception):
