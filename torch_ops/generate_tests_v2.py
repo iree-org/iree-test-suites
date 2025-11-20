@@ -507,5 +507,5 @@ SQUARE = [
 ]
 
 for m, n, k in SQUARE:
-    name = f"SquareGemmBenc{m}x{m}"
+    name = f"SquareGemmBench{m}x{m}"
     TestProgramsBuilder(ABGemmBench(m, n, k), directory=f"generated/{name}", name=name).generate_tests()
