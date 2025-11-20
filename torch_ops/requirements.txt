@@ -3,6 +3,7 @@
 #   * See requirements-dev.txt for extra deps used to regenerate test cases.
 
 numpy
+psutil
 pyjson5
 pytest
 pytest-html

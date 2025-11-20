@@ -6,14 +6,20 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+import typing
+import numbers
+import csv
 import logging
-import pyjson5
+import json
 import os
 import pytest
 import subprocess
 import glob
 import numpy as np
+import os
+
+from iree import compiler as ireec
+from utils import customJSONDecoder, Formula
 
 THIS_DIR = Path(__file__).parent
 TEST_DATA_FLAGFILE_NAME = "run_module_io_flags.json"
@@ -82,7 +88,7 @@ def pytest_sessionstart(session):
     session.config.iree_test_configs = []
     for config_file in session.config.getoption("config_files"):
         with open(config_file) as f:
-            test_config = pyjson5.load(f)
+            test_config = json.load(f)
 
             # Sanity check the config file structure before going any further.
             def check_field(field_name):
@@ -99,22 +105,29 @@ def pytest_sessionstart(session):
 
 
 def pytest_collect_file(parent, file_path):
+    """A test corresponds to a file named ${TEST_DATA_FLAGFILE_NAME}.
+
+    In order for the test to succeed though, the test should have the
+    folder structure expected. Which is:
+
+    ../${MODULE_NAME}/${TEST_NAME}/{correcntess,benchmark}/${TEST_DATA_FLAGFILE_NAME}
+
+    The ${MODULE_NAME} corresponds to the MLIR module and this is where the MLIR module
+    should be stored.
+    """
     if file_path.name == TEST_DATA_FLAGFILE_NAME:
         return MlirCompileRunTest.from_parent(parent, path=file_path)
-
-    if file_path.suffix == ".json":
-        with open(file_path) as f:
-            test_cases_json = pyjson5.load(f)
-            if test_cases_json.get("file_format", "") == "test_cases_v0":
-                return MlirCompileRunTest.from_parent(parent, path=file_path)
 
 
 @dataclass(frozen=True)
 class IreeCompileAndRunTestSpec:
     """Specification for an IREE "compile and run" test."""
 
-    # Directory where test input files are located.
+    # full path containing the test (i.e., run_io_module.json file).
     test_directory: Path
+
+    # full path to file
+    input_mlir_file: Path
 
     # Name of input MLIR file in a format accepted by IREE (e.g. torch, tosa, or linalg dialect).
     # Including file suffix, e.g. 'model.mlir' or 'model.mlirbc'.
@@ -133,11 +146,11 @@ class IreeCompileAndRunTestSpec:
     test_name: str
 
     # Flags to pass to `iree-compile`, e.g. ["--iree-hal-target-backends=llvm-cpu"].
-    iree_compile_flags: List[str]
+    iree_compile_flags: typing.List[str]
 
     # Flags to pass to `iree-run-module`, e.g. ["--device=local-task"].
     # These will be passed in addition to `--flagfile={data_flagfile_name}`.
-    iree_run_module_flags: List[str]
+    iree_run_module_flags: typing.List[str]
 
     # True if compilation is expected to succeed. If false, the test will be marked XFAIL.
     expect_compile_success: bool
@@ -145,8 +158,27 @@ class IreeCompileAndRunTestSpec:
     # True if running is expected to succeed. If false, the test will be marked XFAIL.
     expect_run_success: bool
 
+    # Golden time for benchmark runs
+    golden_time_ms: typing.Dict[str, float]
+
     # True to only compile the test and skip running.
     skip_run: bool
+
+    # Json decoded dictionary
+    json_obj: typing.Dict
+
+    # Arguments to be passed to the function being tested.
+    args: None | typing.List[typing.Any]
+
+    # Key word arguments to be passed to the function being tested.
+    kwargs: None | typing.Dict
+
+
+@dataclass(frozen=True)
+class IreeCorrectnessTestSpec(IreeCompileAndRunTestSpec):
+    # List of expected output.
+    # We expect a list of npy files.
+    expected_output: typing.List[str]
 
 
 class MlirCompileRunTest(pytest.File):
@@ -154,16 +186,24 @@ class MlirCompileRunTest(pytest.File):
 
     @dataclass(frozen=True)
     class TestCase:
-        mlir_file: str
+        mlir_file: Path
         runtime_flagfile: str
 
     def discover_test_cases(self):
-        """Discovers test cases with run_module_io_flags.txt files."""
+        """Discovers test cases with run_module_io_flags.txt files.
+
+        We expect the following structure
+
+        generated/${CLASSNAME}/${FILE}.mlir
+        generated/${CLASSNAME}/{correctness,benchmark}/${TESTNAME}/${TEST_DATA_FLAGFILE_NAME}
+
+        Multiple correctness and benchmark tests may share an MLIR module.
+        """
         test_cases = []
 
-        mlir_files = sorted(self.path.parent.glob("*.mlir*"))
+        mlir_files = sorted(self.path.parent.parent.parent.glob("*.mlir*"))
         assert len(mlir_files) <= 1, "Test directories may only contain one .mlir file"
-        mlir_file = mlir_files[0]
+        mlir_file = mlir_files[0].resolve()
 
         if self.path.name == TEST_DATA_FLAGFILE_NAME:
             test_cases.append(
@@ -176,15 +216,10 @@ class MlirCompileRunTest(pytest.File):
         return test_cases
 
     def collect(self):
-        # Expected directory structure:
-        #   path/to/test_abs/
-        #     - *.mlir[bc]
-        #     - run_module_io_flags.txt
-        #   path/to/test_add/
-        #     - *.mlir[bc]
-        #     - run_module_io_flags.txt
+        # This test directory corresponds to the path
+        # generated/${CLASSNAME}/{correctness,benchmark}/${TESTNAME}/
+        test_directory = self.path.parent.resolve()
 
-        test_directory = self.path.parent
         relative_test_directory = test_directory.relative_to(THIS_DIR).as_posix()
         test_directory_name = test_directory.name
 
@@ -217,8 +252,12 @@ class MlirCompileRunTest(pytest.File):
                 name_parts = [e for e in [mlir_file.name, config_name] if e]
                 item_name = "::".join(name_parts)
 
+                with open(test_directory / self.path, "r") as json_file:
+                    json_obj = json.load(json_file, object_hook=customJSONDecoder)
+
                 spec = IreeCompileAndRunTestSpec(
                     test_directory=test_directory,
+                    input_mlir_file=mlir_file,
                     input_mlir_name=mlir_file.name,
                     input_mlir_stem=mlir_file.stem,
                     data_flagfile_name=test_case.runtime_flagfile,
@@ -227,13 +266,31 @@ class MlirCompileRunTest(pytest.File):
                     iree_run_module_flags=config["iree_run_module_flags"],
                     expect_compile_success=expect_compile_success,
                     expect_run_success=expect_run_success,
+                    golden_time_ms=config["golden_times_ms"],
                     skip_run=skip_run,
+                    json_obj=json_obj,
+                    args=json_obj["args"],
+                    kwargs=json_obj["kwargs"],
                 )
-                yield IreeCompileRunItem.from_parent(self, name=item_name, spec=spec)
+
+                marker = json_obj["marker"]
+
+                marker_name, marker_args, marker_kwargs = marker.values()
+                marker_callable = getattr(pytest.mark, marker_name)
+                if marker_name == "correctness_test":
+                    test = IreeCompileRunItem.from_parent(
+                        self, name=item_name, spec=spec
+                    )
+                elif marker_name == "benchmark_test":
+                    test = IreeBenchmarkItem.from_parent(
+                        self, name=item_name, spec=spec
+                    )
+                test.add_marker(marker_callable(*marker_args, **marker_kwargs))
+                yield test
 
 
-class IreeCompileRunItem(pytest.Item):
-    """Test invocation item for an IREE compile + run test case."""
+class IreeBaseTest(pytest.Item):
+    """Test invocation item for an IREE test case."""
 
     spec: IreeCompileAndRunTestSpec
 
@@ -247,28 +304,79 @@ class IreeCompileRunItem(pytest.Item):
         self.user_properties.append(
             ("relative_test_directory_name", relative_test_directory)
         )
-        self.user_properties.append(("input_mlir_name", self.spec.input_mlir_name))
+        self.user_properties.append(("input_mlir_name", self.spec.input_mlir_file))
         self.user_properties.append(("test_name", self.spec.test_name))
-
+        self.vmfb_name = f"{self.spec.input_mlir_stem}_{self.spec.test_name}.vmfb"
         self.test_cwd = self.spec.test_directory
 
-        vmfb_name = f"{self.spec.input_mlir_stem}_{self.spec.test_name}.vmfb"
+        self.pregen_args = self.spec.args
+        self.pregen_kwargs = self.spec.kwargs
+        self.json_obj = self.spec.json_obj
 
-        compile_args = ["iree-compile", self.spec.input_mlir_name]
+        compile_args = ["iree-compile", self.spec.input_mlir_file]
         compile_args.extend(self.spec.iree_compile_flags)
-        compile_args.extend(["-o", vmfb_name])
+        compile_args.extend(["-o", self.vmfb_name])
         self.compile_cmd = subprocess.list2cmdline(compile_args)
 
-        run_args = ["iree-run-module", f"--module={vmfb_name}"]
-        run_args.extend(self.spec.iree_run_module_flags)
-        with open(self.test_cwd / self.spec.data_flagfile_name, "r") as config:
-            json = pyjson5.load(config)
-        for input in json["inputs"]:
-            run_args.append(f"--input=@{input}")
-        for output in json["observed_outputs"]:
-            run_args.append(f"--output=@{output}")
-        self.run_cmd = subprocess.list2cmdline(run_args)
-        self.run_options = json
+    def test_compile(self):
+        cwd = self.test_cwd
+        logging.getLogger().info(
+            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
+        )
+        proc = subprocess.run(
+            self.compile_cmd, shell=True, capture_output=True, cwd=cwd
+        )
+        if proc.returncode != 0:
+            raise IreeCompileException(
+                process=proc,
+                cwd=cwd,
+                input_mlir_file=self.spec.input_mlir_file,
+                compile_cmd=self.compile_cmd,
+            )
+        return self.vmfb_name
+
+    def repr_failure(self, excinfo):
+        """Called when self.runtest() raises an exception."""
+        return super().repr_failure(excinfo)
+
+    def reportinfo(self):
+        display_name = (
+            f"{self.path.parent.name}::{self.spec.input_mlir_name}::{self.name}"
+        )
+        return self.path, 0, f"IREE compile and run: {display_name}"
+
+    # Defining this for pytest-retry to avoid an AttributeError.
+    def _initrequest(self):
+        pass
+
+    def generate_values(self, *pregen_args, **pregen_kwargs):
+        args = []
+        for pregen_arg in pregen_args:
+            if isinstance(pregen_arg, Formula):
+                args.append(pregen_arg.numpy())
+            else:
+                args.append(pregen_arg)
+
+        kwargs = {}
+        for pregen_key, pregen_val in pregen_kwargs.items():
+            if isinstance(pregen_val, Formula):
+                kwargs[pregen_key] = pregen_val.numpy()
+            else:
+                kwargs[pregen_key] = pregen_val
+
+        return args, kwargs
+
+    def generate_input_npy_files(self, *args, **kwargs):
+        if kwargs:
+            raise ValueError("Cannot handle kwargs yet")
+
+        new_args = []
+        for idx, arg in enumerate(args):
+            path = self.test_cwd / f"input_{idx}.npy"
+            np.save(path, arg)
+            new_args.append(path)
+
+        return new_args, {}
 
     def runtest(self):
         # We want to test two phases: 'compile', and 'run'.
@@ -313,36 +421,51 @@ class IreeCompileRunItem(pytest.Item):
                 )
             )
 
-        self.test_compile()
+        vmfb = self.test_compile()
 
         if self.spec.skip_run:
             return
 
-        try:
-            self.test_run()
-        except IreeRunException as e:
-            if not self.spec.expect_compile_success:
-                raise IreeXFailCompileRunException from e
-            raise e
+        self.test_run(vmfb)
 
-    def test_compile(self):
-        cwd = self.test_cwd
-        logging.getLogger().info(
-            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
-        )
-        proc = subprocess.run(
-            self.compile_cmd, shell=True, capture_output=True, cwd=cwd
-        )
-        if proc.returncode != 0:
-            raise IreeCompileException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-            )
 
-    def test_run(self):
+class IreeCompileRunItem(IreeBaseTest):
+    """Test invocation item for an IREE compile + run test case."""
+
+    def initialize_correctness_test(self):
+        marker = self.get_closest_marker("correctness_test")
+
+        np.random.seed(marker.kwargs["seed"])
+        self.entry_point = marker.kwargs["entry_point"]
+        self.rtol = marker.kwargs.get("rtol", 1e-05)
+        self.atol = marker.kwargs.get("atol", 1e-08)
+        self.equal_nan = marker.kwargs.get("equal_nan", False)
+        self.expected_results = self.json_obj["expected_results"]
+
+    def test_run(self, vmfb):
+        self.initialize_correctness_test()
+        run_args = ["iree-run-module", f"--module={str(vmfb)}"]
+        run_args.extend(self.spec.iree_run_module_flags)
+        run_args.extend([f"--function={self.entry_point}"])
+
+        args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
+        input_npy_files, input_kwargs = self.generate_input_npy_files(*args, **kwargs)
+
+        for input in input_npy_files:
+            run_args.append(f"--input=@{input}")
+
         cwd = self.test_cwd
+
+        observed = []
+        for idx, expected_result in enumerate(self.expected_results):
+            observed_results_file = f"observed_outputs{idx}.npy"
+            observed.append(f"{observed_results_file}")
+
+        for obs in observed:
+            run_args.append(f"--output=@{obs}")
+
+        self.run_cmd = subprocess.list2cmdline(run_args)
+
         logging.getLogger().info(
             f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
         )
@@ -350,47 +473,78 @@ class IreeCompileRunItem(pytest.Item):
         proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
         if proc.returncode != 0:
             raise IreeRunException(
-                process=proc,
                 cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
+                process=proc,
+                input_mlir_file=self.spec.input_mlir_file,
                 compile_cmd=self.compile_cmd,
                 run_cmd=self.run_cmd,
             )
 
-        observed = self.run_options["observed_outputs"]
-        expected = self.run_options["expected_outputs"]
-        expected.sort()
-        observed.sort()
-        rtol = self.run_options["rtol"]
-        atol = self.run_options["atol"]
-        equal_nan = self.run_options["equal_nan"]
+        expected = self.expected_results
         for exp, obs in zip(expected, observed, strict=True):
             exp_arr = np.load(cwd / exp)
             obs_arr = np.load(cwd / obs)
             assert np.allclose(
-                exp_arr, obs_arr, rtol=rtol, atol=atol, equal_nan=equal_nan
+                exp_arr,
+                obs_arr,
+                rtol=self.rtol,
+                atol=self.atol,
+                equal_nan=self.equal_nan,
             )
 
-    def repr_failure(self, excinfo):
-        """Called when self.runtest() raises an exception."""
-        if isinstance(excinfo.value, (IreeCompileException, IreeRunException)):
-            return "\n".join(excinfo.value.args)
-        if isinstance(excinfo.value, IreeXFailCompileRunException):
-            return (
-                "Expected compile failure but run failed (move to 'expected_run_failures'):\n"
-                + "\n".join(excinfo.value.__cause__.args)
-            )
-        return super().repr_failure(excinfo)
 
-    def reportinfo(self):
-        display_name = (
-            f"{self.path.parent.name}::{self.spec.input_mlir_name}::{self.name}"
+# TODO(@amd-eochoalo): Have a version of this that does not depend
+# on rocprofv3 for different targets. Once gpu timestamp is available
+# Remove rocprofv3 dependency and use iree-benchmark-{module,executable}
+class IreeBenchmarkItem(IreeBaseTest):
+    """Test invocation item for an IREE compile + run test case."""
+
+    def initialize_benchmark_test(self):
+        marker = self.get_closest_marker("benchmark_test")
+        np.random.seed(marker.kwargs["seed"])
+        self.entry_point = marker.kwargs["entry_point"]
+
+    def test_run(self, vmfb):
+        self.initialize_benchmark_test()
+        parent = self.test_cwd.parent
+        grand_parent = parent.parent
+        golden_time_key = f"{grand_parent.name}/{parent.name}"
+        run_args = [
+            "iree-benchmark-module",
+            "--benchmark_format=json",
+            f"--module={str(vmfb)}",
+        ]
+        run_args.extend(self.spec.iree_run_module_flags)
+        run_args.extend([f"--function={self.entry_point}"])
+
+        args, kwargs = self.generate_values(*self.pregen_args, **self.pregen_kwargs)
+        input_npy_files, input_kwargs = self.generate_input_npy_files(*args, **kwargs)
+
+        for input in input_npy_files:
+            run_args.append(f"--input=@{input}")
+
+        cwd = self.test_cwd
+
+        self.run_cmd = subprocess.list2cmdline(run_args)
+
+        logging.getLogger().info(
+            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
         )
-        return self.path, 0, f"IREE compile and run: {display_name}"
 
-    # Defining this for pytest-retry to avoid an AttributeError.
-    def _initrequest(self):
-        pass
+        proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
+        if proc.returncode != 0:
+            raise IreeRunException(
+                cwd=cwd,
+                process=proc,
+                input_mlir_file=self.spec.input_mlir_file,
+                compile_cmd=self.compile_cmd,
+                run_cmd=self.run_cmd,
+            )
+
+        json_obj = json.loads(proc.stdout.decode("utf-8"))
+        observed_time = json_obj["benchmarks"][0]["real_time"]
+        expected_golden_time = self.spec.golden_time_ms[golden_time_key]
+        assert observed_time <= (expected_golden_time * 1.1)
 
 
 class IreeCompileException(Exception):
@@ -400,7 +554,7 @@ class IreeCompileException(Exception):
         self,
         process: subprocess.CompletedProcess,
         cwd: Path,
-        input_mlir_name: Path,
+        input_mlir_file: Path,
         compile_cmd: str,
     ):
         try:
@@ -417,7 +571,7 @@ class IreeCompileException(Exception):
             + cwd.relative_to(THIS_DIR).as_posix()
         )
 
-        with open(cwd / input_mlir_name) as f:
+        with open(input_mlir_file) as f:
             input_mlir = f.read()
 
             super().__init__(
@@ -439,9 +593,9 @@ class IreeRunException(Exception):
 
     def __init__(
         self,
-        process: subprocess.CompletedProcess,
         cwd: Path,
-        input_mlir_name: Path,
+        process: subprocess.CompletedProcess,
+        input_mlir_file: Path,
         compile_cmd: str,
         run_cmd: str,
     ):
@@ -459,7 +613,7 @@ class IreeRunException(Exception):
             + cwd.relative_to(THIS_DIR).as_posix()
         )
 
-        with open(cwd / input_mlir_name) as f:
+        with open(input_mlir_file) as f:
             input_mlir = f.read()
 
             super().__init__(
