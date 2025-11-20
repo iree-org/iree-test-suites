@@ -13,6 +13,7 @@ try:
 except:
     ...
 
+
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Formula:
     """
@@ -20,13 +21,16 @@ class Formula:
 
     (coeff * numpy.random.rand(*shape) + offset).astype(dtype)
     """
+
     shape: typing.Tuple[int, ...]
     dtype: type = np.dtype("float32")
     coeff: numbers.Number = 1
     offset: numbers.Number = 0
 
     def numpy(self):
-        return (self.coeff * np.random.rand(*self.shape) + self.offset).astype(self.dtype)
+        return (self.coeff * np.random.rand(*self.shape) + self.offset).astype(
+            self.dtype
+        )
 
     def torch(self):
         return torch.from_numpy(self.numpy())
@@ -37,7 +41,15 @@ class Formula:
 
         self.dtype:type cannot be encoded into JSON
         """
-        return {"Formula": {"shape": self.shape, "dtype": self.dtype.name, "coeff": self.coeff, "offset": self.offset}}
+        return {
+            "Formula": {
+                "shape": self.shape,
+                "dtype": self.dtype.name,
+                "coeff": self.coeff,
+                "offset": self.offset,
+            }
+        }
+
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -47,6 +59,7 @@ class CustomJSONEncoder(json.JSONEncoder):
             mark = obj
             return {"name": mark.name, "args": mark.args, "kwargs": mark.kwargs}
         return super().default(obj)
+
 
 def customJSONDecoder(d):
     if kwargs := d.get("Formula"):
