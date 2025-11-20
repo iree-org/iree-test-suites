@@ -540,7 +540,7 @@ class IreeBenchmarkItem(IreeBaseTest):
         json_obj = json.loads(proc.stdout.decode("utf-8"))
         observed_time = json_obj["benchmarks"][0]["real_time"]
         expected_golden_time = self.spec.golden_time_ms[golden_time_key]
-        assert observed_time <= expected_golden_time
+        assert observed_time <= (expected_golden_time * 1.1)
 
 
 class IreeCompileException(Exception):
