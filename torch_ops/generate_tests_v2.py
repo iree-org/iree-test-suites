@@ -471,7 +471,7 @@ class GeluABPlusC(torch.nn.Module):
         C = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=0.1, offset=-0.05)
         return (A, B, C), {}
 
-for cls in [AB, AB_bfloat16, ATB, ABT, ABPlusC, ReluABPlusC, GeluABPlusC]:
+for cls in [AB, ATB, AB_bfloat16, ABT, ABPlusC, ReluABPlusC, GeluABPlusC]:
     TestProgramsBuilder(cls()).generate_tests()
 
 class ABGemmBench(torch.nn.Module):
@@ -508,4 +508,4 @@ SQUARE = [
 
 for m, n, k in SQUARE:
     name = f"SquareGemmBenc{m}x{m}"
-    TestProgramsBuilder(ABGemmBench(m, n, k), directory=name, name=name).generate_tests()
+    TestProgramsBuilder(ABGemmBench(m, n, k), directory=f"generated/{name}", name=name).generate_tests()
