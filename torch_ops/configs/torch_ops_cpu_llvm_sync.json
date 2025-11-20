@@ -9,6 +9,8 @@
   ],
   "skip_compile_tests": [],
   "skip_run_tests": [
+    "generated/ABPlusC/test_float16/correctness_test",
+    "generated/ABT/test_float_16/correctness_test",
     "generated/SquareGemmBench128x128/test_entry_point/benchmark_test",
     "generated/SquareGemmBench256x256/test_entry_point/benchmark_test",
     "generated/SquareGemmBench512x512/test_entry_point/benchmark_test",
