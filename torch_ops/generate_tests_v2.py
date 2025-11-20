@@ -253,7 +253,6 @@ class TestProgramsBuilder(aot.FxProgramsBuilder):
             json.dump(input, config, indent=4, cls=CustomJSONEncoder)
             print("", file=config)
 
-
     def generate_tests(self):
         """
         Generates tests in the current root_module.
@@ -294,6 +293,7 @@ class AB(torch.nn.Module):
         args = [Formula(shape=(64, 64), dtype=np.dtype("float16"))] * 2
         return args, {}
 
+
 class AB_bfloat16(torch.nn.Module):
     def forward(self, left, right):
         left = left.to(torch.bfloat16)
@@ -306,18 +306,20 @@ class AB_bfloat16(torch.nn.Module):
         arg = Formula(shape=(64, 64), dtype=np.dtype("float32"))
         args = (arg.torch(), arg.torch())
 
-        dynamic_shapes = {"args":
-            ((64, torch.export.Dim("K")),
-            (torch.export.Dim("K"), 64))
+        dynamic_shapes = {
+            "args": ((64, torch.export.Dim("K")), (torch.export.Dim("K"), 64))
         }
 
         return {"args": args, "dynamic_shapes": dynamic_shapes}
 
-    @pytest.mark.correctness_test(entry_point="from_float32", seed=0, rtol=1e-2, atol=1e-2)
+    @pytest.mark.correctness_test(
+        entry_point="from_float32", seed=0, rtol=1e-2, atol=1e-2
+    )
     def test_from_float32(self):
         arg = Formula(shape=(64, 64), dtype=np.dtype("float32"))
         args = (arg, arg)
         return args, {}
+
 
 class ATB(torch.nn.Module):
     def forward(self, left, right):
@@ -347,6 +349,7 @@ class ATB(torch.nn.Module):
         right = Formula(shape=(64, 64), dtype=np.dtype("float16"))
         return (left, right), {}
 
+
 class ABT(torch.nn.Module):
     def forward(self, left, right):
         return left @ right.t()
@@ -375,15 +378,22 @@ class ABT(torch.nn.Module):
         right = Formula(shape=(64, 64), dtype=np.dtype("float16"))
         return (left, right), {}
 
+
 class ABPlusC(torch.nn.Module):
     def forward(self, A, B, C):
         return A @ B + C
 
     @export_variant(seed=7)
     def float32(self):
-        A = Formula(shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1).torch()
-        B = Formula(shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1).torch()
-        C = Formula(shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1).torch()
+        A = Formula(
+            shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1
+        ).torch()
+        B = Formula(
+            shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1
+        ).torch()
+        C = Formula(
+            shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1
+        ).torch()
         return {"args": (A, B, C)}
 
     @pytest.mark.correctness_test(entry_point="float32", seed=7)
@@ -395,9 +405,15 @@ class ABPlusC(torch.nn.Module):
 
     @export_variant(seed=8)
     def float16(self):
-        A = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1).torch()
-        B = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1).torch()
-        C = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1).torch()
+        A = Formula(
+            shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1
+        ).torch()
+        B = Formula(
+            shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1
+        ).torch()
+        C = Formula(
+            shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1
+        ).torch()
         return {"args": (A, B, C)}
 
     @pytest.mark.correctness_test(entry_point="float16", seed=8)
@@ -407,15 +423,22 @@ class ABPlusC(torch.nn.Module):
         C = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1)
         return (A, B, C), {}
 
+
 class ReluABPlusC(torch.nn.Module):
     def forward(self, A, B, C):
         return torch.relu(A @ B + C)
 
     @export_variant(seed=9)
     def float32(self):
-        A = Formula(shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1).torch()
-        B = Formula(shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1).torch()
-        C = Formula(shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1).torch()
+        A = Formula(
+            shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1
+        ).torch()
+        B = Formula(
+            shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1
+        ).torch()
+        C = Formula(
+            shape=(64, 64), dtype=np.dtype("float32"), coeff=2, offset=-1
+        ).torch()
         return {"args": (A, B, C)}
 
     @pytest.mark.correctness_test(entry_point="float32", seed=9)
@@ -427,9 +450,15 @@ class ReluABPlusC(torch.nn.Module):
 
     @export_variant(seed=10)
     def float16(self):
-        A = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1).torch()
-        B = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1).torch()
-        C = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1).torch()
+        A = Formula(
+            shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1
+        ).torch()
+        B = Formula(
+            shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1
+        ).torch()
+        C = Formula(
+            shape=(64, 64), dtype=np.dtype("float16"), coeff=2, offset=-1
+        ).torch()
         return {"args": (A, B, C)}
 
     @pytest.mark.correctness_test(entry_point="float16", seed=8)
@@ -446,16 +475,28 @@ class GeluABPlusC(torch.nn.Module):
 
     @export_variant(seed=11)
     def float32(self):
-        A = Formula(shape=(64, 64), dtype=np.dtype("float32"), coeff=0.1, offset=-0.05).torch()
-        B = Formula(shape=(64, 64), dtype=np.dtype("float32"), coeff=0.1, offset=-0.05).torch()
-        C = Formula(shape=(64, 64), dtype=np.dtype("float32"), coeff=0.1, offset=-0.05).torch()
+        A = Formula(
+            shape=(64, 64), dtype=np.dtype("float32"), coeff=0.1, offset=-0.05
+        ).torch()
+        B = Formula(
+            shape=(64, 64), dtype=np.dtype("float32"), coeff=0.1, offset=-0.05
+        ).torch()
+        C = Formula(
+            shape=(64, 64), dtype=np.dtype("float32"), coeff=0.1, offset=-0.05
+        ).torch()
         return {"args": (A, B, C)}
 
     @export_variant(seed=12)
     def float16(self):
-        A = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=0.1, offset=-0.05).torch()
-        B = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=0.1, offset=-0.05).torch()
-        C = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=0.1, offset=-0.05).torch()
+        A = Formula(
+            shape=(64, 64), dtype=np.dtype("float16"), coeff=0.1, offset=-0.05
+        ).torch()
+        B = Formula(
+            shape=(64, 64), dtype=np.dtype("float16"), coeff=0.1, offset=-0.05
+        ).torch()
+        C = Formula(
+            shape=(64, 64), dtype=np.dtype("float16"), coeff=0.1, offset=-0.05
+        ).torch()
         return {"args": (A, B, C)}
 
     @pytest.mark.correctness_test(entry_point="float32", seed=11, atol=1e-5, rtol=1e-4)
@@ -472,11 +513,12 @@ class GeluABPlusC(torch.nn.Module):
         C = Formula(shape=(64, 64), dtype=np.dtype("float16"), coeff=0.1, offset=-0.05)
         return (A, B, C), {}
 
+
 for cls in [AB, ATB, AB_bfloat16, ABT, ABPlusC, ReluABPlusC, GeluABPlusC]:
     TestProgramsBuilder(cls()).generate_tests()
 
-class ABGemmBench(torch.nn.Module):
 
+class ABGemmBench(torch.nn.Module):
     def __init__(self, m, n, k):
         self.m, self.n, self.k = m, n, k
         super().__init__()
@@ -496,6 +538,7 @@ class ABGemmBench(torch.nn.Module):
         B = Formula(shape=(self.n, self.k), dtype=np.dtype("float32"))
         return (A, B), {}
 
+
 SQUARE = [
     # M, N, K
     (128, 128, 128),
@@ -509,4 +552,6 @@ SQUARE = [
 
 for m, n, k in SQUARE:
     name = f"SquareGemmBench{m}x{m}"
-    TestProgramsBuilder(ABGemmBench(m, n, k), directory=f"generated", name=name).generate_tests()
+    TestProgramsBuilder(
+        ABGemmBench(m, n, k), directory=f"generated", name=name
+    ).generate_tests()

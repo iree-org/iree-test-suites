@@ -159,7 +159,7 @@ class IreeCompileAndRunTestSpec:
     expect_run_success: bool
 
     # Golden time for benchmark runs
-    golden_time_ms : typing.Dict[str,float]
+    golden_time_ms: typing.Dict[str, float]
 
     # True to only compile the test and skip running.
     skip_run: bool
@@ -509,7 +509,11 @@ class IreeBenchmarkItem(IreeBaseTest):
         parent = self.test_cwd.parent
         grand_parent = parent.parent
         golden_time_key = f"{grand_parent.name}/{parent.name}"
-        run_args = ["iree-benchmark-module", "--benchmark_format=json", f"--module={str(vmfb)}"]
+        run_args = [
+            "iree-benchmark-module",
+            "--benchmark_format=json",
+            f"--module={str(vmfb)}",
+        ]
         run_args.extend(self.spec.iree_run_module_flags)
         run_args.extend([f"--function={self.entry_point}"])
 
