@@ -39,7 +39,7 @@ jobs:
       HTML_REPORT_PATH: onnx_ops/onnx_ops_test_report_cpu_llvm_sync.html
     steps:
       - name: Checkout repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       # Install Python packages.
       - name: Setup Python
