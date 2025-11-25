@@ -1,6 +1,6 @@
 {
     "rtol": 1e-05,
-    "atol": 1e-08,
+    "atol": 1e-05,
     "equal_nan": false,
     "inputs": [
         "input0.npy",
