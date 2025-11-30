@@ -363,9 +363,9 @@ class GeluABPlusC(QualityTestGenerator):
     def test_float16(self):
         return (
             (
-                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
-                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
-                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
+                self.rand(64, 64, dtype=torch.float16) * 0.1 - 0.05,
+                self.rand(64, 64, dtype=torch.float16) * 0.1 - 0.05,
+                self.rand(64, 64, dtype=torch.float16) * 0.1 - 0.05,
             ),
             {},
         )
