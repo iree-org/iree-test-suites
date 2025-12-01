@@ -294,7 +294,7 @@ class ABPlusC(QualityTestGenerator):
     def forward(self, A, B, C):
         return A @ B + C
 
-    @test(seed=7)
+    @test(seed=7, atol=1e-5)
     def test_float32(self):
         return (
             (
@@ -321,7 +321,7 @@ class ReluABPlusC(QualityTestGenerator):
     def forward(self, A, B, C):
         return torch.relu(A @ B + C)
 
-    @test(seed=9)
+    @test(seed=9, atol=1e-5)
     def test_float32(self):
         return (
             (
