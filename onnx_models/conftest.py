@@ -97,12 +97,18 @@ def pytest_sessionstart(session):
     cache_dir.mkdir(parents=True, exist_ok=True)
     # Cache context for https://github.com/onnx/models.
     cache_manager = CacheManager(working_directory=ARTIFACTS_ROOT)
-    onnx_models_cache = GitHubLFSRepositoryCacheScope(
+    # onnx_models_cache = GitHubLFSRepositoryCacheScope(
+    #    scope_name="model_zoo",
+    #    cache_dir=cache_dir,
+    #    repository_name="onnx/models",
+    # )
+    hf_onnx_models_cache = HuggingFaceCacheScope(
         scope_name="model_zoo",
         cache_dir=cache_dir,
-        repository_name="onnx/models",
+        repository_name="onnxmodelzoo/legacy_models",
     )
-    cache_manager.register_scope(onnx_models_cache)
+    # cache_manager.register_scope(onnx_models_cache)
+    cache_manager.register_scope(hf_onnx_models_cache)
     session.config.cache_manager = cache_manager
 
 

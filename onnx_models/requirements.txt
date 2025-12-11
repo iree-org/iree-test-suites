@@ -1,6 +1,7 @@
 # Baseline requirements for running the test suite.
 #   * See requirements-iree.txt for using IREE packages.
 
+huggingface_hub
 onnx
 onnxruntime
 
