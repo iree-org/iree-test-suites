@@ -1,35 +1,33 @@
 {
-  "config_name": "simple",
-  "iree_compile_flags": [
-    "--iree-hal-target-device=local",
-    "--iree-hal-target-backends=llvm-cpu",
-    "--iree-llvmcpu-target-cpu=host"
-  ],
-  "iree_run_module_flags": [
-  ],
-  "skip_compile_tests": [],
-  "skip_run_tests": [
-    "generated/ABPlusC/test_float16/correctness_test",
-    "generated/ABT/test_float_16/correctness_test",
-    "generated/SquareGemmBench128x128/test_entry_point/benchmark_test",
-    "generated/SquareGemmBench256x256/test_entry_point/benchmark_test",
-    "generated/SquareGemmBench512x512/test_entry_point/benchmark_test",
-    "generated/SquareGemmBench1024x1024/test_entry_point/benchmark_test",
-    "generated/SquareGemmBench2048x2048/test_entry_point/benchmark_test",
-    "generated/SquareGemmBench4096x4096/test_entry_point/benchmark_test",
-    "generated/SquareGemmBench8192x8192/test_entry_point/benchmark_test",
-    "generated/AB/test_float32/benchmark_test"
-  ],
-  "expected_compile_failures": [],
-  "expected_run_failures": [],
-  "golden_times_ms": {
-    "SquareGemmBench128x128/test_entry_point": 0.0,
-    "SquareGemmBench256x256/test_entry_point": 0.0,
-    "SquareGemmBench512x512/test_entry_point": 0.0,
-    "SquareGemmBench1024x1024/test_entry_point": 0.0,
-    "SquareGemmBench2048x2048/test_entry_point": 0.0,
-    "SquareGemmBench4096x4096/test_entry_point": 0.0,
-    "SquareGemmBench8192x8192/test_entry_point": 0.0,
-    "AB/test_float32": 0.0
-  }
+    "config_name": "simple",
+    "iree_compile_flags": [
+        "--iree-hal-target-device=local",
+        "--iree-hal-target-backends=llvm-cpu",
+        "--iree-llvmcpu-target-cpu=host"
+    ],
+    "iree_run_module_flags": [],
+    "skip_compile_tests": [],
+    "skip_run_tests": [
+        "generated/ABPlusC/test_float16/correctness_test",
+        "generated/ABT/test_float_16/correctness_test",
+        "generated/SquareGemmBench128x128/test_entry_point/benchmark_test",
+        "generated/SquareGemmBench256x256/test_entry_point/benchmark_test",
+        "generated/SquareGemmBench512x512/test_entry_point/benchmark_test",
+        "generated/SquareGemmBench1024x1024/test_entry_point/benchmark_test",
+        "generated/SquareGemmBench2048x2048/test_entry_point/benchmark_test",
+        "generated/SquareGemmBench4096x4096/test_entry_point/benchmark_test",
+        "generated/SquareGemmBench8192x8192/test_entry_point/benchmark_test",
+        "generated/AB/test_float32/benchmark_test"
+    ],
+    "expected_compile_failures": [],
+    "expected_run_failures": [],
+    "golden_times_ms": {
+        "AB/8192x8192xf32_bench": 5587.488262355328,
+        "AB/1024x1024xf32_bench": 1.1874544098876767,
+        "AB/256x256xf32_bench": 0.044473891122477315,
+        "AB/128x128xf32_bench": 0.03577919309132721,
+        "AB/2048x2048xf32_bench": 10.41092509722771,
+        "AB/4096x4096xf32_bench": 131.7884701769799,
+        "AB/512x512xf32_bench": 0.12528392536236224
+    }
 }
