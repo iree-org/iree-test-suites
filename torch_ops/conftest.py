@@ -171,9 +171,7 @@ class MlirCompileRunTest(pytest.File):
 class IreeBaseTest(pytest.Item):
     def __init__(self, tgt_config, gen_config, **kwargs):
         super().__init__(**kwargs)
-        print(2, gen_config.qualified_name, tgt_config["golden_time_ms"])
         self.tgt_config = tgt_config
-        print(3, gen_config.qualified_name, self.tgt_config["golden_time_ms"])
         self.gen_config = gen_config
         self.add_markers()
 
@@ -199,7 +197,6 @@ class IreeBaseTest(pytest.Item):
 
     @property
     def golden_time(self):
-        print(3, self.gen_config.qualified_name, self.tgt_config["golden_time_ms"])
         return self.tgt_config["golden_time_ms"]
 
     def repr_failure(self, excinfo):
