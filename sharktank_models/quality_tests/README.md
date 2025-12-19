@@ -14,7 +14,11 @@
 # Retrieving test files and external test files
 git clone https://github.com/iree-org/iree.git
 export PATH_TO_TESTS=iree/tests/external/iree-test-suites/sharktank_models/quality_tests
-export PATH_TO_EXTERNAL_FILES=iree/build_tools/pkgci/external_test_suite
+export PATH_TO_EXTERNAL_FILES=iree/tests/external/iree-test-suites/test_suite_files
+
+# Set the env variable to point to the directory where vmfb files will be
+# stored.
+export TEST_OUTPUT_ARTIFACTS=/tmp/model_output_artifacts
 
 # Running quality tests
 git clone https://github.com/iree-org/iree-test-suites.git
@@ -26,6 +30,11 @@ pytest iree-test-suites/sharktank_models/quality_tests/ \
     --test-file-directory=${PATH_TO_TESTS} \
     --external-file-directory=${PATH_TO_EXTERNAL_FILES}
 ```
+
+See [sharktank_models/README.md](../README.md) for more details on how to run
+quality tests with different backends and chips.
+
+Important Note: you should point it to `sharktank_models/quality_tests` directory if you want to run quality tests.
 
 ### Required and optional fields for the JSON model file
 

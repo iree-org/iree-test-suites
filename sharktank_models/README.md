@@ -52,6 +52,18 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
     See https://docs.pytest.org/en/stable/how-to/usage.html for other options.
 
+Here are few environment variables that control test runs:
+- `TEST_OUTPUT_ARTIFACTS`: points to the directory where vmfb files are located.
+- `BACKEND`: by default it is `cpu`. Set it to `rocm` if you want to run on
+  AMDGPU. Only `cpu` and `rocm` backends are supported for now.
+- `ROCM_CHIP`: controls which AMDGPU chip to compile and run on. Only needed if
+  `BACKEND`: is set to `rocm`. By default it is `gfx942`.
+- `SKU`: is mostly for CI usage. You can ignore it for local runs.
+
+If you are looking for IREE quality tests or benchmark tests, please refer to
+the [Quality tests README](quality_tests/README.md) and [Benchmark tests
+README](benchmarks/README.md).
+
 ## Advanced pytest usage
 
 * The `log-cli-level` level can also be set to `debug`, `warning`, or `error`.

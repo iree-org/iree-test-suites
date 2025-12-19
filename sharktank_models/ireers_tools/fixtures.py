@@ -22,13 +22,6 @@ from .artifacts import (
 )
 
 
-IREE_COMPILE_QOL_FLAGS = [
-    "--mlir-timing",
-    "--mlir-timing-display=list",
-    "--iree-consteval-jit-debug",
-]
-
-
 class IreeCompileException(RuntimeError):
     pass
 
@@ -49,16 +42,12 @@ def iree_compile(source: Artifact, flags: Sequence[str], vmfb_path: Path):
     sep = "\n  "
     logger.info("**************************************************************")
     logger.info(f"  {sep.join(flags)}")
-    exec_args = (
-        [
-            "iree-compile",
-            "-o",
-            str(vmfb_path),
-            str(source.path),
-        ]
-        + IREE_COMPILE_QOL_FLAGS
-        + flags
-    )
+    exec_args = [
+        "iree-compile",
+        "-o",
+        str(vmfb_path),
+        str(source.path),
+    ] + flags
     logger.info("Exec: " + str(exec_args))
     start_time = time.time()
     ret = subprocess.run(exec_args, capture_output=True, cwd=vmfb_path.parent)
