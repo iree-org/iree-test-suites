@@ -1,6 +1,56 @@
 # Torch Ops Test Suite
 
-## Installation
+This is a test suite and test suite generation framework.
+The goal of the test suite generation framework is to allow test writers to:
+* Write torch programs that will then be used for differential testing.
+* Use `numpy.allclose`'s when comparing floating point data.
+* Deterministic generation of random data.
+* Remove torch as a dependency from the test run.
+
+There are several actions that one can do with this test suite and test suite generation framework.
+* Running tests.
+* Generate tests.
+* Compute golden times (for benchmarks).
+
+## Overview
+
+Torch programs are exported to MLIR.
+There is a test generator program that will take a torch module and a test generation configuration as an input to generate the following files.
+
+```text
+[module's class name]/[test case name]/
+  test.mlir
+  run_module_io.json
+  expected_result_0.npy
+  ...
+```
+
+Most of the test is specified within `run_module_io.json`, but usually one may want to run a test in multiple targets with different optimization levels and such.
+To account for that, before running tests, one must supply a configuration json file with the following fields:
+
+```text
+config_name: Name of the configuration.
+iree_compile_flags: Flags passed to iree-compile.
+iree_run_module_flags: Flags passed to iree-run-module and similar tools.
+```
+
+Additionally, it may optionally include the following information:
+
+```text
+skip_compile_tests: List of tests which compilation should be skipped. Formatted as ${CLASS_DIR}/${TEST_DIR}
+skip_run_tests: List of tests which run should be skipped.
+expected_compile_failures: List of tests which one expects compilation to fail.
+expected_run_failures: List of tests which one expects run to fail.
+golden_times_ms: Dictionary of tests with golden times in ms.
+```
+
+With the generated configuration and the target configuration, one can run any test.
+
+## Running tests
+
+### Installation
+
+Install the required packages for running tests.
 
 ```bash
 python3 -m venv .env
@@ -10,13 +60,13 @@ pip install -r requirements.txt
 The test suite expects that you have `iree-base-compiler` and
 `iree-base-runtime` packages installed or built from source
 
-### IREE: prebuilt wheels
+#### IREE: prebuilt wheels
 
 ```bash
 pip install -r requirements-iree.txt
 ```
 
-### IREE: build from source
+#### IREE: build from source
 
 If you are using them from a source build, make sure that the iree python
 bindings are discoverable in your `PYTHONPATH` and iree tools are in your
@@ -27,7 +77,7 @@ export PATH="<path-to-iree-build>/tools:$PATH"
 export PYTHONPATH="<path-to-iree-build>/bindings/python:$PYTHONPATH"
 ```
 
-## Running Tests
+### Running Tests
 
 - Run all tests 
 
@@ -38,12 +88,31 @@ pytest
 - Run single test
 
 ```bash
-pytest test_a_b
+pytest /point/to/test_directory/run_module_io.json
 ```
 
-## Configuration file
+## Configuration files
 
-Configuration files are written in JSON
+### Generated configuration
+
+Generated configuration files are written in JSON by the test generator tool.
+Generated configuration files are named `run_module_io.json` by default.
+They include things like:
+
+* `function_name`: Value used in the `--function` flag when running iree-run-module. Defaults to "main".
+* `flat_args`: Compressed arguments to be sent to the entry point. Defaults to None.
+* `seed`: Seed used to generate the uncompressed arguments from the compressed arguments. Defaults to 0.
+* `rtol`: Relative tolerance. Defaults to 1e-05.
+* `atol`: Abolute tolerance. Defaults to 1e-08.
+* `equal_nan`: Whether NaNs should compare as equal. Defaults to `False`.
+* `mode`: Either "compare" or "benchmark". Defaults to "compare".
+* `file_name`: The name of the mlir file. Defaults to "test.mlir".
+* `vmfb_name`: The name given to the vmfb file. Defaults to "out.vmfb".
+* `expected_output`: Only included when using "compare" mode. List of files holding expected returned values.
+
+### Target configuration
+
+Target configuration files are written in JSON
 and allow one to specify different compilation and
 run flags.
 
@@ -75,87 +144,62 @@ pip install -r requirements-generate.txt
 When writing new tests take into account the following guidelines.
 
 ```python
-# Instead of using torch.nn.Module
-# as a base class for a torch Module,
-# use this class instead.
-#             V
-class MyTest(QualityTestGenerator):
+from generate_tests import gen, Formula, GenConfig
 
-  def forward(self, left, right):
-    return left @ right
+class AB(torch.nn.Module):
+  def forward(self, A, B):
+    return A @ B
 
-  # Use the test decorator to denote a test.
-  # V
+def data():
+  t = Formula(shape=(64, 64))
+  yield GenConfig(**{"args": (t, t)})
+
+gen(AB(), data())
+```
+
+or with a decorator style.
+
+```python
+from generate_tests import gen_tests, test, Formula, GenConfig
+
+@gen_tests
+class AB(torch.nn.Module):
+  def forward(self, A, B):
+    return A @ B
+
+  @staticmethod
   @test
-    # The output is a tuple of (Sequence, dict)
-    # that corresponds to *args, **kwargs
-    #                       V
-    def test_16x16(self) -> tuple[Sequence, dict]:
-      # Use self.rand instead of torch.rand.
-      # It is a wrapper around torch.rand to make sure tests are deterministic
-      # and seeds are easily specified
-      #         V                  V
-      return ((self.rand(16, 16), self.rand(16, 16), {})
+  def test_data():
+    t = Formula(shape=(64, 64))
+    yield GenConfig(**{"args": (t, t)})
 
-    # Add more tests by adding a new decorator
-    @test(seed=42, atol=1e-7, rtol=1e-9)
-    def test_8x8(self):
-      return ((self.rand(8, 8), self.rand(8, 8), {})
-
-# Will create a directory with the test and metadata needed to execute
-# the test.
-MyTest().generate_tests()
+AB()
 ```
 
-## Test case structure
+The GenConfig class is a dataclass that holds all necessary information for generating and running the test.
+Fields of the GenConfig class are documented with its definition.
+The most common ones are below:
 
-Each test case is a folder containing a few files:
+* `name`: Name of the test. Will be used when creating the test folder directory.
+* `args`: Example arguments to aot.export which will also be used as real inputs for the tests. These are in compressed form.
+* `kwargs`: Example kwargs to aot.export which will also be used as real inputs for the tests. These are in compresed form.
+* `dynamic_shapes`: Dynamic shape specification.
+* `seed`: Seed used to generate inputs from compressed arguments.
+* `rtol`: Relative tolerance.
+* `atol`: Absolute tolerance.
+* `mode`: "benchmark" or "compare".
 
-```text
-[test case name]/
-  test.mlir
-  input0.npy
-  input1.npy
-  ...
-  expected_output0.npy
-  expected_output1.npy
-  ...
-  run_module_io_flags.json
+### Formulas / Compressed Arguments
+
+Since there may be many input tensors taking a large quantity of memory, input tensors are "compressed" into Formulas.
+A Formula represents the a random tensor of the following form:
+
+```python
+def formula(shape, coeff, offset, dtype):
+  return (coeff * numpy.random.rand(*shape) + offset).astype(dtype)
 ```
 
-* `test.mlir` is in torch-mlir dialect.
-* `input0.npy` and `expected_output.npy` files correspond to any of number of program
-  inputs and outputs for one test case
-* `run_module_io_flags.json` is a json file similar the flagfile.
-  However, this file is a json file and supports additional metadata.
-  For example,
-    * `rtol` is relative tolerance,
-    * `atol` is absolute tolerance, and
-    * `equal_nan` which correpond to the parameters given to `numpy.allclose`.
-    * Additionally, `ovserved_outputs` corresponds to the option passed to the `output` flag
-      when using iree-run-module.
-
-```json
-{
-    "rtol": 1e-05,
-    "atol": 1e-08,
-    "equal_nan": false,
-    "inputs": [
-        "input0.npy",
-        "input1.npy"
-    ],
-    "expected_outputs": [
-        "expected_result0.npy"
-    ],
-    "observed_outputs": [
-        "observed_result0.npy"
-    ]
-}
-```
-
-### Advanced pytest usage
-
-* The `--ignore-xfails` option will ignore any expected compile or runtime
-  failures.
-* The `--skip-all-runs` option will only `iree-compile` tests, not
-  `iree-run-module` tests.
+These Formulas will generate the concrete tensors during test generation and testing using the same seed provided by GenConfig.
+The seed is done on a per-test level as opposed to a per-Formula level.
+This is because we want tests to have deterministic random inputs and we only need to set the seed once per test to achieve this.
+Otherwise, one would need to type a different seed for every different formula.

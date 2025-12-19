@@ -1,0 +1,34 @@
+{
+    "function_name": "main",
+    "flat_args": [
+        {
+            "Formula": {
+                "shape": [
+                    256,
+                    256
+                ],
+                "dtype": "float32",
+                "coeff": 1,
+                "offset": 0
+            }
+        },
+        {
+            "Formula": {
+                "shape": [
+                    256,
+                    256
+                ],
+                "dtype": "float32",
+                "coeff": 1,
+                "offset": 0
+            }
+        }
+    ],
+    "seed": 15,
+    "rtol": 1e-05,
+    "atol": 1e-08,
+    "equal_nan": false,
+    "mode": "benchmark",
+    "file_name": "test.mlir",
+    "vmfb_name": "out.vmfb"
+}

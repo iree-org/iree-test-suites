@@ -1,376 +1,628 @@
-from abc import ABC, abstractmethod
-import numpy as np
+"""
+# Summary
+
+This file contains the necessary classes to generate differential
+tests and performance regression tests. This file does not run the
+tests, but just generates them. One of the reasons for this split
+is to remove torch as a dependency when running the tests.
+
+Each generated test corresponds to one directory which may contain:
+    - run_module_io.json
+    - test.mlir
+    - expected_output_${idx}.npy files
+
+However, when running the tests, it is also necessary to point
+to a target configuration file (usually under configs) which
+primarily provides information about which target to use when
+compiling and other flags used when running.
+
+TODO: Add scripts for running tests from the command line and
+document them here and setting golden time.
+
+The differential tests verify that given the same input,
+a torch program will output the same result when using torch's
+default backend and using IREE.
+
+The performance regression tests verify that we do not exceed
+a golden time.
+"""
+
 from pathlib import Path
 from dataclasses import dataclass
 import json
-import functools
+import numbers
+import numpy as np
+import subprocess
+from typing import Any
 
-import torch
-import iree.turbine.aot as aot
+# Import optional libraries.
+# These libraries are only needed when
+# the tests are generated. Not when the
+# tests are run.
+try:
+    import torch
+except:
+    ...
+
+try:
+    import iree.turbine.aot as aot
+except:
+    ...
 
 
-def camel_to_snake(name):
-    result = ""
-    for i, char in enumerate(name):
-        if char.isupper() and i > 0:
-            result += "_"
-        result += char.lower()
-    return result
+class IreeCompileException(Exception):
+    """Compiler exception that preserves the command line and output."""
+
+    def __init__(
+        self,
+        process: subprocess.CompletedProcess,
+        cwd: Path,
+        input_mlir_file: Path,
+        compile_cmd: str,
+    ):
+        try:
+            errs = process.stderr.decode("utf-8")
+        except:
+            errs = str(process.stderr)
+        try:
+            outs = process.stdout.decode("utf-8")
+        except:
+            outs = str(process.stdout)
+
+        test_github_url = (
+            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
+            + cwd.relative_to(THIS_DIR).as_posix()
+        )
+
+        with open(input_mlir_file) as f:
+            input_mlir = f.read()
+
+            super().__init__(
+                f"Error invoking iree-compile\n"
+                f"Error code: {process.returncode}\n"
+                f"Stderr diagnostics:\n{errs}\n\n"
+                f"Stdout diagnostics:\n{outs}\n\n"
+                f"Test case source:\n"
+                f"  {test_github_url}\n\n"
+                f"Input program:\n"
+                f"```\n{input_mlir}```\n\n"
+                f"Compiled with:\n"
+                f"  cd {cwd} && {compile_cmd}\n\n"
+            )
 
 
-class QualityTestGenerator(torch.nn.Module, ABC):
+class IreeRunException(Exception):
+    """Runtime exception that preserves the command line and output."""
+
+    def __init__(
+        self,
+        cwd: Path,
+        process: subprocess.CompletedProcess,
+        input_mlir_file: Path,
+        compile_cmd: str,
+        run_cmd: str,
+    ):
+        try:
+            errs = process.stderr.decode("utf-8")
+        except:
+            errs = str(process.stderr)
+        try:
+            outs = process.stdout.decode("utf-8")
+        except:
+            outs = str(process.stdout)
+
+        test_github_url = (
+            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
+            + cwd.relative_to(THIS_DIR).as_posix()
+        )
+
+        with open(input_mlir_file) as f:
+            input_mlir = f.read()
+
+            super().__init__(
+                f"Error invoking iree-run-module\n"
+                f"Error code: {process.returncode}\n"
+                f"Stderr diagnostics:\n{errs}\n"
+                f"Stdout diagnostics:\n{outs}\n"
+                f"Test case source:\n"
+                f"  {test_github_url}\n\n"
+                f"Input program:\n"
+                f"```\n{input_mlir}```\n\n"
+                f"Compiled with:\n"
+                f"  cd {cwd} && {compile_cmd}\n\n"
+                f"Run with:\n"
+                f"  cd {cwd} && {run_cmd}\n\n"
+            )
+
+
+class IreeXFailCompileRunException(Exception):
+    pass
+
+
+@dataclass(frozen=True, kw_only=True)
+class Formula:
     """
-    Class used to generate correctness tests
-    for `torch.nn.Module`s. These tests are MLIR modules that have
-    been exported and their inputs and expected outputs have been saved.
-    Some other metadata may be used for tests as well like tolerance for
-    floating point comparisons.
+    Represents the formula:
 
-    Example:
+    (coeff * numpy.random.rand(*shape) + offset).astype(dtype)
 
-    ```python
-    # Instead of using torch.nn.Module
-    # as a base class for a torch Module,
-    # use this class instead.
-    class MyTest(QualityTestGenerator):
+    This class is useful because it allows us to compress the input tensors.
+    Without this class, one would need to store all inputs to all programs.
+    When dealing with a small set of tests, this may be ok. But when dealing
+    with larger sets of tests with large tensors, storing all of these files
+    with random tensor data does not make a lot of sense.
 
-      def forward(self, left, right):
-        return left @ right
+    With this class, benchmark tests (which do not need to compare the
+    output) do not store tensors.
 
-      # Use the test decorator to denote a test.
-      @test
-      def test_16x16(self):
-        # Use self.rand instead of torch.rand.
-        # It is a wrapper around torch.rand to make sure tests are deterministic
-        # and seeds are easily specified
-
-        # The output is a tuple of (Sequence, dict)
-        # that corresponds to *args, **kwargs
-        return ((self.rand(16, 16), self.rand(16, 16), {})
-
-      # Add more tests by adding a new decorator
-      @test(seed=42, atol=1e-7, rtol=1e-9)
-      def test_8x8(self):
-        return ((self.rand(8, 8), self.rand(8, 8), {})
-
-    # Will create a directory with the test and metadata needed to execute
-    # the test.
-    MyTest().generate_tests()
-    ```
+    We still control and guarantee that the same input is generated for every test
+    by setting the seed before generating the contents of each tensor produced by
+    Formula. The seed is set on a per-test basis (as opposed to on a per-Formula
+    basis).
     """
 
-    def __init__(self):
-        self.test_config = {}
-        self.generator = None
-        super().__init__()
+    shape: tuple[int, ...]
+    dtype: type = np.dtype("float32")
+    coeff: numbers.Number = 1
+    offset: numbers.Number = 0
+
+    def numpy(self):
+        return (self.coeff * np.random.rand(*self.shape) + self.offset).astype(
+            self.dtype
+        )
+
+    def torch(self):
+        return torch.from_numpy(self.numpy())
+
+    def toJSONEncoder(self):
+        """
+        Ensure all fields in dataclass are able to be encoded into JSON.
+
+        self.dtype:type cannot be encoded into JSON
+        """
+        return {
+            "Formula": {
+                "shape": self.shape,
+                "dtype": self.dtype.name,
+                "coeff": self.coeff,
+                "offset": self.offset,
+            }
+        }
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Formula):
+            return obj.toJSONEncoder()
+        return super().default(obj)
+
+
+def customJSONDecoder(d):
+    if kwargs := d.get("Formula"):
+        kwargs["dtype"] = np.dtype(kwargs["dtype"])
+        return Formula(**kwargs)
+    return d
+
+
+def ensure_dir_exists(path):
+    path.mkdir(exist_ok=True, parents=True)
+    return path
+
+
+def export(module, test_folder, file_name, export_kwargs):
+    ensure_dir_exists(test_folder)
+    exported_module = aot.export(module, **export_kwargs)
+    output = test_folder / file_name
+    exported_module.save_mlir(output)
+    return output
+
+
+def formulas_to_torch(formulas):
+    return [
+        formula.torch() if isinstance(formula, Formula) else formula
+        for formula in formulas
+    ]
+
+
+def formulas_to_npy(formulas):
+    return [
+        formula.numpy() if isinstance(formula, Formula) else formula
+        for formula in formulas
+    ]
+
+
+def formulas_to_npy_files(formulas, test_folder, seed):
+    np.random.seed(seed)
+    tensors = formulas_to_npy(formulas)
+    inputs = []
+    for idx, tensor in enumerate(tensors):
+        fname = f"input_{idx}.npy"
+        inputs.append(fname)
+        file = test_folder / fname
+        np.save(file, tensor)
+    return inputs
+
+
+def save_expected_output(module, test_folder, args_torch, kwargs_torch):
+    results = module.forward(*args_torch, **kwargs_torch)
+    results, _ = torch.utils._pytree.tree_flatten(results)
+    expected_outputs = []
+    for idx, result in enumerate(results):
+        fname = f"expected_result_{idx}.npy"
+        expected_outputs.append(fname)
+        file = test_folder / fname
+        np.save(file, result)
+    return expected_outputs
+
+
+@dataclass
+class GenConfig:
+    """
+    Class holding parameters sent to aot.export.
+    The one difference is that aot.export expects
+    torch.Tensor arguments while this one expects
+    them to be in Formula
+    """
+
+    name: str
+    """Name of the test. Will be name of directory containing test files."""
+
+    # Same as aot.export's parameters
+    # These are used when generating the MLIR file.
+    # function_name is also needed when running the test.
+    args: tuple[Formula] | None = None
+    """Arguments (as formulas instead of torch.Tensor)."""
+    kwargs: dict[Any, Any] | None = None
+    """Kwargs (as formulas instead of torch.Tensor)."""
+    dynamic_shapes: dict[str, Any] | tuple[Any] | list[Any] | None = None
+    """Dynamic shapes spec."""
+    module_name: str | None = None
+    """Name of module, will also be used as name of folder."""
+    function_name: str | None = "main"
+    """Identifier given to the entry_point of the module."""
+    strict_export: bool = True
+    """Strict export."""
+    import_symbolic_shape_expressions: bool = False
+    """Import symbolic shape expressions."""
+    arg_device: dict[int, Any] | None = None
+    """Arg device"""
+
+    # Extra parameters.
+    # These are used when compiling and running tests.
+    file_name: str = "test.mlir"
+    """Name of mlir file."""
+    vmfb_name: str = "out.vmfb"
+    """Name of vmfb file (used when compiling)."""
+    seed: int = 0
+    """Seed to be used for the generation of tensors."""
+    rtol: float = 1e-05
+    """The relative tolerance."""
+    atol: float = 1e-08
+    """The absolute tolerance."""
+    equal_nan: bool = False
+    """Flat list of arguments to be used during test"""
+    mode: str = "compare"
+    """Test mode."""
+
+    # Directory hierarchy.
+    path: Path = Path("generated")
+    """Path to folder which will contain all generated tests."""
+
+    # You do not need to set any of the ones below. They will be
+    # set automatically.
+    class_dir: Path | None = None
+    """Class directory. Generated from module"""
+    test_dir: Path | None = None
+    """Test directory. Generated from test name"""
+    expected_output: list[str] | None = None
+    """List of npy files with expected outputs."""
+    flat_args: list[Formula] | None = None
+    """Flattened args and kwargs. Used when using iree-run-module."""
+
+    # We just need to store this one when running tests
+    # so that we can have nice run exceptions which include
+    # the command used to compile the mlir file.
+    compile_cmd: str | None = None
+    """Compile command."""
+
+    # These will definitely not be stored in run_module_io.json.
+    # These are just here for convienience.
+    args_torch: list["torch.Tensor"] | None = None
+    """Formulas are now torch.Tensors."""
+    kwargs_torch: dict[Any, Any] | None = None
+    """Formulas are now torch.Tensors."""
+
+    @property
+    def qualified_name(self):
+        return f"{self.class_dir.name}/{self.test_dir.name}"
+
+    @staticmethod
+    def load(run_module_io_json):
+        test_dir = run_module_io_json.parent
+        class_dir = test_dir.parent
+        path = class_dir.parent
+        name = test_dir.name
+        with open(run_module_io_json, "r") as f:
+            return GenConfig(
+                name=test_dir.name,
+                path=path,
+                class_dir=class_dir,
+                test_dir=test_dir,
+                **json.load(f, object_hook=customJSONDecoder),
+            )
+
+    def flatten(self):
+        args = self.args
+        kwargs = self.kwargs
+        args, _ = torch.utils._pytree.tree_flatten(args)
+        kwargs, _ = torch.utils._pytree.tree_flatten(kwargs)
+        return args + kwargs
+
+    def to_torch(self, seed):
+        """Only args and kwargs may hold Formulas.
+
+        Since args and kwargs may be arbitrary Python data structures,
+        use pytrees to flatten them and change Formula to torch.Tensors.
+        """
+        self.args = self.args if self.args is not None else ()
+        self.kwargs = self.kwargs if self.kwargs is not None else {}
+
+        args = self.args
+        kwargs = self.kwargs
+
+        args, args_shape = torch.utils._pytree.tree_flatten(args)
+        kwargs, kwargs_shape = torch.utils._pytree.tree_flatten(kwargs)
+        np.random.seed(seed)
+        args = formulas_to_torch(args)
+        kwargs = formulas_to_torch(kwargs)
+        args = torch.utils._pytree.tree_unflatten(args, args_shape)
+        kwargs = torch.utils._pytree.tree_unflatten(kwargs, kwargs_shape)
+
+        self.args_torch = tuple(args)
+        self.kwargs_torch = kwargs
+        return self.args_torch, self.kwargs_torch
 
     def get_export_kwargs(self):
-        """Default implementation returns an empty dictionary.
+        self.to_torch(self.seed)
+        return {
+            "args": self.args_torch,
+            "kwargs": self.kwargs_torch,
+            "dynamic_shapes": self.dynamic_shapes,
+            "module_name": self.module_name,
+            "function_name": self.function_name,
+            "strict_export": self.strict_export,
+            "import_symbolic_shape_expressions": self.import_symbolic_shape_expressions,
+            "arg_device": self.arg_device,
+        }
 
-        This dictionary will be passed to IREE's aot.export.
-        See here for aot.export's documentation on possible kwargs
-        https://github.com/iree-org/iree-turbine/blob/fabcbad626860d190623d1a1ee432efcf9174315/iree/turbine/aot/exporter.py#L228-L233
-        and here for torch.export's documentation
-        https://docs.pytorch.org/docs/stable/export/api_reference.html
+    def get_run_module_io(self):
+        flat_args = self.flat_args if self.flat_args is not None else self.flatten()
+        data = {
+            "function_name": self.function_name,
+            "flat_args": flat_args,
+            "seed": self.seed,
+            "rtol": self.rtol,
+            "atol": self.atol,
+            "equal_nan": self.equal_nan,
+            "mode": self.mode,
+            "file_name": self.file_name,
+            "vmfb_name": self.vmfb_name,
+        }
+        if self.mode == "compare":
+            data["expected_output"] = self.expected_output
+        return data
+
+    def get_input_flags(self):
+        args = self.flat_args
+        input_npy_files = formulas_to_npy_files(args, self.test_dir, self.seed)
+
+        flags = []
+        for file in input_npy_files:
+            path = self.test_dir / file
+            option = f"--input=@{path}"
+            flags.append(option)
+        return flags
+
+    def get_output_flags(self):
+        files = []
+        flags = []
+        for idx, _ in enumerate(self.expected_output):
+            fname = f"expected_output_{idx}.npy"
+            files.append(fname)
+            path = self.test_dir / fname
+            option = f"--output=@{path}"
+            flags.append(option)
+        return files, flags
+
+    def save_config(self):
+        data = self.get_run_module_io()
+        with open(self.test_dir / "run_module_io.json", "w") as file:
+            json.dump(data, file, indent=4, cls=CustomJSONEncoder)
+            print("", file=file)
+
+    def iree_compile(self, iree_compile_flags):
+        mlir_file = self.test_dir / self.file_name
+        vmfb_file = self.test_dir / self.vmfb_name
+        self.compile_cmd = subprocess.list2cmdline(
+            ["iree-compile", *iree_compile_flags, mlir_file, "-o", vmfb_file]
+        )
+        proc = subprocess.run(self.compile_cmd, shell=True, capture_output=True)
+        if proc.returncode != 0:
+            raise IreeCompileException(proc, self.test_dir, mlir_file, self.compile_cmd)
+
+    def compare_results(self, expected, observed):
+        rtol = self.rtol
+        atol = self.atol
+        equal_nan = self.equal_nan
+        for exp, obs in zip(expected, observed, strict=True):
+            obs_tensor = np.load(self.test_dir / obs)
+            exp_tensor = np.load(self.test_dir / exp)
+            assert np.allclose(
+                obs_tensor, exp_tensor, rtol=rtol, atol=atol, equal_nan=equal_nan
+            )
+
+    def iree_run_module(self, iree_run_flags):
+        module = self.test_dir / self.vmfb_name
+        function = self.function_name
+        input_flags = self.get_input_flags()
+        output_files, output_flags = self.get_output_flags()
+        run_cmd = [
+            "iree-run-module",
+            f"--module={module}",
+            f"--function={function}",
+            *iree_run_flags,
+            *input_flags,
+            *output_flags,
+        ]
+        run_cmd = subprocess.list2cmdline(run_cmd)
+        proc = subprocess.run(run_cmd, shell=True, capture_output=True)
+        if proc.returncode != 0:
+            input_mlir_file = self.test_file / self.file_name
+            raise IreeRunException(
+                self.test_dir, proc, input_mlir_file, self.compile_cmd, run_cmd
+            )
+
+        self.compare_results(self.expected_output, output_files)
+
+    def iree_benchmark_module(
+        self, iree_run_flags, golden_time=float("nan"), return_golden_time=True
+    ):
+        module = self.test_dir / self.vmfb_name
+        function = self.function_name
+        input_flags = self.get_input_flags()
+        cmd = [
+            "iree-benchmark-module",
+            f"--module={module}",
+            f"--function={function}",
+            "--benchmark_format=json",
+            *iree_run_flags,
+            *input_flags,
+        ]
+        cmd = subprocess.list2cmdline(cmd)
+        proc = subprocess.run(cmd, shell=True, capture_output=True)
+        if proc.returncode != 0:
+            input_mlir_file = self.test_file / self.file_name
+            raise IreeRunException(
+                self.test_dir, proc, input_mlir_file, self.compile_cmd, run_cmd
+            )
+
+        output = json.loads(proc.stdout.decode("utf-8"))
+        real_time = output["benchmarks"][0]["real_time"]
+        if return_golden_time:
+            return real_time
+        assert real_time <= golden_time
+
+    def report_golden_time(self, iree_compile_flags, iree_run_flags):
+        self.iree_compile(iree_compile_flags)
+        golden_time = self.iree_benchmark_module(
+            iree_run_flags, return_golden_time=True
+        )
+        print(golden_time * 1.1)
+        return golden_time * 1.1
+
+    def run_benchmark_test(
+        self,
+        iree_compile_flags,
+        iree_run_flags,
+        golden_time=float("nan"),
+        skip_run=False,
+    ):
+        """Run benchmark test
+        iree-compile \
+                ${self.file_name} \
+                ${iree_compile_flags} \
+                -o ${self.vmfb_name}
+
+        iree-benchmark-module \
+                --benchmark_format=json \
+                --module ${self.vmfb_name} \
+                --function ${self.function_name} \
+                --input=${self.flat_arg[0]} ... \
+                --output=${output_file}
+
+        assert real_time <= golden_time
         """
-        return {}
 
-    def save_mlir(self, path, *args):
-        """Save MLIR file into $path/test.mlir.
+        if np.isnan(golden_time):
+            raise ValueError("golden time has not been set!")
+        self.iree_compile(iree_compile_flags)
+        if skip_run:
+            return
+        self.iree_benchmark_module(iree_run_flags, golden_time)
 
-        export_kwargs from self.get_export_kwargs are used when exporting the module.
+    def run_quality_test(self, iree_compile_flags, iree_run_flags, skip_run=False):
+        """Run differential test.
+
+        iree-compile \
+                ${self.file_name} \
+                ${iree_compile_flags} \
+                -o ${self.vmfb_name}
+
+        iree-run-module \
+                --module ${self.vmfb_name} \
+                --function ${self.function_name} \
+                --input=${self.flat_arg[0]} ... \
+                --output=${output_file}
+
+        assert numpy.allclose(expected, observed, rtol=${self.rtol}, atol=${self.atol}, equal_nan=${self.equal_nan})
         """
-        export_kwargs = self.get_export_kwargs()
-        exported_module = aot.export(self, *args, **export_kwargs)
-        exported_module.save_mlir(path / "test.mlir")
+        self.iree_compile(iree_compile_flags)
+        if skip_run:
+            return
+        self.iree_run_module(iree_run_flags)
 
-    def save_inputs(self, root_path, test_config, *args):
-        """Save inputs into a ${root_path}/input${idx}.npy
-        and updates test_config to denote number inputs to this test.
-        """
-        inputs = []
-        for idx, input in enumerate(args):
-            fname = f"input{idx}.npy"
-            path = root_path / fname
-            np.save(path, input)
-            inputs.append(fname)
-        test_config["inputs"] = inputs
-        return test_config
 
-    def save_results(self, root_path, test_config, *args):
-        """Save expected output to ${root_path}/expected_result${idx}.npy
-        and updates test_config with expected results and path to observed
-        results files which will then be generated by the test itself."""
-        expected_outputs = []
-        observed_outputs = []
-        for idx, result in enumerate(args):
-            fname_expected = f"expected_result{idx}.npy"
-            fname_observed = f"observed_result{idx}.npy"
-            path = root_path / fname_expected
-            np.save(path, result)
-            expected_outputs.append(fname_expected)
-            observed_outputs.append(fname_observed)
-        test_config["expected_outputs"] = expected_outputs
-        test_config["observed_outputs"] = observed_outputs
-        return test_config
+def gen(module, configs):
+    """Generate test with multiple configurations."""
+    for config in configs:
+        gen_config(module, config)
 
-    def save_config(self, root_path, test_config):
-        """Save configuration file."""
-        with open(root_path / "run_module_io_flags.json", "w") as config:
-            json.dump(test_config, config, indent=4)
-            print("", file=config)
 
-    def generate_tests(self):
-        """For each test method run the torch.nn.Module to generate an expected result
-        and then:
-            * save MLIR module
-            * save inputs
-            * save expected outputs
-            * save configuration file
-        """
-        for name in sorted(dir(self)):
-            if not name.startswith("test_"):
+def gen_config(module, config):
+    """Generate test with single configuration."""
+    config.class_dir = Path(config.path / module._get_name())
+    config.test_dir = Path(config.class_dir / config.name)
+
+    ensure_dir_exists(config.test_dir)
+    mlir_file = export(
+        module, config.test_dir, config.file_name, config.get_export_kwargs()
+    )
+    # TODO: inline this inside export. Make export a method of GenConfig
+    if config.mode == "compare":
+        config.expected_output = save_expected_output(
+            module, config.test_dir, config.args_torch, config.kwargs_torch
+        )
+    config.save_config()
+
+
+def test(function):
+    """Mark function as test."""
+    function._is_test = True
+    return function
+
+
+class ModuleWrapper:
+    """Wrapper around torch.nn.Module
+
+    If called, it will call the module's constructor
+    and generate the tests for the specific module.
+    Tests data comes from functions mark with the _is_test attribute.
+    """
+
+    def __init__(self, cls):
+        self.cls = cls
+
+    def __call__(self, *args, **kwargs):
+        module = self.cls(*args, **kwargs)
+        for attr in dir(module):
+            attr = getattr(module, attr)
+            if not hasattr(attr, "_is_test"):
                 continue
 
-            attr = getattr(self, name)
-            if not callable(attr):
-                continue
-
-            test_config = {}
-            pathname = f"test_{camel_to_snake(self._get_name())}_{name[5:]}"
-            path = "generated" / Path(pathname)
-            path.mkdir(parents=True, exist_ok=True)
-            inputs_to_forward = attr
-
-            args, kwargs, test_kwargs = inputs_to_forward()
-            test_config["rtol"] = test_kwargs["rtol"]
-            test_config["atol"] = test_kwargs["atol"]
-            test_config["equal_nan"] = test_kwargs["equal_nan"]
-
-            self.save_mlir(path, *args, **kwargs)
-            expected_results = self.generate_expected_value(*args, **kwargs)
-            test_config = self.save_inputs(path, test_config, *args)
-            test_config = self.save_results(path, test_config, *expected_results)
-            self.save_config(path, test_config)
-
-    def generate_expected_value(self, *args):
-        """Call forward"""
-        results = self.forward(*args)
-        return [results]
-
-    @abstractmethod
-    def forward(self, *args):
-        ...
-
-    def rand(self, *args, **kwargs):
-        """Wrapper around torch.rand
-
-        The main purpose of this wrapper is to enforce that the generator argument
-        is passed through the test decorator. This way, each test is deterministic.
-        """
-        if kwargs.get("generator"):
-            raise ValueError("Set generator with parameter to test function.")
-        kwargs["generator"] = self.generator
-        return torch.rand(*args, **kwargs)
+            configs = attr
+            gen(module, configs())
 
 
-def test(
-    function=None, generator=None, seed=0, rtol=1e-05, atol=1e-08, equal_nan=False
-):
-    """
-    Decorator used to denote that a particular method corresponds
-    to test input used in the forward method.
-
-    The default values for rtol, atol, and equal_nan come from the
-    numpy.allclose's default values listed in the link below.
-    https://numpy.org/devdocs/reference/generated/numpy.allclose.html
-
-    The generator will be seeded with seed and later be passed on
-    to a torch.rand wrapper.
-
-    These values will be saved in the json file and be used when
-    running the test.
-
-    The name of the function must start with "test_"
-    """
-
-    if not generator:
-        generator = torch.Generator()
-
-    test_kwargs = {"rtol": rtol, "atol": atol, "equal_nan": equal_nan}
-
-    if function:
-        if not function.__name__.startswith("test_"):
-            raise ValueError("The name of test functions should start with test_")
-
-        def wrapper(self):
-            self.generator = generator
-            self.generator.manual_seed(seed)
-            args, kwargs = function(self)
-            self.generator = None
-            return args, kwargs, test_kwargs
-
-        return wrapper
-
-    return functools.partial(test, **test_kwargs)
-
-
-class AB(QualityTestGenerator):
-    def forward(self, left, right):
-        return left @ right
-
-    @test(seed=0)
-    def test_float32(self):
-        left = self.rand(64, 64, dtype=torch.float32)
-        right = self.rand(64, 64, dtype=torch.float32)
-        return ((left, right), {})
-
-    @test(seed=1)
-    def test_float16(self):
-        left = self.rand(64, 64, dtype=torch.float16)
-        right = self.rand(64, 64, dtype=torch.float16)
-        return ((left, right), {})
-
-    def get_export_kwargs(self):
-        dyn_dim = torch.export.Dim("N")
-        dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
-        return {"dynamic_shapes": dynamic_shapes}
-
-
-class AB_bfloat16(QualityTestGenerator):
-    def forward(self, left, right):
-        left = left.to(torch.bfloat16)
-        right = right.to(torch.bfloat16)
-        res = left @ right
-        return res.to(torch.float32)
-
-    @test(atol=1e-2, rtol=1e-2, seed=2)
-    def test_from_float32(self):
-        left = self.rand(64, 64, dtype=torch.float32)
-        right = self.rand(64, 64, dtype=torch.float32)
-        return ((left, right), {})
-
-    def get_export_kwargs(self):
-        dyn_dim = torch.export.Dim("N")
-        dynamic_shapes = {"left": {0: dyn_dim}, "right": {1: dyn_dim}}
-        return {"dynamic_shapes": dynamic_shapes}
-
-
-class ATB(QualityTestGenerator):
-    def forward(self, left, right):
-        return left.t() @ right
-
-    @test(seed=3)
-    def test_float32(self):
-        left = self.rand(64, 64, dtype=torch.float32)
-        right = self.rand(64, 64, dtype=torch.float32)
-        return ((left, right), {})
-
-    @test(seed=4)
-    def test_float16(self):
-        left = self.rand(64, 64, dtype=torch.float16)
-        right = self.rand(64, 64, dtype=torch.float16)
-        return ((left, right), {})
-
-
-class ABT(QualityTestGenerator):
-    def forward(self, left, right):
-        return left @ right.t()
-
-    @test(seed=5)
-    def test_float32(self):
-        left = self.rand(64, 64, dtype=torch.float32)
-        right = self.rand(64, 64, dtype=torch.float32)
-        return ((left, right), {})
-
-    @test(seed=6)
-    def test_float16(self):
-        left = self.rand(64, 64, dtype=torch.float16)
-        right = self.rand(64, 64, dtype=torch.float16)
-        return ((left, right), {})
-
-
-class ABPlusC(QualityTestGenerator):
-    def forward(self, A, B, C):
-        return A @ B + C
-
-    @test(seed=7, atol=1e-5)
-    def test_float32(self):
-        return (
-            (
-                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
-                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
-                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
-            ),
-            {},
-        )
-
-    @test(seed=8)
-    def test_float16(self):
-        return (
-            (
-                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
-                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
-                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
-            ),
-            {},
-        )
-
-
-class ReluABPlusC(QualityTestGenerator):
-    def forward(self, A, B, C):
-        return torch.relu(A @ B + C)
-
-    @test(seed=9, atol=1e-5)
-    def test_float32(self):
-        return (
-            (
-                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
-                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
-                self.rand(64, 64, dtype=torch.float32) * 2 - 1,
-            ),
-            {},
-        )
-
-    @test(seed=10)
-    def test_float16(self):
-        return (
-            (
-                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
-                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
-                self.rand(64, 64, dtype=torch.float16) * 2 - 1,
-            ),
-            {},
-        )
-
-
-class GeluABPlusC(QualityTestGenerator):
-    def forward(self, A, B, C):
-        return torch.ops.aten.gelu.default(A @ B + C)
-
-    @test(seed=11, atol=1e-5, rtol=1e-4)
-    def test_float32(self):
-        return (
-            (
-                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
-                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
-                self.rand(64, 64, dtype=torch.float32) * 0.1 - 0.05,
-            ),
-            {},
-        )
-
-    @test(seed=12, atol=1e-3, rtol=1e-3)
-    def test_float16(self):
-        return (
-            (
-                self.rand(64, 64, dtype=torch.float16) * 0.1 - 0.05,
-                self.rand(64, 64, dtype=torch.float16) * 0.1 - 0.05,
-                self.rand(64, 64, dtype=torch.float16) * 0.1 - 0.05,
-            ),
-            {},
-        )
-
-
-for cls in [AB, AB_bfloat16, ATB, ABT, ABPlusC, ReluABPlusC, GeluABPlusC]:
-    instance = cls()
-    instance.generate_tests()
+def gen_tests(cls):
+    """Decorator for torch.nn.Modules"""
+    return ModuleWrapper(cls)
