@@ -13,8 +13,13 @@ from pathlib import Path
 import pytest
 import subprocess
 
-pytest.register_assert_rewrite('generate_tests')
-from generate_tests import GenConfig, IreeCompileException, IreeRunException, IreeXFailCompileRunException
+pytest.register_assert_rewrite("generate_tests")
+from generate_tests import (
+    GenConfig,
+    IreeCompileException,
+    IreeRunException,
+    IreeXFailCompileRunException,
+)
 
 THIS_DIR = Path(__file__).parent
 TEST_DATA_FLAGFILE_NAME = "run_module_io.json"
@@ -104,6 +109,7 @@ def pytest_collect_file(parent, file_path):
     if file_path.name == TEST_DATA_FLAGFILE_NAME:
         return MlirCompileRunTest.from_parent(parent, path=file_path)
 
+
 class MlirCompileRunTest(pytest.File):
     """Collector for MLIR -> compile -> run tests anchored on a run_module_io.json file."""
 
@@ -117,7 +123,9 @@ class MlirCompileRunTest(pytest.File):
 
     def expect_compile_success(self, tgt_config, gen_config):
         expected_comp_fails = tgt_config.get("expected_compile_failures", [])
-        return self.ignore_xfails or gen_config.qualified_name not in expected_comp_fails
+        return (
+            self.ignore_xfails or gen_config.qualified_name not in expected_comp_fails
+        )
 
     def expect_run_success(self, tgt_config, gen_config):
         expected_run_fails = tgt_config.get("expected_run_failures", [])
@@ -135,10 +143,16 @@ class MlirCompileRunTest(pytest.File):
             if gen_config.qualified_name in tgt_config.get("skip_compile_tests", []):
                 continue
 
-            tgt_config["expect_compile_success"] = self.expect_compile_success(tgt_config, gen_config)
-            tgt_config["expect_run_success"] = self.expect_run_success(tgt_config, gen_config)
+            tgt_config["expect_compile_success"] = self.expect_compile_success(
+                tgt_config, gen_config
+            )
+            tgt_config["expect_run_success"] = self.expect_run_success(
+                tgt_config, gen_config
+            )
             tgt_config["skip_run"] = self.skip_run(tgt_config, gen_config)
-            tgt_config["golden_time_ms"] = tgt_config.get("golden_times_ms", {}).get(gen_config.qualified_name, float("nan"))
+            tgt_config["golden_time_ms"] = tgt_config.get("golden_times_ms", {}).get(
+                gen_config.qualified_name, float("nan")
+            )
 
             match gen_config.mode:
                 case "compare":
@@ -146,7 +160,13 @@ class MlirCompileRunTest(pytest.File):
                 case "benchmark":
                     cls = IreeBenchmarkTest
 
-            yield cls.from_parent(self, name=gen_config.qualified_name, tgt_config=copy.copy(tgt_config), gen_config=gen_config)
+            yield cls.from_parent(
+                self,
+                name=gen_config.qualified_name,
+                tgt_config=copy.copy(tgt_config),
+                gen_config=gen_config,
+            )
+
 
 class IreeBaseTest(pytest.Item):
     def __init__(self, tgt_config, gen_config, **kwargs):
@@ -193,7 +213,6 @@ class IreeBaseTest(pytest.Item):
             )
         return super().repr_failure(excinfo)
 
-
     def add_markers(self):
         if not self.tgt_config["expect_compile_success"]:
             self.add_marker(
@@ -212,13 +231,16 @@ class IreeBaseTest(pytest.Item):
                 )
             )
 
+
 class IreeCompareTest(IreeBaseTest):
     def runtest(self):
         iree_compile_flags = self.iree_compile_flags
         iree_run_flags = self.iree_run_flags
         skip_run = self.skip_run
         try:
-            self.gen_config.run_quality_test(iree_compile_flags, iree_run_flags, skip_run)
+            self.gen_config.run_quality_test(
+                iree_compile_flags, iree_run_flags, skip_run
+            )
         except IreeRunException as e:
             if not self.expect_compile_success:
                 raise IreeXFailCompileRunException from e
@@ -227,13 +249,19 @@ class IreeCompareTest(IreeBaseTest):
     def reportinfo(self):
         return self.path, 0, f"IREE quality test: {self.qualified_name}"
 
+
 class IreeBenchmarkTest(IreeBaseTest):
     def runtest(self):
         iree_compile_flags = self.iree_compile_flags
         iree_run_flags = self.iree_run_flags
         skip_run = self.skip_run
         try:
-            self.gen_config.run_benchmark_test(iree_compile_flags, iree_run_flags, golden_time=self.golden_time, skip_run=skip_run)
+            self.gen_config.run_benchmark_test(
+                iree_compile_flags,
+                iree_run_flags,
+                golden_time=self.golden_time,
+                skip_run=skip_run,
+            )
         except IreeRunException as e:
             if not self.expect_compile_success:
                 raise IreeXFailCompileRunException from e
