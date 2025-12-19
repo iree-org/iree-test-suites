@@ -1,0 +1,9 @@
+module @module {
+  func.func @main(%arg0: !torch.vtensor<[64,64],f32>, %arg1: !torch.vtensor<[64,64],f32>) -> !torch.vtensor<[64,64],f32> attributes {torch.assume_strict_symbolic_shapes} {
+    %int0 = torch.constant.int 0
+    %int1 = torch.constant.int 1
+    %0 = torch.aten.transpose.int %arg0, %int0, %int1 : !torch.vtensor<[64,64],f32>, !torch.int, !torch.int -> !torch.vtensor<[64,64],f32>
+    %1 = torch.aten.matmul %0, %arg1 : !torch.vtensor<[64,64],f32>, !torch.vtensor<[64,64],f32> -> !torch.vtensor<[64,64],f32>
+    return %1 : !torch.vtensor<[64,64],f32>
+  }
+}

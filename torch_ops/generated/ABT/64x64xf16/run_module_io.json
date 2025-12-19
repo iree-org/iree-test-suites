@@ -1,0 +1,37 @@
+{
+    "function_name": "main",
+    "flat_args": [
+        {
+            "Formula": {
+                "shape": [
+                    64,
+                    64
+                ],
+                "dtype": "float16",
+                "coeff": 1,
+                "offset": 0
+            }
+        },
+        {
+            "Formula": {
+                "shape": [
+                    64,
+                    64
+                ],
+                "dtype": "float16",
+                "coeff": 1,
+                "offset": 0
+            }
+        }
+    ],
+    "seed": 7,
+    "rtol": 0.001,
+    "atol": 0.001,
+    "equal_nan": false,
+    "mode": "compare",
+    "file_name": "test.mlir",
+    "vmfb_name": "out.vmfb",
+    "expected_output": [
+        "expected_result_0.npy"
+    ]
+}

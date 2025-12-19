@@ -1,0 +1,48 @@
+{
+    "function_name": "main",
+    "flat_args": [
+        {
+            "Formula": {
+                "shape": [
+                    64,
+                    64
+                ],
+                "dtype": "float32",
+                "coeff": 0.1,
+                "offset": -0.05
+            }
+        },
+        {
+            "Formula": {
+                "shape": [
+                    64,
+                    64
+                ],
+                "dtype": "float32",
+                "coeff": 0.1,
+                "offset": -0.05
+            }
+        },
+        {
+            "Formula": {
+                "shape": [
+                    64,
+                    64
+                ],
+                "dtype": "float32",
+                "coeff": 0.1,
+                "offset": -0.05
+            }
+        }
+    ],
+    "seed": 13,
+    "rtol": 0.001,
+    "atol": 0.001,
+    "equal_nan": false,
+    "mode": "compare",
+    "file_name": "test.mlir",
+    "vmfb_name": "out.vmfb",
+    "expected_output": [
+        "expected_result_0.npy"
+    ]
+}
