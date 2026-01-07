@@ -171,9 +171,6 @@ class Formula:
             self.dtype
         )
 
-    def torch(self):
-        return torch.from_numpy(self.numpy())
-
     def toJSONEncoder(self):
         """
         Ensure all fields in dataclass are able to be encoded into JSON.
@@ -219,7 +216,7 @@ def export(module, test_folder, file_name, export_kwargs):
 
 def formulas_to_torch(formulas):
     return [
-        formula.torch() if isinstance(formula, Formula) else formula
+        torch.from_numpy(formula.numpy()) if isinstance(formula, Formula) else formula
         for formula in formulas
     ]
 

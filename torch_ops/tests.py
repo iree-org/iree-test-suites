@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 import torch
 
-from generate_tests import gen, gen_tests, GenConfig, Formula, test
+from common import gen, gen_tests, GenConfig, Formula, test
 
 
 def formulas(n, **kwargs):
