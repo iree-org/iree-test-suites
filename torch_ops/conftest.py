@@ -13,9 +13,9 @@ from pathlib import Path
 import pytest
 import subprocess
 
-pytest.register_assert_rewrite("generate_tests")
-from generate_tests import (
-    GenConfig,
+pytest.register_assert_rewrite("common")
+from common import (
+    CommonConfig,
     IreeCompileException,
     IreeRunException,
     IreeXFailCompileRunException,
@@ -137,7 +137,7 @@ class MlirCompileRunTest(pytest.File):
 
     def collect(self):
         # self.path is run_module_io.json
-        gen_config = GenConfig.load(self.path)
+        gen_config = CommonConfig.load(self.path)
 
         for tgt_config in self.config.iree_test_configs:
             if gen_config.qualified_name in tgt_config.get("skip_compile_tests", []):

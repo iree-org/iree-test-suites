@@ -1,30 +1,17 @@
 """
 # Summary
 
-This file contains the necessary classes to generate differential
-tests and performance regression tests. This file does not run the
-tests, but just generates them. One of the reasons for this split
-is to remove torch as a dependency when running the tests.
+This file contains the classes and methods common to generating and
+running tests. This file does not run the tests nor generates them.
+For generation, look at the methods and classes in generate.py.
 
-Each generated test corresponds to one directory which may contain:
-    - run_module_io.json
-    - test.mlir
-    - expected_output_${idx}.npy files
+The generate.py file is separate from this common file to make it explicit
+where torch is used as a dependency. Here, torch should never be imported.
 
-However, when running the tests, it is also necessary to point
+When running the tests, it is also necessary to point
 to a target configuration file (usually under configs) which
 primarily provides information about which target to use when
 compiling and other flags used when running.
-
-TODO: Add scripts for running tests from the command line and
-document them here and setting golden time.
-
-The differential tests verify that given the same input,
-a torch program will output the same result when using torch's
-default backend and using IREE.
-
-The performance regression tests verify that we do not exceed
-a golden time.
 """
 
 from pathlib import Path
@@ -34,20 +21,6 @@ import numbers
 import numpy as np
 import subprocess
 from typing import Any
-
-# Import optional libraries.
-# These libraries are only needed when
-# the tests are generated. Not when the
-# tests are run.
-try:
-    import torch
-except:
-    ...
-
-try:
-    import iree.turbine.aot as aot
-except:
-    ...
 
 
 class IreeCompileException(Exception):
@@ -206,21 +179,6 @@ def ensure_dir_exists(path):
     return path
 
 
-def export(module, test_folder, file_name, export_kwargs):
-    ensure_dir_exists(test_folder)
-    exported_module = aot.export(module, **export_kwargs)
-    output = test_folder / file_name
-    exported_module.save_mlir(output)
-    return output
-
-
-def formulas_to_torch(formulas):
-    return [
-        torch.from_numpy(formula.numpy()) if isinstance(formula, Formula) else formula
-        for formula in formulas
-    ]
-
-
 def formulas_to_npy(formulas):
     return [
         formula.numpy() if isinstance(formula, Formula) else formula
@@ -240,20 +198,8 @@ def formulas_to_npy_files(formulas, test_folder, seed):
     return inputs
 
 
-def save_expected_output(module, test_folder, args_torch, kwargs_torch):
-    results = module.forward(*args_torch, **kwargs_torch)
-    results, _ = torch.utils._pytree.tree_flatten(results)
-    expected_outputs = []
-    for idx, result in enumerate(results):
-        fname = f"expected_result_{idx}.npy"
-        expected_outputs.append(fname)
-        file = test_folder / fname
-        np.save(file, result)
-    return expected_outputs
-
-
 @dataclass
-class GenConfig:
+class CommonConfig:
     """
     Class holding parameters sent to aot.export.
     The one difference is that aot.export expects
@@ -322,13 +268,6 @@ class GenConfig:
     compile_cmd: str | None = None
     """Compile command."""
 
-    # These will definitely not be stored in run_module_io.json.
-    # These are just here for convienience.
-    args_torch: list["torch.Tensor"] | None = None
-    """Formulas are now torch.Tensors."""
-    kwargs_torch: dict[Any, Any] | None = None
-    """Formulas are now torch.Tensors."""
-
     @property
     def qualified_name(self):
         return f"{self.class_dir.name}/{self.test_dir.name}"
@@ -340,74 +279,13 @@ class GenConfig:
         path = class_dir.parent
         name = test_dir.name
         with open(run_module_io_json, "r") as f:
-            return GenConfig(
+            return CommonConfig(
                 name=test_dir.name,
                 path=path,
                 class_dir=class_dir,
                 test_dir=test_dir,
                 **json.load(f, object_hook=customJSONDecoder),
             )
-
-    def flatten(self):
-        args = self.args
-        kwargs = self.kwargs
-        args, _ = torch.utils._pytree.tree_flatten(args)
-        kwargs, _ = torch.utils._pytree.tree_flatten(kwargs)
-        return args + kwargs
-
-    def to_torch(self, seed):
-        """Only args and kwargs may hold Formulas.
-
-        Since args and kwargs may be arbitrary Python data structures,
-        use pytrees to flatten them and change Formula to torch.Tensors.
-        """
-        self.args = self.args if self.args is not None else ()
-        self.kwargs = self.kwargs if self.kwargs is not None else {}
-
-        args = self.args
-        kwargs = self.kwargs
-
-        args, args_shape = torch.utils._pytree.tree_flatten(args)
-        kwargs, kwargs_shape = torch.utils._pytree.tree_flatten(kwargs)
-        np.random.seed(seed)
-        args = formulas_to_torch(args)
-        kwargs = formulas_to_torch(kwargs)
-        args = torch.utils._pytree.tree_unflatten(args, args_shape)
-        kwargs = torch.utils._pytree.tree_unflatten(kwargs, kwargs_shape)
-
-        self.args_torch = tuple(args)
-        self.kwargs_torch = kwargs
-        return self.args_torch, self.kwargs_torch
-
-    def get_export_kwargs(self):
-        self.to_torch(self.seed)
-        return {
-            "args": self.args_torch,
-            "kwargs": self.kwargs_torch,
-            "dynamic_shapes": self.dynamic_shapes,
-            "module_name": self.module_name,
-            "function_name": self.function_name,
-            "strict_export": self.strict_export,
-            "import_symbolic_shape_expressions": self.import_symbolic_shape_expressions,
-            "arg_device": self.arg_device,
-        }
-
-    def get_run_module_io(self):
-        flat_args = self.flat_args if self.flat_args is not None else self.flatten()
-        data = {
-            "function_name": self.function_name,
-            "flat_args": flat_args,
-            "seed": self.seed,
-            "rtol": self.rtol,
-            "atol": self.atol,
-            "equal_nan": self.equal_nan,
-            "mode": self.mode,
-            "file_name": self.file_name,
-            "vmfb_name": self.vmfb_name,
-        }
-        if self.mode == "compare":
-            data["expected_output"] = self.expected_output
-        return data
 
     def get_input_flags(self):
         args = self.flat_args
@@ -430,12 +308,6 @@ class GenConfig:
             option = f"--output=@{path}"
             flags.append(option)
         return files, flags
-
-    def save_config(self):
-        data = self.get_run_module_io()
-        with open(self.test_dir / "run_module_io.json", "w") as file:
-            json.dump(data, file, indent=4, cls=CustomJSONEncoder)
-            print("", file=file)
 
     def iree_compile(self, iree_compile_flags):
         mlir_file = self.test_dir / self.file_name
@@ -567,59 +439,3 @@ class GenConfig:
         if skip_run:
             return
         self.iree_run_module(iree_run_flags)
-
-
-def gen(module, configs):
-    """Generate test with multiple configurations."""
-    for config in configs:
-        gen_config(module, config)
-
-
-def gen_config(module, config):
-    """Generate test with single configuration."""
-    config.class_dir = Path(config.path / module._get_name())
-    config.test_dir = Path(config.class_dir / config.name)
-
-    ensure_dir_exists(config.test_dir)
-    mlir_file = export(
-        module, config.test_dir, config.file_name, config.get_export_kwargs()
-    )
-    # TODO: inline this inside export. Make export a method of GenConfig
-    if config.mode == "compare":
-        config.expected_output = save_expected_output(
-            module, config.test_dir, config.args_torch, config.kwargs_torch
-        )
-    config.save_config()
-
-
-def test(function):
-    """Mark function as test."""
-    function._is_test = True
-    return function
-
-
-class ModuleWrapper:
-    """Wrapper around torch.nn.Module
-
-    If called, it will call the module's constructor
-    and generate the tests for the specific module.
-    Tests data comes from functions mark with the _is_test attribute.
-    """
-
-    def __init__(self, cls):
-        self.cls = cls
-
-    def __call__(self, *args, **kwargs):
-        module = self.cls(*args, **kwargs)
-        for attr in dir(module):
-            attr = getattr(module, attr)
-            if not hasattr(attr, "_is_test"):
-                continue
-
-            configs = attr
-            gen(module, configs())
-
-
-def gen_tests(cls):
-    """Decorator for torch.nn.Modules"""
-    return ModuleWrapper(cls)
