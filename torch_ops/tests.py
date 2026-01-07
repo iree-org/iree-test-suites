@@ -52,9 +52,7 @@ class AB(torch.nn.Module):
             seed += 1
 
 
-AB()
-
-
+@gen_tests
 class AB_bfloat16(torch.nn.Module):
     def forward(self, A, B):
         A = A.to(torch.bfloat16)
@@ -62,6 +60,7 @@ class AB_bfloat16(torch.nn.Module):
         return (A @ B).to(torch.float32)
 
     @staticmethod
+    @test
     def test_data():
         args = formulas(2, shape=(64, 64))
         name = "Nx64xf32_64xNxf32"
@@ -72,11 +71,13 @@ class AB_bfloat16(torch.nn.Module):
         yield GenConfig(name, args=args, dynamic_shapes=dynamic_shapes, seed=3)
 
 
+@gen_tests
 class ATB(torch.nn.Module):
     def forward(self, A, B):
         return A.t() @ B
 
     @staticmethod
+    @test
     def test_data():
         args = formulas(2, shape=(64, 64))
         name = "64x64xf32"
@@ -87,11 +88,13 @@ class ATB(torch.nn.Module):
         yield GenConfig(name, args=args, seed=5)
 
 
+@gen_tests
 class ABT(torch.nn.Module):
     def forward(self, A, B):
         return A @ B.t()
 
     @staticmethod
+    @test
     def test_data():
         args = formulas(2, shape=(64, 64))
         name = "64x64xf32"
@@ -102,11 +105,13 @@ class ABT(torch.nn.Module):
         yield GenConfig(name, args=args, seed=7, rtol=1e-3, atol=1e-3)
 
 
+@gen_tests
 class ABPlusC(torch.nn.Module):
     def forward(self, A, B, C):
         return A @ B + C
 
     @staticmethod
+    @test
     def test_data():
         args = formulas(3, shape=(64, 64), coeff=2, offset=-1)
         name = "64x64xf32"
@@ -119,11 +124,13 @@ class ABPlusC(torch.nn.Module):
         yield GenConfig(name, args=args, seed=9, rtol=1e-3, atol=1e-3)
 
 
+@gen_tests
 class ReluABPlusC(torch.nn.Module):
     def forward(self, A, B, C):
         return torch.relu(A @ B + C)
 
     @staticmethod
+    @test
     def test_data():
         args = formulas(3, shape=(64, 64), coeff=2, offset=-1)
         name = "64x64xf32"
@@ -136,11 +143,13 @@ class ReluABPlusC(torch.nn.Module):
         yield GenConfig(name, args=args, seed=11, rtol=1e-3, atol=1e-3)
 
 
+@gen_tests
 class GeluABPlusC(torch.nn.Module):
     def forward(self, A, B, C):
         return torch.ops.aten.gelu.default(A @ B + C)
 
     @staticmethod
+    @test
     def test_data():
         args = formulas(3, shape=(64, 64), coeff=0.1, offset=-0.05)
         name = "64x64xf32"
@@ -151,11 +160,21 @@ class GeluABPlusC(torch.nn.Module):
         yield GenConfig(name, args=args, seed=13, rtol=1e-3, atol=1e-3)
 
 
-gen(AB_bfloat16(), AB_bfloat16.test_data())
-gen(ATB(), ATB.test_data())
-gen(ABT(), ABT.test_data())
-gen(ABT(), ABT.test_data())
-gen(ABPlusC(), ABPlusC.test_data())
-gen(ReluABPlusC(), ReluABPlusC.test_data())
-gen(GeluABPlusC(), GeluABPlusC.test_data())
-# gen(AB(), AB.benchmark_data(14))
+# Just creating an instance generates tests.
+AB()
+AB_bfloat16()
+ATB()
+ABT()
+ABPlusC()
+ReluABPlusC()
+GeluABPlusC()
+
+
+# Example of generation using the functional approach.
+# gen(AB_bfloat16(), AB_bfloat16.test_data())
+# gen(ATB(), ATB.test_data())
+# gen(ABT(), ABT.test_data())
+# gen(ABT(), ABT.test_data())
+# gen(ABPlusC(), ABPlusC.test_data())
+# gen(ReluABPlusC(), ReluABPlusC.test_data())
+# gen(GeluABPlusC(), GeluABPlusC.test_data())
