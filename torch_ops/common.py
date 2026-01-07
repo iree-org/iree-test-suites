@@ -3,6 +3,8 @@
 
 This file contains the classes and methods common to generating and
 running tests. This file does not run the tests nor generates them.
+It does contain the logic for running the tests, but to run them
+one needs to use pytest.
 For generation, look at the methods and classes in generate.py.
 
 The generate.py file is separate from this common file to make it explicit
@@ -200,35 +202,16 @@ def formulas_to_npy_files(formulas, test_folder, seed):
 
 @dataclass
 class CommonConfig:
-    """
-    Class holding parameters sent to aot.export.
-    The one difference is that aot.export expects
-    torch.Tensor arguments while this one expects
-    them to be in Formula
+    """Class used for running tests.
+
+    Some of these fields may also be used during test generation.
     """
 
     name: str
     """Name of the test. Will be name of directory containing test files."""
 
-    # Same as aot.export's parameters
-    # These are used when generating the MLIR file.
-    # function_name is also needed when running the test.
-    args: tuple[Formula] | None = None
-    """Arguments (as formulas instead of torch.Tensor)."""
-    kwargs: dict[Any, Any] | None = None
-    """Kwargs (as formulas instead of torch.Tensor)."""
-    dynamic_shapes: dict[str, Any] | tuple[Any] | list[Any] | None = None
-    """Dynamic shapes spec."""
-    module_name: str | None = None
-    """Name of module, will also be used as name of folder."""
     function_name: str | None = "main"
     """Identifier given to the entry_point of the module."""
-    strict_export: bool = True
-    """Strict export."""
-    import_symbolic_shape_expressions: bool = False
-    """Import symbolic shape expressions."""
-    arg_device: dict[int, Any] | None = None
-    """Arg device"""
 
     # Extra parameters.
     # These are used when compiling and running tests.

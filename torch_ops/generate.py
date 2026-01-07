@@ -61,6 +61,28 @@ def formulas_to_torch(formulas):
 
 @dataclass
 class GenConfig(CommonConfig):
+    """Class used during test generation"""
+
+    # Same as aot.export's parameters
+    # These are used when generating the MLIR file.
+    # function_name is also needed when running the test.
+    args: tuple[Formula] | None = None
+    """Arguments (as formulas instead of torch.Tensor)."""
+    kwargs: dict[Any, Any] | None = None
+    """Kwargs (as formulas instead of torch.Tensor)."""
+    dynamic_shapes: dict[str, Any] | tuple[Any] | list[Any] | None = None
+    """Dynamic shapes spec."""
+    module_name: str | None = None
+    """Name of module, will also be used as name of folder."""
+    # There's also function_name
+    # But that is on CommonConfig
+    strict_export: bool = True
+    """Strict export."""
+    import_symbolic_shape_expressions: bool = False
+    """Import symbolic shape expressions."""
+    arg_device: dict[int, Any] | None = None
+    """Arg device"""
+
     # These will definitely not be stored in run_module_io.json.
     # These are just here for convienience.
     args_torch: list["torch.Tensor"] | None = None
