@@ -8,16 +8,9 @@
     "iree_run_module_flags": [],
     "skip_compile_tests": [],
     "skip_run_tests": [
-        "generated/ABPlusC/test_float16/correctness_test",
-        "generated/ABT/test_float_16/correctness_test",
-        "generated/SquareGemmBench128x128/test_entry_point/benchmark_test",
-        "generated/SquareGemmBench256x256/test_entry_point/benchmark_test",
-        "generated/SquareGemmBench512x512/test_entry_point/benchmark_test",
-        "generated/SquareGemmBench1024x1024/test_entry_point/benchmark_test",
-        "generated/SquareGemmBench2048x2048/test_entry_point/benchmark_test",
-        "generated/SquareGemmBench4096x4096/test_entry_point/benchmark_test",
-        "generated/SquareGemmBench8192x8192/test_entry_point/benchmark_test",
-        "generated/AB/test_float32/benchmark_test"
+        "AB/8192x8192xf32_bench",
+        "AB/4096x4096xf32_bench",
+        "AB/2048x2048xf32_bench"
     ],
     "expected_compile_failures": [],
     "expected_run_failures": [],
