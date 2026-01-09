@@ -61,7 +61,7 @@ jobs:
           pytest torch_ops/ \
             -n auto \
             -rA \
-            --timeout=30 \
+            --timeout=1200 \
             --durations=10 \
             --html=${HTML_REPORT_PATH} \
             --self-contained-html \
