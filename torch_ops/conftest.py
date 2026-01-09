@@ -4,19 +4,25 @@
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import List
-import logging
-import pyjson5
+import copy
+import glob
+import json
+import numpy as np
 import os
+from pathlib import Path
 import pytest
 import subprocess
-import glob
-import numpy as np
+
+pytest.register_assert_rewrite("common")
+from common import (
+    CommonConfig,
+    IreeCompileException,
+    IreeRunException,
+    IreeXFailCompileRunException,
+)
 
 THIS_DIR = Path(__file__).parent
-TEST_DATA_FLAGFILE_NAME = "run_module_io_flags.json"
+TEST_DATA_FLAGFILE_NAME = "run_module_io.json"
 
 
 def pytest_addoption(parser):
@@ -82,7 +88,7 @@ def pytest_sessionstart(session):
     session.config.iree_test_configs = []
     for config_file in session.config.getoption("config_files"):
         with open(config_file) as f:
-            test_config = pyjson5.load(f)
+            test_config = json.load(f)
 
             # Sanity check the config file structure before going any further.
             def check_field(field_name):
@@ -99,277 +105,99 @@ def pytest_sessionstart(session):
 
 
 def pytest_collect_file(parent, file_path):
+    """A test corresponds to a file named ${TEST_DATA_FLAGFILE_NAME}."""
     if file_path.name == TEST_DATA_FLAGFILE_NAME:
         return MlirCompileRunTest.from_parent(parent, path=file_path)
 
-    if file_path.suffix == ".json":
-        with open(file_path) as f:
-            test_cases_json = pyjson5.load(f)
-            if test_cases_json.get("file_format", "") == "test_cases_v0":
-                return MlirCompileRunTest.from_parent(parent, path=file_path)
-
-
-@dataclass(frozen=True)
-class IreeCompileAndRunTestSpec:
-    """Specification for an IREE "compile and run" test."""
-
-    # Directory where test input files are located.
-    test_directory: Path
-
-    # Name of input MLIR file in a format accepted by IREE (e.g. torch, tosa, or linalg dialect).
-    # Including file suffix, e.g. 'model.mlir' or 'model.mlirbc'.
-    input_mlir_name: str
-
-    # Stem of input MLIR file, excluding file suffix, e.g. 'model'.
-    input_mlir_stem: str
-
-    # Name of flagfile in the same directory as the input MLIR, containing flags like:
-    #   --input=i64=@input_0.bin
-    #   --expected_output=i64=@output_0.bin
-    data_flagfile_name: str
-
-    # Name of the test configuration, e.g. "cpu_llvm_sync".
-    # This will be used in generated files and test case names.
-    test_name: str
-
-    # Flags to pass to `iree-compile`, e.g. ["--iree-hal-target-backends=llvm-cpu"].
-    iree_compile_flags: List[str]
-
-    # Flags to pass to `iree-run-module`, e.g. ["--device=local-task"].
-    # These will be passed in addition to `--flagfile={data_flagfile_name}`.
-    iree_run_module_flags: List[str]
-
-    # True if compilation is expected to succeed. If false, the test will be marked XFAIL.
-    expect_compile_success: bool
-
-    # True if running is expected to succeed. If false, the test will be marked XFAIL.
-    expect_run_success: bool
-
-    # True to only compile the test and skip running.
-    skip_run: bool
-
 
 class MlirCompileRunTest(pytest.File):
-    """Collector for MLIR -> compile -> run tests anchored on a file."""
+    """Collector for MLIR -> compile -> run tests anchored on a run_module_io.json file."""
 
-    @dataclass(frozen=True)
-    class TestCase:
-        mlir_file: str
-        runtime_flagfile: str
+    @property
+    def ignore_xfails(self):
+        return self.config.getoption("ignore_xfails")
 
-    def discover_test_cases(self):
-        """Discovers test cases with run_module_io_flags.txt files."""
-        test_cases = []
+    @property
+    def skip_all_runs(self):
+        return self.config.getoption("skip_all_runs")
 
-        mlir_files = sorted(self.path.parent.glob("*.mlir*"))
-        assert len(mlir_files) <= 1, "Test directories may only contain one .mlir file"
-        mlir_file = mlir_files[0]
+    def expect_compile_success(self, tgt_config, gen_config):
+        expected_comp_fails = tgt_config.get("expected_compile_failures", [])
+        return (
+            self.ignore_xfails or gen_config.qualified_name not in expected_comp_fails
+        )
 
-        if self.path.name == TEST_DATA_FLAGFILE_NAME:
-            test_cases.append(
-                MlirCompileRunTest.TestCase(
-                    mlir_file=mlir_file,
-                    runtime_flagfile=TEST_DATA_FLAGFILE_NAME,
-                )
-            )
+    def expect_run_success(self, tgt_config, gen_config):
+        expected_run_fails = tgt_config.get("expected_run_failures", [])
+        return self.ignore_xfails or gen_config.qualified_name not in expected_run_fails
 
-        return test_cases
+    def skip_run(self, tgt_config, gen_config):
+        skips = tgt_config.get("skip_run_tests", [])
+        return self.skip_all_runs or gen_config.qualified_name in skips
 
     def collect(self):
-        # Expected directory structure:
-        #   path/to/test_abs/
-        #     - *.mlir[bc]
-        #     - run_module_io_flags.txt
-        #   path/to/test_add/
-        #     - *.mlir[bc]
-        #     - run_module_io_flags.txt
+        # self.path is run_module_io.json
+        gen_config = CommonConfig.load(self.path)
 
-        test_directory = self.path.parent
-        relative_test_directory = test_directory.relative_to(THIS_DIR).as_posix()
-        test_directory_name = test_directory.name
-
-        test_cases = self.discover_test_cases()
-        if len(test_cases) == 0:
-            logging.getLogger().debug(f"No test cases for '{test_directory_name}'")
-            return []
-
-        for config in self.config.iree_test_configs:
-            if relative_test_directory in config.get("skip_compile_tests", []):
+        for tgt_config in self.config.iree_test_configs:
+            if gen_config.qualified_name in tgt_config.get("skip_compile_tests", []):
                 continue
 
-            expect_compile_success = self.config.getoption(
-                "ignore_xfails"
-            ) or relative_test_directory not in config.get(
-                "expected_compile_failures", []
+            tgt_config["expect_compile_success"] = self.expect_compile_success(
+                tgt_config, gen_config
             )
-            expect_run_success = self.config.getoption(
-                "ignore_xfails"
-            ) or relative_test_directory not in config.get("expected_run_failures", [])
-            skip_run = self.config.getoption(
-                "skip_all_runs"
-            ) or relative_test_directory in config.get("skip_run_tests", [])
-            config_name = config["config_name"]
+            tgt_config["expect_run_success"] = self.expect_run_success(
+                tgt_config, gen_config
+            )
+            tgt_config["skip_run"] = self.skip_run(tgt_config, gen_config)
+            tgt_config["golden_time_ms"] = tgt_config.get("golden_times_ms", {}).get(
+                gen_config.qualified_name, float("nan")
+            )
 
-            for test_case in test_cases:
-                # Generate test item names like 'model.mlir::cpu_llvm_sync'.
-                # These show up in pytest output.
-                mlir_file = test_case.mlir_file
-                name_parts = [e for e in [mlir_file.name, config_name] if e]
-                item_name = "::".join(name_parts)
+            match gen_config.mode:
+                case "compare":
+                    cls = IreeCompareTest
+                case "benchmark":
+                    cls = IreeBenchmarkTest
 
-                spec = IreeCompileAndRunTestSpec(
-                    test_directory=test_directory,
-                    input_mlir_name=mlir_file.name,
-                    input_mlir_stem=mlir_file.stem,
-                    data_flagfile_name=test_case.runtime_flagfile,
-                    test_name=config_name,
-                    iree_compile_flags=config["iree_compile_flags"],
-                    iree_run_module_flags=config["iree_run_module_flags"],
-                    expect_compile_success=expect_compile_success,
-                    expect_run_success=expect_run_success,
-                    skip_run=skip_run,
-                )
-                yield IreeCompileRunItem.from_parent(self, name=item_name, spec=spec)
+            yield cls.from_parent(
+                self,
+                name=gen_config.qualified_name,
+                tgt_config=copy.copy(tgt_config),
+                gen_config=gen_config,
+            )
 
 
-class IreeCompileRunItem(pytest.Item):
-    """Test invocation item for an IREE compile + run test case."""
-
-    spec: IreeCompileAndRunTestSpec
-
-    def __init__(self, spec, **kwargs):
+class IreeBaseTest(pytest.Item):
+    def __init__(self, tgt_config, gen_config, **kwargs):
         super().__init__(**kwargs)
-        self.spec = spec
+        self.tgt_config = tgt_config
+        self.gen_config = gen_config
+        self.add_markers()
 
-        relative_test_directory = self.spec.test_directory.relative_to(
-            THIS_DIR
-        ).as_posix()
-        self.user_properties.append(
-            ("relative_test_directory_name", relative_test_directory)
-        )
-        self.user_properties.append(("input_mlir_name", self.spec.input_mlir_name))
-        self.user_properties.append(("test_name", self.spec.test_name))
+    @property
+    def iree_compile_flags(self):
+        return self.tgt_config["iree_compile_flags"]
 
-        self.test_cwd = self.spec.test_directory
+    @property
+    def iree_run_flags(self):
+        return self.tgt_config["iree_run_module_flags"]
 
-        vmfb_name = f"{self.spec.input_mlir_stem}_{self.spec.test_name}.vmfb"
+    @property
+    def skip_run(self):
+        return self.tgt_config["skip_run"]
 
-        compile_args = ["iree-compile", self.spec.input_mlir_name]
-        compile_args.extend(self.spec.iree_compile_flags)
-        compile_args.extend(["-o", vmfb_name])
-        self.compile_cmd = subprocess.list2cmdline(compile_args)
+    @property
+    def expect_compile_success(self):
+        return self.tgt_config["expect_compile_success"]
 
-        run_args = ["iree-run-module", f"--module={vmfb_name}"]
-        run_args.extend(self.spec.iree_run_module_flags)
-        with open(self.test_cwd / self.spec.data_flagfile_name, "r") as config:
-            json = pyjson5.load(config)
-        for input in json["inputs"]:
-            run_args.append(f"--input=@{input}")
-        for output in json["observed_outputs"]:
-            run_args.append(f"--output=@{output}")
-        self.run_cmd = subprocess.list2cmdline(run_args)
-        self.run_options = json
+    @property
+    def qualified_name(self):
+        return self.gen_config.qualified_name
 
-    def runtest(self):
-        # We want to test two phases: 'compile', and 'run'.
-        # A test can be marked as expected to fail at either stage, with these
-        # possible outcomes:
-
-        # Expect 'compile' | Expect 'run' | Actual 'compile' | Actual 'run' | Result
-        # ---------------- | ------------ | ---------------- | ------------ | ------
-        #
-        # PASS             | PASS         | PASS             | PASS         | PASS
-        # PASS             | PASS         | FAIL             | N/A          | FAIL
-        # PASS             | PASS         | PASS             | FAIL         | FAIL
-        #
-        # PASS             | FAIL         | PASS             | PASS         | XPASS
-        # PASS             | FAIL         | FAIL             | N/A          | FAIL
-        # PASS             | FAIL         | PASS             | FAIL         | XFAIL
-        #
-        # FAIL             | N/A          | PASS             | PASS         | XPASS
-        # FAIL             | N/A          | FAIL             | N/A          | XFAIL
-        # FAIL             | N/A          | PASS             | FAIL         | XPASS
-
-        # * XFAIL and PASS are acceptable outcomes - they mean that the list of
-        #   expected failures in the config file matched the test run.
-        # * FAIL means that something expected to work did not. That's an error.
-        # * XPASS means that a test is newly passing and can be removed from the
-        #   expected failures list.
-
-        if not self.spec.expect_compile_success:
-            self.add_marker(
-                pytest.mark.xfail(
-                    raises=IreeCompileException,
-                    strict=True,
-                    reason="Expected compilation to fail (included in 'expected_compile_failures')",
-                )
-            )
-        if not self.spec.expect_run_success:
-            self.add_marker(
-                pytest.mark.xfail(
-                    raises=IreeRunException,
-                    strict=True,
-                    reason="Expected run to fail (included in 'expected_run_failures')",
-                )
-            )
-
-        self.test_compile()
-
-        if self.spec.skip_run:
-            return
-
-        try:
-            self.test_run()
-        except IreeRunException as e:
-            if not self.spec.expect_compile_success:
-                raise IreeXFailCompileRunException from e
-            raise e
-
-    def test_compile(self):
-        cwd = self.test_cwd
-        logging.getLogger().info(
-            f"Launching compile command:\n" f"cd {cwd} && {self.compile_cmd}"  #
-        )
-        proc = subprocess.run(
-            self.compile_cmd, shell=True, capture_output=True, cwd=cwd
-        )
-        if proc.returncode != 0:
-            raise IreeCompileException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-            )
-
-    def test_run(self):
-        cwd = self.test_cwd
-        logging.getLogger().info(
-            f"Launching run command:\n" f"cd {cwd} && {self.run_cmd}"  #
-        )
-
-        proc = subprocess.run(self.run_cmd, shell=True, capture_output=True, cwd=cwd)
-        if proc.returncode != 0:
-            raise IreeRunException(
-                process=proc,
-                cwd=cwd,
-                input_mlir_name=self.spec.input_mlir_name,
-                compile_cmd=self.compile_cmd,
-                run_cmd=self.run_cmd,
-            )
-
-        observed = self.run_options["observed_outputs"]
-        expected = self.run_options["expected_outputs"]
-        expected.sort()
-        observed.sort()
-        rtol = self.run_options["rtol"]
-        atol = self.run_options["atol"]
-        equal_nan = self.run_options["equal_nan"]
-        for exp, obs in zip(expected, observed, strict=True):
-            exp_arr = np.load(cwd / exp)
-            obs_arr = np.load(cwd / obs)
-            assert np.allclose(
-                exp_arr, obs_arr, rtol=rtol, atol=atol, equal_nan=equal_nan
-            )
+    @property
+    def golden_time(self):
+        return self.tgt_config["golden_time_ms"]
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
@@ -382,101 +210,59 @@ class IreeCompileRunItem(pytest.Item):
             )
         return super().repr_failure(excinfo)
 
+    def add_markers(self):
+        if not self.tgt_config["expect_compile_success"]:
+            self.add_marker(
+                pytest.mark.xfail(
+                    raises=IreeCompileException,
+                    strict=True,
+                    reason="Expected compilation to fail (included in 'expected_compile_failures')",
+                )
+            )
+        if not self.tgt_config["expect_run_success"]:
+            self.add_marker(
+                pytest.mark.xfail(
+                    raises=IreeRunException,
+                    strict=True,
+                    reason="Expected run to fail (included in 'expected_run_failures')",
+                )
+            )
+
+
+class IreeCompareTest(IreeBaseTest):
+    def runtest(self):
+        iree_compile_flags = self.iree_compile_flags
+        iree_run_flags = self.iree_run_flags
+        skip_run = self.skip_run
+        try:
+            self.gen_config.run_quality_test(
+                iree_compile_flags, iree_run_flags, skip_run
+            )
+        except IreeRunException as e:
+            if not self.expect_compile_success:
+                raise IreeXFailCompileRunException from e
+            raise e
+
     def reportinfo(self):
-        display_name = (
-            f"{self.path.parent.name}::{self.spec.input_mlir_name}::{self.name}"
-        )
-        return self.path, 0, f"IREE compile and run: {display_name}"
-
-    # Defining this for pytest-retry to avoid an AttributeError.
-    def _initrequest(self):
-        pass
+        return self.path, 0, f"IREE quality test: {self.qualified_name}"
 
 
-class IreeCompileException(Exception):
-    """Compiler exception that preserves the command line and output."""
-
-    def __init__(
-        self,
-        process: subprocess.CompletedProcess,
-        cwd: Path,
-        input_mlir_name: Path,
-        compile_cmd: str,
-    ):
+class IreeBenchmarkTest(IreeBaseTest):
+    def runtest(self):
+        iree_compile_flags = self.iree_compile_flags
+        iree_run_flags = self.iree_run_flags
+        skip_run = self.skip_run
         try:
-            errs = process.stderr.decode("utf-8")
-        except:
-            errs = str(process.stderr)
-        try:
-            outs = process.stdout.decode("utf-8")
-        except:
-            outs = str(process.stdout)
-
-        test_github_url = (
-            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
-            + cwd.relative_to(THIS_DIR).as_posix()
-        )
-
-        with open(cwd / input_mlir_name) as f:
-            input_mlir = f.read()
-
-            super().__init__(
-                f"Error invoking iree-compile\n"
-                f"Error code: {process.returncode}\n"
-                f"Stderr diagnostics:\n{errs}\n\n"
-                f"Stdout diagnostics:\n{outs}\n\n"
-                f"Test case source:\n"
-                f"  {test_github_url}\n\n"
-                f"Input program:\n"
-                f"```\n{input_mlir}```\n\n"
-                f"Compiled with:\n"
-                f"  cd {cwd} && {compile_cmd}\n\n"
+            self.gen_config.run_benchmark_test(
+                iree_compile_flags,
+                iree_run_flags,
+                golden_time=self.golden_time,
+                skip_run=skip_run,
             )
+        except IreeRunException as e:
+            if not self.expect_compile_success:
+                raise IreeXFailCompileRunException from e
+            raise e
 
-
-class IreeRunException(Exception):
-    """Runtime exception that preserves the command line and output."""
-
-    def __init__(
-        self,
-        process: subprocess.CompletedProcess,
-        cwd: Path,
-        input_mlir_name: Path,
-        compile_cmd: str,
-        run_cmd: str,
-    ):
-        try:
-            errs = process.stderr.decode("utf-8")
-        except:
-            errs = str(process.stderr)
-        try:
-            outs = process.stdout.decode("utf-8")
-        except:
-            outs = str(process.stdout)
-
-        test_github_url = (
-            "https://github.com/iree-org/iree-test-suites/blob/main/torch_ops/"
-            + cwd.relative_to(THIS_DIR).as_posix()
-        )
-
-        with open(cwd / input_mlir_name) as f:
-            input_mlir = f.read()
-
-            super().__init__(
-                f"Error invoking iree-run-module\n"
-                f"Error code: {process.returncode}\n"
-                f"Stderr diagnostics:\n{errs}\n"
-                f"Stdout diagnostics:\n{outs}\n"
-                f"Test case source:\n"
-                f"  {test_github_url}\n\n"
-                f"Input program:\n"
-                f"```\n{input_mlir}```\n\n"
-                f"Compiled with:\n"
-                f"  cd {cwd} && {compile_cmd}\n\n"
-                f"Run with:\n"
-                f"  cd {cwd} && {run_cmd}\n\n"
-            )
-
-
-class IreeXFailCompileRunException(Exception):
-    pass
+    def reportinfo(self):
+        return self.path, 0, f"IREE benchmark test: {self.qualified_name}"
