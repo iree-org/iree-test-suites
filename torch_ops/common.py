@@ -24,6 +24,8 @@ import numpy as np
 import subprocess
 from typing import Any
 
+THIS_DIR = Path(__file__).parent
+
 
 class IreeCompileException(Exception):
     """Compiler exception that preserves the command line and output."""
