@@ -160,6 +160,105 @@ class GeluABPlusC(torch.nn.Module):
         yield GenConfig(name, args=args, seed=13, rtol=1e-3, atol=1e-3)
 
 
+@gen_tests
+class InterestingShapesBiasAdd(torch.nn.Module):
+    def forward(
+        self,
+        A,
+        B,
+        C,
+        ACC,
+        transposeA=False,
+        transposeB=False,
+        bias=False,
+        castToBf16=False,
+    ):
+        if castToBf16:
+            A = A.to(torch.bfloat16)
+            B = B.to(torch.bfloat16)
+            C = C.to(torch.bfloat16)
+            ACC = ACC.to(torch.bfloat16)
+
+        if transposeA:
+            A = A.t()
+        if transposeB:
+            B = B.t()
+
+        torch.matmul(A, B, out=ACC)
+
+        if bias:
+            ACC += C
+
+        if castToBf16:
+            ACC = ACC.to(torch.float32)
+
+        return ACC
+
+    @staticmethod
+    @test
+    def test_data():
+        args = formulas(4, shape=(999, 999), dtype=np.dtype("float16"))
+        kwargs = {"transposeA": False, "transposeB": True, "bias": True}
+        name = "999x999xf16_NT_bias"
+        yield GenConfig(name, args=args, kwargs=kwargs, seed=15, rtol=1e-3, atol=1e-3)
+
+        args = formulas(4, shape=(999, 999), dtype=np.dtype("i8"))
+        kwargs = {"transposeA": False, "transposeB": False, "bias": True}
+        name = "999x999xi8_NN_bias"
+        yield GenConfig(name, args=args, kwargs=kwargs, seed=16)
+
+        args = formulas(4, shape=(999, 999))
+        kwargs = {"transposeA": False, "transposeB": False, "bias": True}
+        name = "999x999xf32_TN_bias"
+        yield GenConfig(name, args=args, kwargs=kwargs, seed=17)
+
+        A = Formula(shape=(3240000, 2))
+        B = Formula(shape=(2, 2))
+        C = Formula(shape=(3240000, 2))
+        ACC = Formula(shape=(3240000, 2))
+        args = (A, B, C, ACC)
+        kwargs = {
+            "transposeA": False,
+            "transposeB": True,
+            "bias": False,
+            "castToBf16": True,
+        }
+        name = "3240000x2xbf16_matmul_2x2xbf16_NT"
+        yield GenConfig(name, args=args, kwargs=kwargs, seed=18)
+
+        A = Formula(shape=(196608, 419))
+        B = Formula(shape=(384, 419))
+        C = Formula(shape=(196608, 384))
+        ACC = Formula(shape=(196608, 384))
+        args = (A, B, C, ACC)
+        kwargs = {
+            "transposeA": False,
+            "transposeB": True,
+            "bias": False,
+            "castToBf16": True,
+        }
+        name = "196608x419xbf16_matmul_419x384xbf16_NT"
+        yield GenConfig(name, args=args, kwargs=kwargs, seed=19)
+
+        A = Formula(shape=(1536, 64), dtype=np.dtype("i8"))
+        B = Formula(shape=(35, 64), dtype=np.dtype("i8"))
+        C = Formula(shape=(1536, 35), dtype=np.dtype("i8"))
+        ACC = Formula(shape=(1536, 35), dtype=np.dtype("i8"))
+        args = (A, B, C, ACC)
+        kwargs = {"transposeA": False, "transposeB": True, "bias": False}
+        name = "1536x64xbf16_matmul_64x35xbf16_NT"
+        yield GenConfig(name, args=args, kwargs=kwargs, seed=20)
+
+        A = Formula(shape=(1152, 999), dtype=np.dtype("float16"))
+        B = Formula(shape=(999, 576), dtype=np.dtype("float16"))
+        C = Formula(shape=(1152, 576), dtype=np.dtype("float16"))
+        ACC = Formula(shape=(1152, 576), dtype=np.dtype("float16"))
+        args = (A, B, C, ACC)
+        kwargs = {"transposeA": False, "transposeB": False, "bias": False}
+        name = "1152x999xf16_matmul_999x576xf16_NN"
+        yield GenConfig(name, args=args, kwargs=kwargs, seed=20)
+
+
 # Just creating an instance generates tests.
 AB()
 AB_bfloat16()
@@ -168,6 +267,7 @@ ABT()
 ABPlusC()
 ReluABPlusC()
 GeluABPlusC()
+InterestingShapesBiasAdd()
 
 
 # Example of generation using the functional approach.

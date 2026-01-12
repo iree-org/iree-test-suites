@@ -118,8 +118,7 @@ class GenConfig(CommonConfig):
         args = self.args
         kwargs = self.kwargs
         args, _ = torch.utils._pytree.tree_flatten(args)
-        kwargs, _ = torch.utils._pytree.tree_flatten(kwargs)
-        return args + kwargs
+        return args
 
     def get_export_kwargs(self):
         self.to_torch(self.seed)
