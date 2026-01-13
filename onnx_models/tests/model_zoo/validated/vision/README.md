@@ -1,3 +1,3 @@
 # Validated Vision Models
 
-https://github.com/onnx/models/tree/main/validated/vision
+https://huggingface.co/onnxmodelzoo/legacy_models/tree/main/validated/vision
