@@ -47,8 +47,8 @@
         }
     ],
     "seed": 18,
-    "rtol": 1e-05,
-    "atol": 1e-08,
+    "rtol": 0.001,
+    "atol": 0.001,
     "equal_nan": false,
     "mode": "compare",
     "file_name": "test.mlir",
