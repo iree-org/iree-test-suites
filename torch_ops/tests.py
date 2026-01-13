@@ -240,10 +240,10 @@ class InterestingShapesBiasAdd(torch.nn.Module):
         name = "6144x419xbf16_matmul_419x384xbf16_NT"
         yield GenConfig(name, args=args, kwargs=kwargs, seed=19, rtol=7e-3, atol=5e-3)
 
-        A = Formula(shape=(1536, 64), dtype=np.dtype("i8"))
-        B = Formula(shape=(35, 64), dtype=np.dtype("i8"))
-        C = Formula(shape=(1536, 35), dtype=np.dtype("i8"))
-        ACC = Formula(shape=(1536, 35), dtype=np.dtype("i8"))
+        A = Formula(shape=(1536, 64), dtype=np.dtype("int8"))
+        B = Formula(shape=(35, 64), dtype=np.dtype("int8"))
+        C = Formula(shape=(1536, 35), dtype=np.dtype("int8"))
+        ACC = Formula(shape=(1536, 35), dtype=np.dtype("int8"))
         args = (A, B, C, ACC)
         kwargs = {"transposeA": False, "transposeB": True, "bias": False}
         name = "1536x64xbf16_matmul_64x35xbf16_NT"
