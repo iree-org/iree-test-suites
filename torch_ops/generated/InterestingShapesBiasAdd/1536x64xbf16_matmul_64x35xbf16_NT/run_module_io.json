@@ -7,7 +7,7 @@
                     1536,
                     64
                 ],
-                "dtype": "int8",
+                "dtype": "float32",
                 "coeff": 1,
                 "offset": 0
             }
@@ -18,7 +18,7 @@
                     35,
                     64
                 ],
-                "dtype": "int8",
+                "dtype": "float32",
                 "coeff": 1,
                 "offset": 0
             }
@@ -29,7 +29,7 @@
                     1536,
                     35
                 ],
-                "dtype": "int8",
+                "dtype": "float32",
                 "coeff": 1,
                 "offset": 0
             }
@@ -40,7 +40,7 @@
                     1536,
                     35
                 ],
-                "dtype": "int8",
+                "dtype": "float32",
                 "coeff": 1,
                 "offset": 0
             }

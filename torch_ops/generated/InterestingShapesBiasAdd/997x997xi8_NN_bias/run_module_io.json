@@ -7,7 +7,7 @@
                     997,
                     997
                 ],
-                "dtype": "int64",
+                "dtype": "int8",
                 "coeff": 1,
                 "offset": 0
             }
@@ -18,7 +18,7 @@
                     997,
                     997
                 ],
-                "dtype": "int64",
+                "dtype": "int8",
                 "coeff": 1,
                 "offset": 0
             }
@@ -29,7 +29,7 @@
                     997,
                     997
                 ],
-                "dtype": "int64",
+                "dtype": "int8",
                 "coeff": 1,
                 "offset": 0
             }
@@ -40,7 +40,7 @@
                     997,
                     997
                 ],
-                "dtype": "int64",
+                "dtype": "int8",
                 "coeff": 1,
                 "offset": 0
             }
