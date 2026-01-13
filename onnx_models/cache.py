@@ -9,6 +9,8 @@ import logging
 import subprocess
 from pathlib import Path
 
+from huggingface_hub import hf_hub_download
+
 logger = logging.getLogger(__name__)
 
 
@@ -190,6 +192,51 @@ class GitHubLFSRepositoryCacheScope(CacheScope):
         logger.info(f"Getting file '{relative_path}' from cache.")
         logger.info(f"View URL:\n  {view_url}")
         logger.info(f"Direct download URL:\n  {direct_download_url}")
-
         self.pull_lfs_file(relative_path)
         return self.local_repository_dir / relative_path
+
+
+class HuggingFaceCacheScope(CacheScope):
+    """Cache scope backed by a Hugging Face repository.
+
+    Uses the huggingface_hub library to download and cache files.
+    The library handles caching automatically in ~/.cache/huggingface/hub/.
+    """
+
+    def __init__(
+        self,
+        scope_name: str,
+        cache_dir: Path,
+        repository_name: str,
+    ):
+        """Initialize a Hugging Face cache scope.
+
+        Args:
+            scope_name: Name for this cache scope.
+            cache_dir: Directory to cache the repository.
+            repository_name: Name of the repository to cache.
+        """
+        super().__init__(scope_name)
+        self.repository_name = repository_name
+        self.local_repository_dir = cache_dir / repository_name.replace("/", "_")
+
+    def get_file(self, relative_path: str) -> Path:
+        """Downloads a file from Hugging Face and returns the local cached path.
+
+        The huggingface_hub library automatically caches files, so subsequent
+        requests for the same file will use the cached version.
+        """
+        logger.info(
+            f"Getting file '{relative_path}' from Hugging Face repository {self.repository_name}."
+        )
+        logger.debug(f"Local repository directory: {self.local_repository_dir}")
+        # Download the file (or get from cache if already downloaded).
+        local_path = hf_hub_download(
+            repo_id=self.repository_name,
+            filename=relative_path,
+            cache_dir=self.local_repository_dir,
+        )
+        local_path = Path(local_path)
+        logger.info(f"Local cached file: {local_path}")
+
+        return local_path
