@@ -403,16 +403,14 @@ class CommonConfig:
                 iree_compile_flags, iree_run_flags
             )
             raise ValueError(
-                "golden time has not been set! set it to {new_golden_time}"
+                f"golden time has not been set! set it to {new_golden_time}"
             )
 
         self.iree_compile(iree_compile_flags)
         if skip_run:
             return
 
-        self.iree_benchmark_module(
-            iree_run_flags, return_golden_time=return_golden_time
-        )
+        self.iree_benchmark_module(iree_run_flags)
 
     def run_quality_test(self, iree_compile_flags, iree_run_flags, skip_run=False):
         """Run differential test.
