@@ -4,7 +4,7 @@
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-# https://github.com/onnx/models/tree/main/validated/vision/body_analysis/
+# https://huggingface.co/onnxmodelzoo/legacy_models/tree/main/validated/vision/body_analysis
 
 import pytest
 

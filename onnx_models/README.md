@@ -1,7 +1,7 @@
 # ONNX Model Tests
 
 This test suite exercises ONNX (Open Neural Network Exchange: https://onnx.ai/)
-models. Most pretrained models are sourced from https://github.com/onnx/models.
+models. Most pretrained models are sourced from https://huggingface.co/onnxmodelzoo/legacy_models/.
 
 Testing follows several stages:
 
@@ -21,14 +21,7 @@ graph LR
 
 ## Quickstart
 
-1. Ensure you have [Git Large File Storage (LFS)](https://git-lfs.com/)
-   installed:
-
-   ```bash
-   git lfs install
-   ```
-
-2. Set up your virtual environment and install requirements:
+1. Set up your virtual environment and install requirements:
 
     ```bash
     python -m venv .venv
@@ -49,7 +42,7 @@ graph LR
         export PATH=path/to/iree-build:$PATH
         ```
 
-3. Run pytest using typical flags:
+2. Run pytest using typical flags:
 
     ```bash
     pytest \
@@ -206,7 +199,7 @@ iree-run-module \
 
 ## Caching
 
-Test input files from https://github.com/onnx/models are cached by default at a
-local git checkout stored at `~/.cache/iree-test-suites/onnx_models`. The cache
+Test input files from https://huggingface.co/onnxmodelzoo/legacy_models/ are cached by default at a
+local git checkout stored at `~/.cache/iree-test-suites/`. The cache
 location can be changed by passing `--cache-dir=/path/to/cache` or by setting
 the `IREE_TEST_FILES` environment variable.
