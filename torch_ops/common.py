@@ -397,12 +397,22 @@ class CommonConfig:
         assert real_time <= golden_time
         """
 
-        if np.isnan(golden_time):
-            raise ValueError("golden time has not been set!")
+        report_time = np.isnan(golden_time) and not skip_run
+        if report_time:
+            new_golden_time = self.report_golden_time(
+                iree_compile_flags, iree_run_flags
+            )
+            raise ValueError(
+                "golden time has not been set! set it to {new_golden_time}"
+            )
+
         self.iree_compile(iree_compile_flags)
         if skip_run:
             return
-        self.iree_benchmark_module(iree_run_flags, golden_time)
+
+        self.iree_benchmark_module(
+            iree_run_flags, return_golden_time=return_golden_time
+        )
 
     def run_quality_test(self, iree_compile_flags, iree_run_flags, skip_run=False):
         """Run differential test.
