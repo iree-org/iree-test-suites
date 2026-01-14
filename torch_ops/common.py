@@ -24,6 +24,8 @@ import numpy as np
 import subprocess
 from typing import Any
 
+THIS_DIR = Path(__file__).parent
+
 
 class IreeCompileException(Exception):
     """Compiler exception that preserves the command line and output."""
@@ -329,7 +331,7 @@ class CommonConfig:
         run_cmd = subprocess.list2cmdline(run_cmd)
         proc = subprocess.run(run_cmd, shell=True, capture_output=True)
         if proc.returncode != 0:
-            input_mlir_file = self.test_file / self.file_name
+            input_mlir_file = self.test_dir / self.file_name
             raise IreeRunException(
                 self.test_dir, proc, input_mlir_file, self.compile_cmd, run_cmd
             )
