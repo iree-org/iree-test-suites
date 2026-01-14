@@ -1,7 +1,11 @@
 import itertools
 import numpy as np
 import torch
-
+from torch.nn.attention.flex_attention import (
+    flex_attention,
+    BlockMask,
+    _LARGE_SPARSE_BLOCK_SIZE,
+)
 from generate import GenConfig, gen, gen_tests, test, Formula
 
 
@@ -161,6 +165,42 @@ class GeluABPlusC(torch.nn.Module):
 
 
 @gen_tests
+class FlexAttention(torch.nn.Module):
+    def __init__(self):
+        self._block_mask = self._create_empty_block_mask()
+        super().__init__()
+
+    def _create_empty_block_mask(self):
+        return BlockMask.from_kv_blocks(
+            kv_num_blocks=torch.ones([1, 1, 1], dtype=torch.int32),
+            kv_indices=torch.zeros([1, 1, 1, 1], dtype=torch.int32),
+            BLOCK_SIZE=_LARGE_SPARSE_BLOCK_SIZE,
+            seq_lengths=(1, 1),
+        )
+
+    def score_mod_fn(self, score, batch, head, token_q, token_kv):
+        return torch.tanh(score)
+
+    def forward(self, Q, K, V):
+        return flex_attention(
+            Q,
+            K,
+            V,
+            score_mod=self.score_mod_fn,
+            block_mask=self._block_mask,
+            scale=1.0,
+            kernel_options={},
+        )
+
+    @staticmethod
+    @test
+    def test_data():
+        args = formulas(3, shape=(4, 8, 1024, 64))
+        name = "4x8x1024x64xf16"
+        yield GenConfig(name, args=args, seed=14, rtol=1e-3, atol=1e-3)
+
+
+@gen_tests
 class InterestingShapesBiasAdd(torch.nn.Module):
     def forward(
         self,
@@ -268,7 +308,7 @@ ABPlusC()
 ReluABPlusC()
 GeluABPlusC()
 InterestingShapesBiasAdd()
-
+FlexAttention()
 
 # Example of generation using the functional approach.
 # gen(AB_bfloat16(), AB_bfloat16.test_data())
@@ -278,3 +318,4 @@ InterestingShapesBiasAdd()
 # gen(ABPlusC(), ABPlusC.test_data())
 # gen(ReluABPlusC(), ReluABPlusC.test_data())
 # gen(GeluABPlusC(), GeluABPlusC.test_data())
+# gen(FlexAttention(), FlexAttention.test_data())
