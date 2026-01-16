@@ -55,7 +55,6 @@ jobs:
 
       # Run tests and output new config files as needed.
       - name: Run Torch ops test suite
-        continue-on-error: true
         run: |
           source ${VENV_DIR}/bin/activate
           pytest torch_ops/ \
