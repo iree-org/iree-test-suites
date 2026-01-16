@@ -339,7 +339,7 @@ class CommonConfig:
         self.compare_results(self.expected_output, output_files)
 
     def iree_benchmark_module(
-        self, iree_run_flags, golden_time=float("nan"), return_golden_time=True
+        self, iree_run_flags, golden_time_ms=float("nan"), return_golden_time=True
     ):
         module = self.test_dir / self.vmfb_name
         function = self.function_name
@@ -361,10 +361,10 @@ class CommonConfig:
             )
 
         output = json.loads(proc.stdout.decode("utf-8"))
-        real_time = output["benchmarks"][0]["real_time"]
+        real_time_ms = output["benchmarks"][0]["real_time"]
         if return_golden_time:
-            return real_time
-        assert real_time <= golden_time
+            return real_time_ms
+        assert real_time_ms <= golden_time_ms
 
     def report_golden_time(self, iree_compile_flags, iree_run_flags):
         self.iree_compile(iree_compile_flags)
@@ -378,7 +378,7 @@ class CommonConfig:
         self,
         iree_compile_flags,
         iree_run_flags,
-        golden_time=float("nan"),
+        golden_time_ms=float("nan"),
         skip_run=False,
     ):
         """Run benchmark test
@@ -397,20 +397,19 @@ class CommonConfig:
         assert real_time <= golden_time
         """
 
-        report_time = np.isnan(golden_time) and not skip_run
+        report_time = np.isnan(golden_time_ms) and not skip_run
         if report_time:
-            new_golden_time = self.report_golden_time(
+            new_golden_time_ms = self.report_golden_time(
                 iree_compile_flags, iree_run_flags
             )
             raise ValueError(
-                f"golden time has not been set! set it to {new_golden_time}"
-            )
+                f"golden time has not been set. Set to: {new_golden_time_ms} ms")
 
         self.iree_compile(iree_compile_flags)
         if skip_run:
             return
 
-        self.iree_benchmark_module(iree_run_flags)
+        self.iree_benchmark_module(iree_run_flags, golden_time_ms)
 
     def run_quality_test(self, iree_compile_flags, iree_run_flags, skip_run=False):
         """Run differential test.
