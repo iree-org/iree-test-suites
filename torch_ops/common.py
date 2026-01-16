@@ -403,7 +403,7 @@ class CommonConfig:
                 iree_compile_flags, iree_run_flags
             )
             raise ValueError(
-                    f"golden time has not been set. Set to: {new_golden_time_ms:.2f} ms"
+                f"golden time has not been set. Set to: {new_golden_time_ms:.2f} ms"
             )
 
         self.iree_compile(iree_compile_flags)
