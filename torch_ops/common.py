@@ -402,8 +402,12 @@ class CommonConfig:
             new_golden_time_ms = self.report_golden_time(
                 iree_compile_flags, iree_run_flags
             )
+            if new_golden_time_ms < 1:
+                new_golden_time_str = f"{new_golden_time_ms:.2g}"
+            else:
+                new_golden_time_str = f"{new_golden_time_ms:.2f}"
             raise ValueError(
-                f"golden time has not been set. Set to: {new_golden_time_ms} ms"
+                f"golden time has not been set. Set to: {new_golden_time_str} ms"
             )
 
         self.iree_compile(iree_compile_flags)
