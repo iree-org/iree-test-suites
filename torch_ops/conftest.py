@@ -256,7 +256,7 @@ class IreeBenchmarkTest(IreeBaseTest):
             self.gen_config.run_benchmark_test(
                 iree_compile_flags,
                 iree_run_flags,
-                golden_time=self.golden_time,
+                golden_time_ms=self.golden_time,
                 skip_run=skip_run,
             )
         except IreeRunException as e:
