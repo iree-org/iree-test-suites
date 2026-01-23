@@ -188,7 +188,7 @@ class FlexAttention(torch.nn.Module):
             V,
             score_mod=self.score_mod_fn,
             block_mask=self._block_mask,
-            scale=1.0,
+            scale=None,
             kernel_options={},
         )
 
