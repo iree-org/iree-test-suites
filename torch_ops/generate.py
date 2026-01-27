@@ -46,14 +46,14 @@ def export(module, test_folder, file_name, export_kwargs, args_torch, kwargs_tor
                 _module(*args_torch, **kwargs_torch)
             entry_point_name = list(tmpfolder.glob("*"))
             assert len(entry_point_name) == 1, f"{entry_point_name}"
-            export_kwargs["function_name"] = str(Path(entry_point_name[0]).name)
+            function_name = str(Path(entry_point_name[0]).name)
             mlir_files = list(tmpfolder.glob("**/*.mlir"))
             assert len(mlir_files) == 1, f"{mlir_files}"
             file = mlir_files[0]
             file.rename(test_folder / file_name)
             # Unlike the other case, we cannot set function name
             # ourselves so we return it.
-            return export_kwargs["function_name"], file
+            return function_name, file
     else:
         ensure_dir_exists(test_folder)
         exported_module = aot.export(module, **export_kwargs)
