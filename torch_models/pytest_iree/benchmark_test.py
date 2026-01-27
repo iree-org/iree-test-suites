@@ -8,6 +8,7 @@ import pytest
 import logging
 from pathlib import Path
 import logging
+import json
 
 from pytest_iree.test_base import TestBase
 from pytest_iree.utils import iree_benchmark_module
@@ -55,6 +56,9 @@ class IREEBenchmarkTest(TestBase):
                 cwd=self.artifact_dir,
                 args=run_args,
             )
+            # Log the full benchmark output for inspection
+            logger.info("Full benchmark output:")
+            logger.info(json.dumps(output_json, indent=2))
             # https://stackoverflow.com/a/65430875/11660958
             self.mean_time = self._get_min_time_from_output_json(output_json)
             if self.golden_time is not None:
