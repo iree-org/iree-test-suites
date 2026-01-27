@@ -1,0 +1,41 @@
+{
+    "function_name": "fused_op_layout_cus_19251eb76de419c5d116c01b54881305898fbe10_32x224x224x3xfloat16_64x3x3x3xfloat16",
+    "flat_args": [
+        {
+            "Formula": {
+                "shape": [
+                    32,
+                    224,
+                    224,
+                    3
+                ],
+                "dtype": "float16",
+                "coeff": 1,
+                "offset": 0
+            }
+        },
+        {
+            "Formula": {
+                "shape": [
+                    64,
+                    3,
+                    3,
+                    3
+                ],
+                "dtype": "float16",
+                "coeff": 1,
+                "offset": 0
+            }
+        }
+    ],
+    "seed": 1,
+    "rtol": 0.001,
+    "atol": 0.001,
+    "equal_nan": false,
+    "mode": "compare",
+    "file_name": "test.mlir",
+    "vmfb_name": "out.vmfb",
+    "expected_output": [
+        "expected_result_0.npy"
+    ]
+}

@@ -22,26 +22,53 @@ a golden time.
 from dataclasses import dataclass
 import numpy as np
 import json
+import os
 from pathlib import Path
+import shutil
+import tempfile
 from typing import Any
 
 
 import torch
 import iree.turbine.aot as aot
+from iree.turbine.kernel.boo.op_exports.conv import ConvSignature, Mode
+from iree.turbine.kernel.boo.runtime import use_cache_dir
 
 from common import CommonConfig, Formula, ensure_dir_exists, CustomJSONEncoder
 
 
-def export(module, test_folder, file_name, export_kwargs):
-    ensure_dir_exists(test_folder)
-    exported_module = aot.export(module, **export_kwargs)
-    output = test_folder / file_name
-    exported_module.save_mlir(output)
-    return output
+def export(module, test_folder, file_name, export_kwargs, args_torch, kwargs_torch):
+    if isinstance(module, ConvSignature):
+        _module = module.get_compiled_module(backend="iree_boo_experimental")
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmpfolder = Path(tmpdirname)
+            with use_cache_dir(tmpfolder):
+                _module(*args_torch, **kwargs_torch)
+            entry_point_name = list(tmpfolder.glob("fused*"))
+            assert len(entry_point_name) == 1, f"{entry_point_name}"
+            export_kwargs["function_name"] = str(Path(entry_point_name[0]).name)
+            mlir_files = list(tmpfolder.glob("**/*.mlir"))
+            assert len(mlir_files) == 1, f"{mlir_files}"
+            file = mlir_files[0]
+            file.rename(test_folder / file_name)
+            # Unlike the other case, we cannot set function name
+            # ourselves so we return it.
+            return export_kwargs["function_name"], file
+    else:
+        ensure_dir_exists(test_folder)
+        exported_module = aot.export(module, **export_kwargs)
+        output = test_folder / file_name
+        exported_module.save_mlir(output)
+        # We return function name to keep signature.
+        return export_kwargs["function_name"], output
 
 
 def save_expected_output(module, test_folder, args_torch, kwargs_torch):
-    results = module.forward(*args_torch, **kwargs_torch)
+    if isinstance(module, ConvSignature):
+        func = module.get_compiled_module(backend="inductor")
+    else:
+        func = module.forward
+    results = func(*args_torch, **kwargs_torch)
     results, _ = torch.utils._pytree.tree_flatten(results)
     expected_outputs = []
     for idx, result in enumerate(results):
@@ -52,11 +79,51 @@ def save_expected_output(module, test_folder, args_torch, kwargs_torch):
     return expected_outputs
 
 
+def torch_dtype_to_numpy(dtype):
+    match dtype:
+        case torch.float16:
+            return np.dtype("float16")
+    raise ValueError(f"do not have equivalent type for {dtype}")
+
+
 def formulas_to_torch(formulas):
     return [
         torch.from_numpy(formula.numpy()) if isinstance(formula, Formula) else formula
         for formula in formulas
     ]
+
+
+def signature_to_formulas(
+    signature: ConvSignature,
+    *,
+    device: str | torch.device | None = None,
+    splat_value: int | float | None = None,
+    seed: int | None = None,
+):
+    assert not device, "we do not expect a device"
+    assert not seed, "we do not expect a seed"
+    assert not splat_value, "we do not expect splat_value"
+
+    def get(shape):
+        return Formula(shape=shape, dtype=torch_dtype_to_numpy(signature.dtype))
+
+    if signature.mode == Mode.FORWARD:
+        # (x, w, b) or (x, w)
+        return (
+            (
+                get(signature.input_shape),
+                get(signature.kernel_shape),
+                get(signature.out_channels),
+            )
+            if signature.bias
+            else (get(signature.input_shape), get(signature.kernel_shape))
+        )
+
+    return (
+        get(signature.output_shape),
+        get(signature.input_shape),
+        get(signature.kernel_shape),
+    )
 
 
 @dataclass
@@ -165,12 +232,22 @@ def gen(module, configs):
 
 def gen_config(module, config):
     """Generate test with single configuration."""
-    config.class_dir = Path(config.path / module._get_name())
+    _module = module
+    if isinstance(module, ConvSignature):
+        _module = module.get_nn_module()
+
+    name = _module._get_name()
+    config.class_dir = Path(config.path / name)
     config.test_dir = Path(config.class_dir / config.name)
 
     ensure_dir_exists(config.test_dir)
-    mlir_file = export(
-        module, config.test_dir, config.file_name, config.get_export_kwargs()
+    config.function_name, mlir_file = export(
+        module,
+        config.test_dir,
+        config.file_name,
+        config.get_export_kwargs(),
+        config.args_torch,
+        config.kwargs_torch,
     )
     # TODO: inline this inside export. Make export a method of GenConfig
     if config.mode == "compare":
