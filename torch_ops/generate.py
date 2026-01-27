@@ -44,7 +44,7 @@ def export(module, test_folder, file_name, export_kwargs, args_torch, kwargs_tor
             tmpfolder = Path(tmpdirname)
             with use_cache_dir(tmpfolder):
                 _module(*args_torch, **kwargs_torch)
-            entry_point_name = list(tmpfolder.glob("fused*"))
+            entry_point_name = list(tmpfolder.glob("*"))
             assert len(entry_point_name) == 1, f"{entry_point_name}"
             export_kwargs["function_name"] = str(Path(entry_point_name[0]).name)
             mlir_files = list(tmpfolder.glob("**/*.mlir"))
