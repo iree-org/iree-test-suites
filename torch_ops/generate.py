@@ -65,7 +65,7 @@ def export(module, test_folder, file_name, export_kwargs, args_torch, kwargs_tor
 
 def save_expected_output(module, test_folder, args_torch, kwargs_torch):
     if isinstance(module, ConvSignature):
-        func = module.get_nn_module(**kwargs_torch)
+        func = module.get_nn_module()
     else:
         func = module.forward
     results = func(*args_torch, **kwargs_torch)
