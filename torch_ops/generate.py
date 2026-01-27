@@ -100,30 +100,30 @@ def signature_to_formulas(
     splat_value: int | float | None = None,
     seed: int | None = None,
 ):
+    """
+    This function replaces get_sample_args.
+
+    Unlike get_sample_args, we do not care about setting a device here, nor a seed.
+    The seed is generated on a test level for the test-suite.
+
+    The reason why we assert on the splat_value is that that is a level of control
+    that does not yet exist in formula and we should honour it if possible.
+    """
     assert not device, "we do not expect a device"
     assert not seed, "we do not expect a seed"
     assert not splat_value, "we do not expect splat_value"
 
-    def get(shape):
-        return Formula(shape=shape, dtype=torch_dtype_to_numpy(signature.dtype))
+    # Even if this function is intended to replace get_sample_args,
+    # we use get_sample_args here to extract the shapes + dtypes.
+    # That should be more robust to changes, and should extend easier to non-conv ops in the future.
+    sample_args = signature.get_sample_args()
+    formula_args = []
+    for arg in sample_args:
+        assert arg.is_contiguous(), "we expect arguments to be contiguous"
+        dtype = torch_dtype_to_numpy(arg.dtype)
+        formula_args.append(Formula(shape=arg.shape, dtype=dtype))
 
-    if signature.mode == Mode.FORWARD:
-        # (x, w, b) or (x, w)
-        return (
-            (
-                get(signature.input_shape),
-                get(signature.kernel_shape),
-                get(signature.out_channels),
-            )
-            if signature.bias
-            else (get(signature.input_shape), get(signature.kernel_shape))
-        )
-
-    return (
-        get(signature.output_shape),
-        get(signature.input_shape),
-        get(signature.kernel_shape),
-    )
+    return formula_args
 
 
 @dataclass
