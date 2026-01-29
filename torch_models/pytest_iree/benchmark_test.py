@@ -8,6 +8,7 @@ import pytest
 import logging
 from pathlib import Path
 import logging
+from textwrap import dedent
 
 from pytest_iree.test_base import TestBase
 from pytest_iree.utils import iree_benchmark_module
@@ -28,7 +29,7 @@ class IREEBenchmarkTest(TestBase):
         self.golden_time = test_data.get("golden_time_ms", None)
         self.module_artifacts = self._get_modules()
         self.weight_artifacts = self._get_weights()
-        self.mean_time = None
+        self.reported_time = None
 
     def _get_min_time_from_output_json(self, output_json: dict) -> float:
         benchmarks = output_json["benchmarks"]
@@ -56,11 +57,12 @@ class IREEBenchmarkTest(TestBase):
                 args=run_args,
             )
             # https://stackoverflow.com/a/65430875/11660958
-            self.mean_time = self._get_min_time_from_output_json(output_json)
+            self.reported_time = self._get_min_time_from_output_json(output_json)
             if self.golden_time is not None:
-                assert (
-                    self.mean_time <= self.golden_time
-                ), f"Benchmark failed: mean_time {self.mean_time} exceeds golden_time {self.golden_time}"
+                assert self.reported_time <= self.golden_time, dedent(
+                    f"""Benchmark failed: reported_time {self.reported_time} exceeds golden_time {self.golden_time}
+                          Time reported corresponds to the minimum of 10 samples."""
+                )
             self.status = "PASSED"
         except Exception as e:
             self.status = "FAILED"
@@ -77,7 +79,7 @@ class IREEBenchmarkTest(TestBase):
     def get_test_summary(self) -> list:
         return [
             self.name,
-            f"{self.mean_time:.3f}" if self.mean_time is not None else "N/A",
+            f"{self.reported_time:.3f}" if self.reported_time is not None else "N/A",
             f"{self.golden_time:.3f}" if self.golden_time is not None else "N/A",
             self.status,
         ]
