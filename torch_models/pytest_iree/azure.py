@@ -89,10 +89,19 @@ class AzureArtifact(Artifact):
 
         # Use requests library for direct HTTP access to avoid Azure SDK
         # authentication complexity. Public blobs should be accessible via HTTP.
+        # Configure session to avoid Azure-specific environment interference
+        session = requests.Session()
+        # Clear any proxy settings that might interfere with anonymous access
+        session.trust_env = False
+        # Add headers to mimic curl behavior
+        headers = {
+            'User-Agent': 'curl/7.68.0',
+        }
+        
         try:
             # First, do a HEAD request to get blob properties
             logger.info(f"  Checking blob properties for '{remote_file_name}'")
-            head_response = requests.head(self.url, timeout=30)
+            head_response = session.head(self.url, headers=headers, timeout=30)
             head_response.raise_for_status()
             
             blob_size = int(head_response.headers.get('Content-Length', 0))
@@ -127,7 +136,7 @@ class AzureArtifact(Artifact):
                 )
 
             # Stream download with progress
-            response = requests.get(self.url, stream=True, timeout=300)
+            response = session.get(self.url, headers=headers, stream=True, timeout=300)
             response.raise_for_status()
             
             with open(self.path, mode="wb") as local_blob:
