@@ -1,3 +1,0 @@
-generated/ConvForward/nchw_fchw/expected_result_0.npy filter=lfs diff=lfs merge=lfs -text
-generated/ConvForward/nhwc_fhwc/expected_result_0.npy filter=lfs diff=lfs merge=lfs -text
-generated/ConvForward/nhwc_hwcf/expected_result_0.npy filter=lfs diff=lfs merge=lfs -text

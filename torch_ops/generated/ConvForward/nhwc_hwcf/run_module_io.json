@@ -1,12 +1,12 @@
 {
-    "function_name": "fused_op_layout_cus_96d79d3b959f6caf377eeeb1a62aa387950b5409_32x224x224x3xfloat16_3x3x3x64xfloat16",
+    "function_name": "fused_op_layout_cus_566987e7f0ee67644645e3ef9d0a7a6b9143e108_2x32x32x3xfloat16_3x3x3x8xfloat16",
     "flat_args": [
         {
             "Formula": {
                 "shape": [
+                    2,
                     32,
-                    224,
-                    224,
+                    32,
                     3
                 ],
                 "dtype": "float16",
@@ -20,7 +20,7 @@
                     3,
                     3,
                     3,
-                    64
+                    8
                 ],
                 "dtype": "float16",
                 "coeff": 1,
