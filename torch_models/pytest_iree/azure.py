@@ -1,13 +1,10 @@
 from pathlib import Path
-from azure.storage.blob import BlobClient, BlobProperties
 import logging
 import hashlib
 import mmap
 import uuid
-import re
-import tqdm
-import logging
 import json
+import requests
 from pytest_iree.artifact import Artifact
 
 logger = logging.getLogger(__name__)
@@ -64,18 +61,14 @@ class AzureArtifact(Artifact):
             size /= 1024.0
         return f"{size:.{decimal_places}f} {unit}"
 
-    def get_azure_md5(self, remote_file: str, azure_blob_properties: BlobProperties):
+    def get_azure_md5(self, remote_file: str, content_md5: str | None):
         """Gets the content_md5 hash for a blob on Azure, if available."""
-        content_settings = azure_blob_properties.get("content_settings")
-        if not content_settings:
-            return None
-        azure_md5 = content_settings.get("content_md5")
-        if not azure_md5:
+        if not content_md5:
             logger.warning(
                 f"  Remote file '{remote_file}' on Azure is missing the "
                 "'content_md5' property, can't check if local matches remote"
             )
-        return azure_md5
+        return content_md5
 
     def get_local_md5(self, local_file_path: Path):
         """Gets the content_md5 hash for a lolca file, if it exists."""
@@ -89,27 +82,29 @@ class AzureArtifact(Artifact):
 
     def download_azure_artifact(self):
         """
-        Checks the hashes between the local file and azure file.
+        Download artifact from Azure Blob Storage using direct HTTP requests.
+        This avoids Azure SDK authentication issues on VMs with managed identity.
         """
         remote_file_name = self.url.rsplit("/", 1)[-1]
 
-        # Move azure logging to DEBUG because it is too verbose.
-        azure_logger = logging.getLogger("azure").setLevel(logging.ERROR)
-
-        # Use BlobClient.from_blob_url() with credential=None to force anonymous
-        # access for public blobs. This is required when running on Azure VMs with
-        # managed identity enabled, as the SDK will try to use that identity by
-        # default, which may not have access to public blobs.
-        with BlobClient.from_blob_url(
-            self.url,
-            credential=None,  # Force anonymous access for public blobs
-            max_chunk_get_size=1024 * 1024 * 32,  # 32 MiB
-            max_single_get_size=1024 * 1024 * 32,  # 32 MiB
-            logger=azure_logger,
-        ) as blob_client:
-            blob_properties = blob_client.get_blob_properties()
-            blob_size_str = self.human_readable_size(blob_properties.size)
-            azure_md5 = self.get_azure_md5(self.url, blob_properties)
+        # Use requests library for direct HTTP access to avoid Azure SDK
+        # authentication complexity. Public blobs should be accessible via HTTP.
+        try:
+            # First, do a HEAD request to get blob properties
+            logger.info(f"  Checking blob properties for '{remote_file_name}'")
+            head_response = requests.head(self.url, timeout=30)
+            head_response.raise_for_status()
+            
+            blob_size = int(head_response.headers.get('Content-Length', 0))
+            content_md5_b64 = head_response.headers.get('Content-MD5')
+            
+            # Convert base64 MD5 to bytes if present
+            azure_md5 = None
+            if content_md5_b64:
+                import base64
+                azure_md5 = base64.b64decode(content_md5_b64)
+            
+            blob_size_str = self.human_readable_size(blob_size)
             local_md5 = self.get_local_md5(self.path)
 
             if azure_md5 and azure_md5 == local_md5:
@@ -119,36 +114,32 @@ class AzureArtifact(Artifact):
                 )
                 return
 
-            with tqdm.tqdm(
-                total=blob_properties.size,
-                unit="B",
-                unit_scale=True,
-                unit_divisor=1024,
-                desc=f"    {remote_file_name}",
-                file=None,
-            ) as pbar:
+            # Download the blob
+            if not local_md5:
+                logger.info(
+                    f"  Downloading '{remote_file_name}' ({blob_size_str}) "
+                    f"to '{self.path}'"
+                )
+            else:
+                logger.info(
+                    f"  Downloading '{remote_file_name}' ({blob_size_str}) "
+                    f"to '{self.path}' (local MD5 does not match)"
+                )
 
-                def progress_hook(current, total):
-                    pbar.update(current - pbar.n)
-                    # TODO: This can probably be done at a lesser frequenct
-                    # interval.
-                    logger.info(str(pbar))
-
-                if not local_md5:
-                    logger.info(
-                        f"  Downloading '{remote_file_name}' ({blob_size_str}) "
-                        f"to '{self.path}'"
-                    )
-                else:
-                    logger.info(
-                        f"  Downloading '{remote_file_name}' ({blob_size_str}) "
-                        f"to '{self.path}' (local MD5 does not match)"
-                    )
-                with open(self.path, mode="wb") as local_blob:
-                    download_stream = blob_client.download_blob(
-                        max_concurrency=4, progress_hook=progress_hook
-                    )
-                    local_blob.write(download_stream.readall())
+            # Stream download with progress
+            response = requests.get(self.url, stream=True, timeout=300)
+            response.raise_for_status()
+            
+            with open(self.path, mode="wb") as local_blob:
+                for chunk in response.iter_content(chunk_size=1024 * 1024 * 32):  # 32 MiB chunks
+                    if chunk:
+                        local_blob.write(chunk)
+            
+            logger.info(f"  Downloaded '{remote_file_name}' successfully")
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"  Failed to download '{remote_file_name}': {e}")
+            raise
 
     def join(self):
         super().join()
