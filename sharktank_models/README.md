@@ -7,22 +7,7 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 
 ## Quickstart
 
-1. Download files through [git lfs](https://git-lfs.com/) as needed:
-
-    ```bash
-    git lfs install
-    git lfs pull --include="*"
-
-    git lfs ls-files
-    # 37f90b4754 * sharktank_models/llama3.1/assets/toy_llama.irpa
-    # 7172acdf43 * sharktank_models/llama3.1/assets/toy_llama.mlir
-    # e997647ecc * sharktank_models/llama3.1/assets/toy_llama_tp2.irpa
-    # b7b2f5a206 * sharktank_models/llama3.1/assets/toy_llama_tp2.mlir
-    # 917845c887 * sharktank_models/llama3.1/assets/toy_llama_tp2.rank0.irpa
-    # 9ab51093c4 * sharktank_models/llama3.1/assets/toy_llama_tp2.rank1.irpa
-    ```
-
-2. Set up your virtual environment and install requirements:
+1. Set up your virtual environment and install requirements:
 
     ```bash
     python -m venv .venv
@@ -39,7 +24,7 @@ built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
     * To use a custom version of IREE follow the instructions for
       [building the IREE Python packages from source](https://iree.dev/building-from-source/getting-started/#python-bindings).
 
-3. Run pytest using typical flags:
+2. Run pytest using typical flags:
 
     ```bash
     pytest \
