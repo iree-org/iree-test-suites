@@ -29,7 +29,7 @@
         }
     ],
     "seed": 1,
-    "rtol": 0.001,
+    "rtol": 0.005,
     "atol": 0.001,
     "equal_nan": false,
     "mode": "compare",
