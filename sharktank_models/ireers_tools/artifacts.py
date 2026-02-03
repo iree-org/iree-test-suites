@@ -178,7 +178,6 @@ class FetchedArtifact(ProducedArtifact):
             account_url,
             container_name,
             blob_name,
-            credential=None,  # Force anonymous access for public blobs
             max_chunk_get_size=1024 * 1024 * 32,  # 32 MiB
             max_single_get_size=1024 * 1024 * 32,  # 32 MiB
         ) as blob_client:
