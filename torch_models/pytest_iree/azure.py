@@ -93,32 +93,15 @@ class AzureArtifact(Artifact):
         """
         remote_file_name = self.url.rsplit("/", 1)[-1]
 
-        # Extract path components from Azure URL to use with the Azure Storage Blobs
-        # client library for Python (https://pypi.org/project/azure-storage-blob/).
-        #
-        # For example:
-        #   https://sharkpublic.blob.core.windows.net/sharkpublic/path/to/blob.txt
-        #                                            ^           ^
-        #   account_url:    https://sharkpublic.blob.core.windows.net
-        #   container_name: sharkpublic
-        #   blob_name:      path/to/blob.txt
-        result = re.search(r"(https.+\.net)/([^/]+)/(.+)", self.url)
-        assert result, f"Failed to parse Azure URL '{self.url}'"
-        account_url = result.groups()[0]
-        container_name = result.groups()[1]
-        blob_name = result.groups()[2]
-
         # Move azure logging to DEBUG because it is too verbose.
         azure_logger = logging.getLogger("azure").setLevel(logging.ERROR)
 
-        # Use credential=None to explicitly disable managed identity and force
-        # anonymous access. This is required when running on Azure VMs with
-        # managed identity enabled, as the SDK will try to use that identity
-        # by default, which may not have access to public blobs.
-        with BlobClient(
-            account_url,
-            container_name,
-            blob_name,
+        # Use BlobClient.from_blob_url() with credential=None to force anonymous
+        # access for public blobs. This is required when running on Azure VMs with
+        # managed identity enabled, as the SDK will try to use that identity by
+        # default, which may not have access to public blobs.
+        with BlobClient.from_blob_url(
+            self.url,
             credential=None,  # Force anonymous access for public blobs
             max_chunk_get_size=1024 * 1024 * 32,  # 32 MiB
             max_single_get_size=1024 * 1024 * 32,  # 32 MiB
