@@ -111,10 +111,15 @@ class AzureArtifact(Artifact):
         # Move azure logging to DEBUG because it is too verbose.
         azure_logger = logging.getLogger("azure").setLevel(logging.ERROR)
 
+        # Use credential=None to explicitly disable managed identity and force
+        # anonymous access. This is required when running on Azure VMs with
+        # managed identity enabled, as the SDK will try to use that identity
+        # by default, which may not have access to public blobs.
         with BlobClient(
             account_url,
             container_name,
             blob_name,
+            credential=None,  # Force anonymous access for public blobs
             max_chunk_get_size=1024 * 1024 * 32,  # 32 MiB
             max_single_get_size=1024 * 1024 * 32,  # 32 MiB
             logger=azure_logger,
