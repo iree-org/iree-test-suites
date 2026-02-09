@@ -405,10 +405,13 @@ class CommonConfig:
             return real_time_ms
         assert real_time_ms <= golden_time_ms
 
-    def report_golden_time(self, iree_compile_flags, iree_run_flags):
+    def report_golden_time(
+        self, iree_compile_flags, iree_run_flags, use_rocprofv3=False
+    ):
         self.iree_compile(iree_compile_flags)
         func = self.iree_benchmark_module
-        if "--iree-hal-target-device=hip" in iree_compile_flags:
+        is_hip = "--iree-hal-target-device=hip" in iree_compile_flags
+        if use_rocprofv3:
             func = self.rocprofv3
         golden_time = func(iree_run_flags, return_golden_time=True)
         # 10% is added for variance.
@@ -420,6 +423,7 @@ class CommonConfig:
         iree_run_flags,
         golden_time_ms=float("nan"),
         skip_run=False,
+        use_rocprofv3=False,
     ):
         """Run benchmark test
         iree-compile \
@@ -440,7 +444,7 @@ class CommonConfig:
         report_time = np.isnan(golden_time_ms) and not skip_run
         if report_time:
             new_golden_time_ms = self.report_golden_time(
-                iree_compile_flags, iree_run_flags
+                iree_compile_flags, iree_run_flags, use_rocprofv3
             )
             raise ValueError(
                 f"golden time has not been set. Set to: {new_golden_time_ms:.2f} ms"
@@ -450,7 +454,7 @@ class CommonConfig:
         if skip_run:
             return
 
-        if "--iree-hal-target-device=hip" in iree_compile_flags:
+        if use_rocprofv3:
             self.rocprofv3(iree_run_flags, golden_time_ms)
             return
         self.iree_benchmark_module(iree_run_flags, golden_time_ms)
