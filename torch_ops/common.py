@@ -374,7 +374,7 @@ class CommonConfig:
         try:
             real_time_ns = data["rocprofiler-sdk-tool"][0]["summary"][0]["stats"]["min"]
         except:
-            nice_json = json.dumps(data, indented=4)
+            nice_json = json.dumps(data, indent=4)
             raise ValueError(f"{nice_json}")
         real_time_ms = real_time_ns / 1e6
         if return_golden_time:
