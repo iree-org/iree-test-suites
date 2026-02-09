@@ -339,7 +339,7 @@ class CommonConfig:
         self.compare_results(self.expected_output, output_files)
 
     def iree_benchmark_module(
-        self, iree_run_flags, golden_time_ms=float("nan"), return_golden_time=True
+        self, iree_run_flags, golden_time_ms=float("nan"), return_golden_time=False
     ):
         module = self.test_dir / self.vmfb_name
         function = self.function_name
