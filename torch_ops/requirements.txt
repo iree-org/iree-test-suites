@@ -2,7 +2,6 @@
 #   * See requirements-iree.txt for using IREE packages.
 #   * See requirements-dev.txt for extra deps used to regenerate test cases.
 
---extra-index-url https://rocm.nightlies.amd.com/v2/gfx120X-all/
 numpy
 psutil
 pyjson5
@@ -11,4 +10,3 @@ pytest-html
 pytest-reportlog
 pytest-timeout
 pytest-xdist
-rocm[libraries,devel]
