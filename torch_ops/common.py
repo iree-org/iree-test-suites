@@ -371,7 +371,11 @@ class CommonConfig:
         real_output = Path(f"{str(rocprofv3_output)}_results.json")
         with open(real_output) as f:
             data = json.load(f)
-        real_time_ns = data["rocprofiler-sdk-tool"][0]["summary"][0]["stats"]["min"]
+        try:
+            real_time_ns = data["rocprofiler-sdk-tool"][0]["summary"][0]["stats"]["min"]
+        except:
+            nice_json = json.dumps(data, indented=4)
+            raise ValueError(f"{nice_json}")
         real_time_ms = real_time_ns / 1e6
         if return_golden_time:
             return real_time_ms
