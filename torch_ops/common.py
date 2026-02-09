@@ -407,9 +407,10 @@ class CommonConfig:
 
     def report_golden_time(self, iree_compile_flags, iree_run_flags):
         self.iree_compile(iree_compile_flags)
-        golden_time = self.iree_benchmark_module(
-            iree_run_flags, return_golden_time=True
-        )
+        func = self.iree_benchmark_module
+        if "--iree-hal-target-device=hip" in iree_compile_flags:
+            func = self.rocprofv3
+        golden_time = func(iree_run_flags, return_golden_time=True)
         # 10% is added for variance.
         return golden_time * 1.1
 
