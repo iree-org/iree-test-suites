@@ -449,11 +449,10 @@ class CommonConfig:
         if skip_run:
             return
 
-        self.rocprofv3(iree_run_flags, golden_time_ms)
-        #if "--iree-hal-target-device=hip" in iree_compile_flags:
-        #    self.rocprofv3(iree_run_flags, golden_time_ms)
-        #    return
-        #self.iree_benchmark_module(iree_run_flags, golden_time_ms)
+        if "--iree-hal-target-device=hip" in iree_compile_flags:
+            self.rocprofv3(iree_run_flags, golden_time_ms)
+            return
+        self.iree_benchmark_module(iree_run_flags, golden_time_ms)
 
     def run_quality_test(self, iree_compile_flags, iree_run_flags, skip_run=False):
         """Run differential test.
