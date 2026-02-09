@@ -21,6 +21,7 @@ from dataclasses import dataclass
 import json
 import numbers
 import numpy as np
+import shutil
 import subprocess
 from typing import Any
 
@@ -413,7 +414,7 @@ class CommonConfig:
     def report_golden_time(self, iree_compile_flags, iree_run_flags):
         self.iree_compile(iree_compile_flags)
         func = self.iree_benchmark_module
-        if "--iree-hal-target-device=hip" in iree_compile_flags:
+        if shutil.which("rocprofv3"):
             func = self.rocprofv3
         golden_time = func(iree_run_flags, return_golden_time=True)
         # 10% is added for variance.
@@ -455,7 +456,7 @@ class CommonConfig:
         if skip_run:
             return
 
-        if "--iree-hal-target-device=hip" in iree_compile_flags:
+        if shutil.which("rocprofv3"):
             self.rocprofv3(iree_run_flags, golden_time_ms)
             return
         self.iree_benchmark_module(iree_run_flags, golden_time_ms)
