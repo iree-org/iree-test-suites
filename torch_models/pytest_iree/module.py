@@ -2,6 +2,7 @@ from pathlib import Path
 import logging
 import json
 from pytest_iree.artifact import Artifact
+from pytest_iree.git_lfs import GitLfsArtifact
 from pytest_iree.azure import AzureArtifact
 from pytest_iree.utils import iree_compile
 import shutil
@@ -41,6 +42,7 @@ class ModuleArtifact(Artifact):
         super().__init__(module_artifact_dir, name)
 
         self.artifact_base_dir = artifact_base_dir
+        self.module_base_dir = module_base_dir
         self.module_name = module
         self.module_json = module_json
         self.module_artifact_dir = module_artifact_dir
@@ -88,10 +90,15 @@ class ModuleArtifact(Artifact):
     def get_mlir_path(self) -> Path:
         """Get the path to the MLIR file used to generate this module."""
         module_data = json.loads(self.module_json.read_text())
-        mlir_url = module_data["mlir"]
-        assert (
-            "blob.core.windows.net" in mlir_url
-        ), "Only Azure Blob Storage is supported currently."
-        self.mlir_artifact = AzureArtifact(self.artifact_base_dir, mlir_url)
+        assert("type" in module_data, "expected Module definition to specify type of MLIR container")
+        if module_data["type"] == "git-lfs":
+            relative_filepath = module_data["mlir"]
+            self.mlir_artifact = GitLfsArtifact(self.module_base_dir, relative_filepath)
+        elif module_data["type"] == "azure":
+            mlir_url = module_data["mlir"]
+            assert (
+                "blob.core.windows.net" in mlir_url
+            ), "Only Azure Blob Storage is supported currently."
+            self.mlir_artifact = AzureArtifact(self.artifact_base_dir, mlir_url)
         self.mlir_artifact.join()
         return self.mlir_artifact.path

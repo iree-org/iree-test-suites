@@ -1,4 +1,5 @@
 {
+  "type": "azure",
   "mlir": "https://sharkpublic.blob.core.windows.net/sharkpublic/sai/sdxl-scheduled-unet/model.mlir",
   "compiler_flags": [
     "--iree-hal-target-device=local",
