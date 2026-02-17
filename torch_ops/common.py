@@ -16,7 +16,7 @@ primarily provides information about which target to use when
 compiling and other flags used when running.
 """
 
-from my_azure import AzureArtifact
+from pytest_iree.azure import AzureArtifact
 from pathlib import Path
 from dataclasses import asdict, dataclass
 import json
