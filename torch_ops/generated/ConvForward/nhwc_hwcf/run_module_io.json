@@ -36,6 +36,6 @@
     "file_name": "test.mlir",
     "vmfb_name": "out.vmfb",
     "expected_output": [
-        "expected_result_0.npy"
+        "https://sharkpublic.blob.core.windows.net/sharkpublic/eochoalo/ConvForward/nhwc_hwcf/expected_result_0.npy"
     ]
 }

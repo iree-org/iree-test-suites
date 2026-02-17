@@ -27,6 +27,12 @@ from typing import Any
 THIS_DIR = Path(__file__).parent
 
 
+@dataclass
+class ArgSpec:
+    url: str | None = None
+    value: numbers.Number | Path | Any | None = None
+
+
 class IreeCompileException(Exception):
     """Compiler exception that preserves the command line and output."""
 

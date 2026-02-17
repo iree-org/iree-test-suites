@@ -34,7 +34,7 @@ import iree.turbine.aot as aot
 from iree.turbine.kernel.boo.op_exports.conv import ConvSignature, Mode
 from iree.turbine.kernel.boo.runtime import use_cache_dir
 
-from common import CommonConfig, Formula, ensure_dir_exists, CustomJSONEncoder
+from common import ArgSpec, CommonConfig, Formula, ensure_dir_exists, CustomJSONEncoder
 
 
 def export(module, test_folder, file_name, export_kwargs, args_torch, kwargs_torch):
@@ -63,7 +63,13 @@ def export(module, test_folder, file_name, export_kwargs, args_torch, kwargs_tor
         return export_kwargs["function_name"], output
 
 
-def save_expected_output(module, test_folder, args_torch, kwargs_torch):
+ACCOUNT = "sharkpublic"
+CONTAINER = "sharkpublic"
+
+
+def save_expected_output(
+    module, test_folder, args_torch, kwargs_torch, prepare_azure_script=False
+):
     if isinstance(module, ConvSignature):
         func = module.get_nn_module()
     else:
@@ -73,9 +79,22 @@ def save_expected_output(module, test_folder, args_torch, kwargs_torch):
     expected_outputs = []
     for idx, result in enumerate(results):
         fname = f"expected_result_{idx}.npy"
-        expected_outputs.append(fname)
         file = test_folder / fname
         np.save(file, result)
+
+        if prepare_azure_script:
+            account_name = f"--account-name {ACCOUNT}"
+            container_name = f"--container-name {CONTAINER}"
+            name = Path("eochoalo") / Path(*file.parts[1:])
+            cmd = f"az storage blob upload {account_name} {container_name} {name} {file}\n"
+            with open("upload.sh", "a") as f:
+                f.write(cmd)
+
+            url = f"https://{ACCOUNT}.blob.core.windows.net/{CONTAINER}/{name}"
+            expected_outputs.append(url)
+        else:
+            expected_outputs.append(fname)
+
     return expected_outputs
 
 
@@ -149,6 +168,8 @@ class GenConfig(CommonConfig):
     """Import symbolic shape expressions."""
     arg_device: dict[int, Any] | None = None
     """Arg device"""
+    azure_blob: bool = False
+    """Whether or not to store as an azure blob"""
 
     # These will definitely not be stored in run_module_io.json.
     # These are just here for convienience.
@@ -252,7 +273,11 @@ def gen_config(module, config):
     # TODO: inline this inside export. Make export a method of GenConfig
     if config.mode == "compare":
         config.expected_output = save_expected_output(
-            module, config.test_dir, config.args_torch, config.kwargs_torch
+            module,
+            config.test_dir,
+            config.args_torch,
+            config.kwargs_torch,
+            config.azure_blob,
         )
     config.save_config()
 
