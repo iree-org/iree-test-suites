@@ -97,10 +97,10 @@ class AzureArtifact(Artifact):
         # client library for Python (https://pypi.org/project/azure-storage-blob/).
         #
         # For example:
-        #   https://sharkpublic.blob.core.windows.net/sharkpublic/path/to/blob.txt
-        #                                            ^           ^
-        #   account_url:    https://sharkpublic.blob.core.windows.net
-        #   container_name: sharkpublic
+        #   https://amdsharkpublic.blob.core.windows.net/amdsharkpublic/path/to/blob.txt
+        #                                                ^              ^
+        #   account_url:    https://amdsharkpublic.blob.core.windows.net
+        #   container_name: amdsharkpublic
         #   blob_name:      path/to/blob.txt
         result = re.search(r"(https.+\.net)/([^/]+)/(.+)", self.url)
         assert result, f"Failed to parse Azure URL '{self.url}'"
