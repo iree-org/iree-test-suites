@@ -36,9 +36,9 @@ class ArgSpec:
     def toJSONEncoder(self):
         return asdict(self)
 
-    def __rtruediv__(self, other) -> Path:
+    def path(self, test_dir) -> Path:
         if self.value:
-            return other / self.value
+            return test_dir / self.value
 
         artifact = AzureArtifact(artifact_base_dir=Path("artifacts"), url=self.url)
         artifact.join()
@@ -336,7 +336,7 @@ class CommonConfig:
         equal_nan = self.equal_nan
         for exp, obs in zip(expected, observed, strict=True):
             obs_tensor = np.load(self.test_dir / obs)
-            exp_tensor = np.load(self.test_dir / exp)
+            exp_tensor = np.load(exp.path(self.test_dir))
             assert np.allclose(
                 obs_tensor, exp_tensor, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
