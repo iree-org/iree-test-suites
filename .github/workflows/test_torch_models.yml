@@ -11,10 +11,12 @@ on:
       - main
     paths:
       - ".github/workflows/test_torch_models.yml"
+      - "pytest_iree/**"
       - "torch_models/**"
   pull_request:
     paths:
       - ".github/workflows/test_torch_models.yml"
+      - "pytest_iree/**"
       - "torch_models/**"
   workflow_dispatch:
   schedule:
@@ -51,6 +53,7 @@ jobs:
       - name: Install IREE nightly release Python packages
         run: |
           source ${VENV_DIR}/bin/activate
+          python3 -m pip install -e .
           python3 -m pip install -r torch_models/requirements.txt
           python3 -m pip install -r torch_models/requirements-iree.txt
 
