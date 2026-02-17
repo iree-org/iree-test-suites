@@ -24,6 +24,7 @@ import numpy as np
 import json
 import os
 from pathlib import Path
+import pwd
 import shutil
 import tempfile
 from typing import Any
@@ -85,7 +86,9 @@ def save_expected_output(
         if prepare_azure_script:
             account_name = f"--account-name {ACCOUNT}"
             container_name = f"--container-name {CONTAINER}"
-            name = Path("eochoalo") / Path(*file.parts[1:])
+            uid = os.getuid()
+            username = pwd.getpwuid(uid).pw_name
+            name = Path(username) / Path(*file.parts[1:])
             cmd = f"az storage blob upload {account_name} {container_name} {name} {file}\n"
             with open("upload.sh", "a") as f:
                 f.write(cmd)
