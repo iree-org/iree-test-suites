@@ -91,9 +91,9 @@ def save_expected_output(
                 f.write(cmd)
 
             url = f"https://{ACCOUNT}.blob.core.windows.net/{CONTAINER}/{name}"
-            expected_outputs.append(url)
+            expected_outputs.append(ArgSpec(url))
         else:
-            expected_outputs.append(fname)
+            expected_outputs.append(ArgSpec(value=fname))
 
     return expected_outputs
 
