@@ -89,7 +89,7 @@ def save_expected_output(
             uid = os.getuid()
             username = pwd.getpwuid(uid).pw_name
             name = Path(username) / Path(*file.parts[1:])
-            cmd = f"az storage blob upload {account_name} {container_name} {name} {file}\n"
+            cmd = f"az storage blob upload {account_name} {container_name} --name {name} --file {file}\n"
             with open("upload.sh", "a") as f:
                 f.write(cmd)
 
@@ -171,7 +171,7 @@ class GenConfig(CommonConfig):
     """Import symbolic shape expressions."""
     arg_device: dict[int, Any] | None = None
     """Arg device"""
-    azure_blob: bool = False
+    azure_blob: bool = True
     """Whether or not to store as an azure blob"""
 
     # These will definitely not be stored in run_module_io.json.

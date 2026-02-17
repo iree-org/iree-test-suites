@@ -33,8 +33,8 @@
     "vmfb_name": "out.vmfb",
     "expected_output": [
         {
-            "url": null,
-            "value": "expected_result_0.npy"
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/eochoalo/ATB/64x64xf32/expected_result_0.npy",
+            "value": null
         }
     ]
 }

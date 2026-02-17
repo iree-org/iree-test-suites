@@ -55,8 +55,8 @@
     "vmfb_name": "out.vmfb",
     "expected_output": [
         {
-            "url": null,
-            "value": "expected_result_0.npy"
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/eochoalo/InterestingShapesBiasAdd/997x997xf32_TN_bias/expected_result_0.npy",
+            "value": null
         }
     ]
 }
