@@ -2,6 +2,7 @@
 #   * See requirements-iree.txt for using IREE packages.
 #   * See requirements-dev.txt for extra deps used to regenerate test cases.
 
+azure-storage-blob
 numpy
 psutil
 pyjson5
@@ -10,3 +11,4 @@ pytest-html
 pytest-reportlog
 pytest-timeout
 pytest-xdist
+tqdm

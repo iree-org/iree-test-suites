@@ -43,6 +43,9 @@
     "file_name": "test.mlir",
     "vmfb_name": "out.vmfb",
     "expected_output": [
-        "expected_result_0.npy"
+        {
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/eochoalo/ABPlusC/64x64xf16/expected_result_0.npy",
+            "value": null
+        }
     ]
 }

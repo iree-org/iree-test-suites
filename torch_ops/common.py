@@ -16,8 +16,9 @@ primarily provides information about which target to use when
 compiling and other flags used when running.
 """
 
+from pytest_iree.azure import AzureArtifact
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import json
 import numbers
 import numpy as np
@@ -25,6 +26,23 @@ import subprocess
 from typing import Any
 
 THIS_DIR = Path(__file__).parent
+
+
+@dataclass
+class ArgSpec:
+    url: str | None = None
+    value: numbers.Number | Path | Any | None = None
+
+    def toJSONEncoder(self):
+        return asdict(self)
+
+    def path(self, test_dir) -> Path:
+        if self.value:
+            return test_dir / self.value
+
+        artifact = AzureArtifact(artifact_base_dir=Path("artifacts"), url=self.url)
+        artifact.join()
+        return artifact.path
 
 
 class IreeCompileException(Exception):
@@ -168,6 +186,8 @@ class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Formula):
             return obj.toJSONEncoder()
+        if isinstance(obj, ArgSpec):
+            return obj.toJSONEncoder()
         return super().default(obj)
 
 
@@ -175,6 +195,12 @@ def customJSONDecoder(d):
     if kwargs := d.get("Formula"):
         kwargs["dtype"] = np.dtype(kwargs["dtype"])
         return Formula(**kwargs)
+    if "url" in d:
+        try:
+            d["value"] = Path(d["value"])
+        except:
+            ...
+        return ArgSpec(**d)
     return d
 
 
@@ -242,7 +268,7 @@ class CommonConfig:
     """Class directory. Generated from module"""
     test_dir: Path | None = None
     """Test directory. Generated from test name"""
-    expected_output: list[str] | None = None
+    expected_output: list[ArgSpec] | None = None
     """List of npy files with expected outputs."""
     flat_args: list[Formula] | None = None
     """Flattened args and kwargs. Used when using iree-run-module."""
@@ -310,7 +336,7 @@ class CommonConfig:
         equal_nan = self.equal_nan
         for exp, obs in zip(expected, observed, strict=True):
             obs_tensor = np.load(self.test_dir / obs)
-            exp_tensor = np.load(self.test_dir / exp)
+            exp_tensor = np.load(exp.path(self.test_dir))
             assert np.allclose(
                 obs_tensor, exp_tensor, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
