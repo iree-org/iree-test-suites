@@ -34,7 +34,11 @@ concurrency:
 jobs:
   test-torch-models:
     if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
-    runs-on: ubuntu-24.04
+    runs-on:
+      - self-hosted # must come first
+      - Linux
+      - X64
+      - threadripper
     env:
       VENV_DIR: ${{ github.workspace }}/.venv
     steps:
