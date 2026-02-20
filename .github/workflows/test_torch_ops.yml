@@ -32,7 +32,11 @@ concurrency:
 jobs:
   test-torch-ops:
     if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
-    runs-on: ubuntu-24.04
+    runs-on:
+      - self-hosted # must come first
+      - Linux
+      - X64
+      - threadripper
     env:
       VENV_DIR: ${{ github.workspace }}/.venv
       CONFIG_FILE_PATH: torch_ops/configs/torch_ops_cpu_llvm_sync.json
