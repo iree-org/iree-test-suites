@@ -33,7 +33,7 @@ jobs:
   test-torch-ops:
     if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
     runs-on:
-      - self-hosted # must come first
+      - self-hosted # Must come first.
       - Linux
       - X64
       - threadripper
