@@ -40,7 +40,12 @@ class ArgSpec:
         if self.value:
             return test_dir / self.value
 
-        artifact = AzureArtifact(artifact_base_dir=Path("artifacts"), url=self.url)
+    def normalize(self, test_dir, artifact_dir) -> Path:
+        """Download and return path"""
+        if self.url is None:
+            return test_dir / self.value
+        assert self.url
+        artifact = AzureArtifact(artifact_base_dir=artifact_dir, url=self.url)
         artifact.join()
         return artifact.path
 
@@ -269,7 +274,7 @@ class CommonConfig:
     test_dir: Path | None = None
     """Test directory. Generated from test name"""
     expected_output: list[ArgSpec] | None = None
-    """List of npy files with expected outputs."""
+    """ArgSpec of npy files with expected outputs."""
     flat_args: list[Formula] | None = None
     """Flattened args and kwargs. Used when using iree-run-module."""
 
@@ -336,7 +341,7 @@ class CommonConfig:
         equal_nan = self.equal_nan
         for exp, obs in zip(expected, observed, strict=True):
             obs_tensor = np.load(self.test_dir / obs)
-            exp_tensor = np.load(exp.path(self.test_dir))
+            exp_tensor = np.load(exp)
             assert np.allclose(
                 obs_tensor, exp_tensor, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
@@ -381,9 +386,9 @@ class CommonConfig:
         cmd = subprocess.list2cmdline(cmd)
         proc = subprocess.run(cmd, shell=True, capture_output=True)
         if proc.returncode != 0:
-            input_mlir_file = self.test_file / self.file_name
+            input_mlir_file = self.test_dir / self.file_name
             raise IreeRunException(
-                self.test_dir, proc, input_mlir_file, self.compile_cmd, run_cmd
+                self.test_dir, proc, input_mlir_file, self.compile_cmd, cmd
             )
 
         output = json.loads(proc.stdout.decode("utf-8"))

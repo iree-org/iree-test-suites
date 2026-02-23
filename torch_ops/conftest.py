@@ -69,18 +69,24 @@ def pytest_addoption(parser):
         help="List of config JSON files used to build test cases",
     )
 
+    # Optional options.
     parser.addoption(
         "--ignore-xfails",
         action="store_true",
         default=False,
         help="Ignores expected compile/run failures from configs, to print all error output",
     )
-
     parser.addoption(
         "--skip-all-runs",
         action="store_true",
         default=False,
         help="Skips all 'run' tests, overriding 'skip_run_tests' in configs",
+    )
+    parser.addoption(
+        "--artifact-directory",
+        action="store",
+        default="artifacts",
+        help="The base directory to store compiled/downloaded artifacts.",
     )
 
 
@@ -121,6 +127,11 @@ class MlirCompileRunTest(pytest.File):
     def skip_all_runs(self):
         return self.config.getoption("skip_all_runs")
 
+    @property
+    def artifact_dir(self):
+        print(self.config.getoption("artifact_directory"))
+        return Path(self.config.getoption("artifact_directory")).resolve()
+
     def expect_compile_success(self, tgt_config, gen_config):
         expected_comp_fails = tgt_config.get("expected_compile_failures", [])
         return (
@@ -142,6 +153,8 @@ class MlirCompileRunTest(pytest.File):
         for tgt_config in self.config.iree_test_configs:
             if gen_config.qualified_name in tgt_config.get("skip_compile_tests", []):
                 continue
+
+            tgt_config["artifact_directory"] = self.artifact_dir
 
             tgt_config["expect_compile_success"] = self.expect_compile_success(
                 tgt_config, gen_config
@@ -196,8 +209,26 @@ class IreeBaseTest(pytest.Item):
         return self.gen_config.qualified_name
 
     @property
+    def artifact_dir(self):
+        return self.tgt_config["artifact_directory"]
+
+    @property
     def golden_time(self):
         return self.tgt_config["golden_time_ms"]
+
+    def _get_golden_input(self):
+        """Get golden_inputs from azure and pass the path to common config."""
+        if not self.gen_config.expected_output:
+            return
+        paths = []
+        for expected_output in self.gen_config.expected_output:
+            if expected_output.url:
+                paths.append(
+                    expected_output.normalize(
+                        self.gen_config.test_dir, self.artifact_dir
+                    )
+                )
+        self.gen_config.expected_output = paths
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
@@ -235,6 +266,7 @@ class IreeCompareTest(IreeBaseTest):
         iree_run_flags = self.iree_run_flags
         skip_run = self.skip_run
         try:
+            self._get_golden_input()
             self.gen_config.run_quality_test(
                 iree_compile_flags, iree_run_flags, skip_run
             )
@@ -253,6 +285,7 @@ class IreeBenchmarkTest(IreeBaseTest):
         iree_run_flags = self.iree_run_flags
         skip_run = self.skip_run
         try:
+            self._get_golden_input()
             self.gen_config.run_benchmark_test(
                 iree_compile_flags,
                 iree_run_flags,
