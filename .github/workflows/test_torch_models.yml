@@ -34,9 +34,15 @@ concurrency:
 jobs:
   test-torch-models:
     if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
-    runs-on: ubuntu-24.04
+    runs-on:
+      - self-hosted # Must come first.
+      - persistent-cache
+      - Linux
+      - X64
+      - threadripper
     env:
       VENV_DIR: ${{ github.workspace }}/.venv
+      CACHE_DIR: /home/nod/iree_tests_cache
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -72,7 +78,7 @@ jobs:
             --test-file-directory=torch_models \
             --external-file-directory=torch_models \
             --module-directory=torch_models \
-            --artifact-directory=${{ github.workspace }}/torch_models_artifacts \
+            --artifact-directory=${CACHE_DIR}/torch_models/artifacts \
             --job-summary-path=${{ github.workspace }} \
             -m "quick or compstat"
 
