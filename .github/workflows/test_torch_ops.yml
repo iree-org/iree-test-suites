@@ -34,6 +34,7 @@ jobs:
     if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
     runs-on:
       - self-hosted # Must come first.
+      - persistent-cache
       - Linux
       - X64
       - threadripper
