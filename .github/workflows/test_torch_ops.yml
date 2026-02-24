@@ -68,7 +68,8 @@ jobs:
             --html=${HTML_REPORT_PATH} \
             --self-contained-html \
             --report-log=/tmp/torch_ops_cpu_logs.json \
-            --config-files=${CONFIG_FILE_PATH}
+            --config-files=${CONFIG_FILE_PATH} \
+            --artifact-directory=${{ github.workspace }}/torch_ops_artifacs
       - name: Upload HTML report
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
