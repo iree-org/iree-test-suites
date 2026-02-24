@@ -41,6 +41,7 @@ jobs:
       VENV_DIR: ${{ github.workspace }}/.venv
       CONFIG_FILE_PATH: torch_ops/configs/torch_ops_cpu_llvm_sync.json
       HTML_REPORT_PATH: torch_ops/torch_ops_test_report_cpu_llvm_sync.html
+      CACHE_DIR: /home/nod/iree_tests_cache
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -73,7 +74,7 @@ jobs:
             --self-contained-html \
             --report-log=/tmp/torch_ops_cpu_logs.json \
             --config-files=${CONFIG_FILE_PATH} \
-            --artifact-directory=${{ github.workspace }}/torch_ops_artifacs
+            --artifact-directory=${CACHE_DIR}/torch_ops_artifacs
       - name: Upload HTML report
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
