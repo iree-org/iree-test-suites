@@ -21,6 +21,6 @@
         "AB/128x128xf32_bench": 0.25,
         "AB/256x256xf32_bench": 0.30,
         "AB/512x512xf32_bench": 0.88,
-        "AB/1024x1024xf32_bench": 1.63
+        "AB/1024x1024xf32_bench": 1.83
     }
 }
