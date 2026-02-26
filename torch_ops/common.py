@@ -369,6 +369,45 @@ class CommonConfig:
 
         self.compare_results(self.expected_output, output_files)
 
+    def rocprofv3(
+        self, iree_run_flags, golden_time_ms=float("nan"), return_golden_time=False
+    ):
+        module = self.test_dir / self.vmfb_name
+        function = self.function_name
+        input_flags = self.get_input_flags()
+        rocprofv3_output = self.test_dir / "rocprofv3_output.txt"
+        cmd = [
+            "rocprofv3",
+            "--kernel-trace",
+            "--stats",
+            "--output-file",
+            rocprofv3_output,
+            "--output-format",
+            "json",
+            "--",
+            "iree-benchmark-module",
+            f"--module={module}",
+            f"--function={function}",
+            "--benchmark_format=json",
+            *iree_run_flags,
+            *input_flags,
+        ]
+        cmd = subprocess.list2cmdline(cmd)
+        proc = subprocess.run(cmd, shell=True, capture_output=True)
+        if proc.returncode != 0:
+            input_mlir_file = self.test_dir / self.file_name
+            raise IreeRunException(
+                self.test_dir, proc, input_mlir_file, self.compile_cmd, cmd
+            )
+        real_output = Path(f"{str(rocprofv3_output)}_results.json")
+        with open(real_output) as f:
+            data = json.load(f)
+        real_time_ns = data["rocprofiler-sdk-tool"][0]["summary"][0]["stats"]["min"]
+        real_time_ms = real_time_ns / 1e6
+        if return_golden_time:
+            return real_time_ms
+        assert real_time_ms <= golden_time_ms
+
     def iree_benchmark_module(
         self, iree_run_flags, golden_time_ms=float("nan"), return_golden_time=False
     ):
@@ -397,11 +436,15 @@ class CommonConfig:
             return real_time_ms
         assert real_time_ms <= golden_time_ms
 
-    def report_golden_time(self, iree_compile_flags, iree_run_flags):
+    def report_golden_time(
+        self, iree_compile_flags, iree_run_flags, use_rocprofv3=False
+    ):
         self.iree_compile(iree_compile_flags)
-        golden_time = self.iree_benchmark_module(
-            iree_run_flags, return_golden_time=True
-        )
+        func = self.iree_benchmark_module
+        is_hip = "--iree-hal-target-device=hip" in iree_compile_flags
+        if use_rocprofv3:
+            func = self.rocprofv3
+        golden_time = func(iree_run_flags, return_golden_time=True)
         # 10% is added for variance.
         return golden_time * 1.1
 
@@ -411,6 +454,7 @@ class CommonConfig:
         iree_run_flags,
         golden_time_ms=float("nan"),
         skip_run=False,
+        use_rocprofv3=False,
     ):
         """Run benchmark test
         iree-compile \
@@ -431,7 +475,7 @@ class CommonConfig:
         report_time = np.isnan(golden_time_ms) and not skip_run
         if report_time:
             new_golden_time_ms = self.report_golden_time(
-                iree_compile_flags, iree_run_flags
+                iree_compile_flags, iree_run_flags, use_rocprofv3
             )
             raise ValueError(
                 f"golden time has not been set. Set to: {new_golden_time_ms:.2f} ms"
@@ -441,6 +485,9 @@ class CommonConfig:
         if skip_run:
             return
 
+        if use_rocprofv3:
+            self.rocprofv3(iree_run_flags, golden_time_ms)
+            return
         self.iree_benchmark_module(iree_run_flags, golden_time_ms)
 
     def run_quality_test(self, iree_compile_flags, iree_run_flags, skip_run=False):

@@ -91,6 +91,12 @@ pytest
 pytest /point/to/test_directory/run_module_io.json
 ```
 
+- Run benchmarking with rocprofv3
+
+```
+pytest --benchmark-with-rocprofv3
+```
+
 ## Configuration files
 
 ### Generated configuration

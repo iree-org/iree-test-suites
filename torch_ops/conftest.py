@@ -89,6 +89,19 @@ def pytest_addoption(parser):
         help="The base directory to store compiled/downloaded artifacts.",
     )
 
+    # This option should ideally be detected automatically based on whether
+    # 1) we are targetting a hip device,
+    # 2) and whether rocprofv3 is available.
+    #
+    # However, it looks like some machines on CI reliably fail to capture any traces.
+    # TODO: investigate.
+    parser.addoption(
+        "--benchmark-with-rocprofv3",
+        action="store_true",
+        default=False,
+        help="Use rocprofv3 for benchmarking.",
+    )
+
 
 def pytest_sessionstart(session):
     session.config.iree_test_configs = []
@@ -128,8 +141,11 @@ class MlirCompileRunTest(pytest.File):
         return self.config.getoption("skip_all_runs")
 
     @property
+    def use_rocprofv3(self):
+        return self.config.getoption("benchmark_with_rocprofv3")
+
+    @property
     def artifact_dir(self):
-        print(self.config.getoption("artifact_directory"))
         return Path(self.config.getoption("artifact_directory")).resolve()
 
     def expect_compile_success(self, tgt_config, gen_config):
@@ -147,7 +163,6 @@ class MlirCompileRunTest(pytest.File):
         return self.skip_all_runs or gen_config.qualified_name in skips
 
     def collect(self):
-        # self.path is run_module_io.json
         gen_config = CommonConfig.load(self.path)
 
         for tgt_config in self.config.iree_test_configs:
@@ -166,6 +181,7 @@ class MlirCompileRunTest(pytest.File):
             tgt_config["golden_time_ms"] = tgt_config.get("golden_times_ms", {}).get(
                 gen_config.qualified_name, float("nan")
             )
+            tgt_config["use_rocprofv3"] = self.use_rocprofv3
 
             match gen_config.mode:
                 case "compare":
@@ -203,6 +219,10 @@ class IreeBaseTest(pytest.Item):
     @property
     def expect_compile_success(self):
         return self.tgt_config["expect_compile_success"]
+
+    @property
+    def use_rocprofv3(self):
+        return self.tgt_config["use_rocprofv3"]
 
     @property
     def qualified_name(self):
@@ -291,6 +311,7 @@ class IreeBenchmarkTest(IreeBaseTest):
                 iree_run_flags,
                 golden_time_ms=self.golden_time,
                 skip_run=skip_run,
+                use_rocprofv3=self.use_rocprofv3,
             )
         except IreeRunException as e:
             if not self.expect_compile_success:
