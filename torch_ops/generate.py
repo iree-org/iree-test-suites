@@ -28,6 +28,7 @@ import pwd
 import shutil
 import tempfile
 from typing import Any
+import ml_dtypes
 
 
 import torch
@@ -51,7 +52,7 @@ def export(module, test_folder, file_name, export_kwargs, args_torch, kwargs_tor
             mlir_files = list(tmpfolder.glob("**/*.mlir"))
             assert len(mlir_files) == 1, f"{mlir_files}"
             file = mlir_files[0]
-            file.rename(test_folder / file_name)
+            shutil.move(str(file), test_folder / file_name)
             # Unlike the other case, we cannot set function name
             # ourselves so we return it.
             return function_name, file
@@ -81,7 +82,15 @@ def save_expected_output(
     for idx, result in enumerate(results):
         fname = f"expected_result_{idx}.npy"
         file = test_folder / fname
-        np.save(file, result)
+        if result.dtype == torch.bfloat16:
+            # torch's .numpy() doesn't support bfloat16, so round-trip through
+            # uint16 views and use ml_dtypes for the numpy dtype.
+            import ml_dtypes
+
+            result_np = result.view(torch.uint16).numpy().view(ml_dtypes.bfloat16)
+        else:
+            result_np = result.detach().numpy()
+        np.save(file, result_np)
 
         if prepare_azure_script:
             account_name = f"--account-name {ACCOUNT}"
@@ -105,14 +114,25 @@ def torch_dtype_to_numpy(dtype):
     match dtype:
         case torch.float16:
             return np.dtype("float16")
+        case torch.bfloat16:
+            return np.dtype(ml_dtypes.bfloat16)
     raise ValueError(f"do not have equivalent type for {dtype}")
 
 
 def formulas_to_torch(formulas):
-    return [
-        torch.from_numpy(formula.numpy()) if isinstance(formula, Formula) else formula
-        for formula in formulas
-    ]
+    result: list[torch.Tensor] = []
+    for formula in formulas:
+        if not isinstance(formula, Formula):
+            result.append(formula)
+            continue
+        arr = formula.numpy()
+        if arr.dtype == ml_dtypes.bfloat16:
+            # torch.from_numpy() doesn't support ml_dtypes.bfloat16, so view as uint16.
+            t = torch.from_numpy(arr.view(np.uint16)).view(torch.bfloat16)
+        else:
+            t = torch.from_numpy(arr)
+        result.append(t)
+    return result
 
 
 def signature_to_formulas(

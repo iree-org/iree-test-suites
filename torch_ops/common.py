@@ -21,6 +21,7 @@ from pathlib import Path
 from dataclasses import asdict, dataclass
 import json
 import numbers
+import ml_dtypes
 import numpy as np
 import subprocess
 from typing import Any
@@ -193,7 +194,12 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 def customJSONDecoder(d):
     if kwargs := d.get("Formula"):
-        kwargs["dtype"] = np.dtype(kwargs["dtype"])
+        dtype_str = kwargs["dtype"]
+        # np.dtype() doesn't recognize "bfloat16"; use ml_dtypes for it.
+        if dtype_str == "bfloat16":
+            kwargs["dtype"] = np.dtype(ml_dtypes.bfloat16)
+        else:
+            kwargs["dtype"] = np.dtype(dtype_str)
         return Formula(**kwargs)
     if "url" in d:
         try:
@@ -309,11 +315,19 @@ class CommonConfig:
             flags.append(option)
         return flags
 
+    def _has_bf16_args(self):
+        return any(
+            isinstance(a, Formula) and a.dtype == ml_dtypes.bfloat16
+            for a in (self.flat_args or [])
+        )
+
     def get_output_flags(self):
+        # iree-run-module can't write bfloat16 to .npy files, use .bin instead
+        ext = ".bin" if self._has_bf16_args() else ".npy"
         files = []
         flags = []
         for idx, _ in enumerate(self.expected_output):
-            fname = f"expected_output_{idx}.npy"
+            fname = f"expected_output_{idx}{ext}"
             files.append(fname)
             path = self.test_dir / fname
             option = f"--output=@{path}"
@@ -335,8 +349,22 @@ class CommonConfig:
         atol = self.atol
         equal_nan = self.equal_nan
         for exp, obs in zip(expected, observed, strict=True):
-            obs_tensor = np.load(self.test_dir / obs)
             exp_tensor = np.load(exp.path(self.test_dir))
+            obs_path = self.test_dir / obs
+            if obs_path.suffix == ".bin":
+                obs_tensor = np.fromfile(obs_path, dtype=exp_tensor.dtype).reshape(
+                    exp_tensor.shape
+                )
+            else:
+                obs_tensor = np.load(obs_path)
+            # numpy void dtype (|V2) is used for bfloat16; view as ml_dtypes
+            # bfloat16 so np.allclose can compare numerically
+            if exp_tensor.dtype.str == "|V2":
+                exp_tensor = exp_tensor.view(ml_dtypes.bfloat16)
+                obs_tensor = obs_tensor.view(ml_dtypes.bfloat16)
+                # 1-ULP rounding diffs are expected; ensure rtol covers
+                # bf16 machine epsilon (2^-7)
+                rtol = max(rtol, 2**-7)
             assert np.allclose(
                 obs_tensor, exp_tensor, rtol=rtol, atol=atol, equal_nan=equal_nan
             )

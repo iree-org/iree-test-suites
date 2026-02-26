@@ -1,0 +1,57 @@
+{
+    "function_name": "fused_op_layout_cus_f75bbe5bbd611c0854c075c62904b2b2177b94d8_16x64x75x75xbfloat16_16x64x225x225xbfloat16_64x64x3x3xbfloat16",
+    "flat_args": [
+        {
+            "Formula": {
+                "shape": [
+                    16,
+                    64,
+                    75,
+                    75
+                ],
+                "dtype": "bfloat16",
+                "coeff": 1,
+                "offset": 0
+            }
+        },
+        {
+            "Formula": {
+                "shape": [
+                    16,
+                    64,
+                    225,
+                    225
+                ],
+                "dtype": "bfloat16",
+                "coeff": 1,
+                "offset": 0
+            }
+        },
+        {
+            "Formula": {
+                "shape": [
+                    64,
+                    64,
+                    3,
+                    3
+                ],
+                "dtype": "bfloat16",
+                "coeff": 1,
+                "offset": 0
+            }
+        }
+    ],
+    "seed": 1,
+    "rtol": 0.005,
+    "atol": 0.001,
+    "equal_nan": false,
+    "mode": "compare",
+    "file_name": "test.mlir",
+    "vmfb_name": "out.vmfb",
+    "expected_output": [
+        {
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/rkayaith/ConvBackward/nchw_bf16_3x3_strided_unaligned_mn_bwd_input/expected_result_0.npy",
+            "value": null
+        }
+    ]
+}
