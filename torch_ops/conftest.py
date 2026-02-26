@@ -144,6 +144,7 @@ class MlirCompileRunTest(pytest.File):
     def use_rocprofv3(self):
         return self.config.getoption("benchmark_with_rocprofv3")
 
+    @property
     def artifact_dir(self):
         return Path(self.config.getoption("artifact_directory")).resolve()
 
