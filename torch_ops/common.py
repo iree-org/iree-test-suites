@@ -196,6 +196,7 @@ def customJSONDecoder(d):
     if kwargs := d.get("Formula"):
         dtype_str = kwargs["dtype"]
         # np.dtype() doesn't recognize "bfloat16"; use ml_dtypes for it.
+        # RVW: assign to `dtype_str` if and move kwargs asignment after the if/else to avoid code duplication
         if dtype_str == "bfloat16":
             kwargs["dtype"] = np.dtype(ml_dtypes.bfloat16)
         else:
@@ -315,6 +316,7 @@ class CommonConfig:
             flags.append(option)
         return flags
 
+    # RVW: this is only used once, doesn't need to be a function. is there a way to check the final dtype instead of the args dtype?
     def _has_bf16_args(self):
         return any(
             isinstance(a, Formula) and a.dtype == ml_dtypes.bfloat16
@@ -359,11 +361,13 @@ class CommonConfig:
                 obs_tensor = np.load(obs_path)
             # numpy void dtype (|V2) is used for bfloat16; view as ml_dtypes
             # bfloat16 so np.allclose can compare numerically
+            # RVW: propose alternatives to this check, this seems like a hack. why isn't it already the correct type?
             if exp_tensor.dtype.str == "|V2":
                 exp_tensor = exp_tensor.view(ml_dtypes.bfloat16)
                 obs_tensor = obs_tensor.view(ml_dtypes.bfloat16)
                 # 1-ULP rounding diffs are expected; ensure rtol covers
                 # bf16 machine epsilon (2^-7)
+                # RVW: rtol should be set in the test, not here.
                 rtol = max(rtol, 2**-7)
             assert np.allclose(
                 obs_tensor, exp_tensor, rtol=rtol, atol=atol, equal_nan=equal_nan
