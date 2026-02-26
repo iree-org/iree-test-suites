@@ -54,6 +54,9 @@
     "file_name": "test.mlir",
     "vmfb_name": "out.vmfb",
     "expected_output": [
-        "expected_result_0.npy"
+        {
+            "url": "https://sharkpublic.blob.core.windows.net/sharkpublic/eochoalo/InterestingShapesBiasAdd/997x997xi8_NN_bias/expected_result_0.npy",
+            "value": null
+        }
     ]
 }

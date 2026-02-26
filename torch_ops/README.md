@@ -115,6 +115,7 @@ They include things like:
 * `file_name`: The name of the mlir file. Defaults to "test.mlir".
 * `vmfb_name`: The name given to the vmfb file. Defaults to "out.vmfb".
 * `expected_output`: Only included when using "compare" mode. List of files holding expected returned values.
+* `azure_blob`: Defaults to true. Will generate an azure command in upload.sh to upload the blob.
 
 ### Target configuration
 
@@ -209,3 +210,12 @@ These Formulas will generate the concrete tensors during test generation and tes
 The seed is done on a per-test level as opposed to a per-Formula level.
 This is because we want tests to have deterministic random inputs and we only need to set the seed once per test to achieve this.
 Otherwise, one would need to type a different seed for every different formula.
+
+### Where to store the golden outputs
+
+Golden outputs can be stored directly on the repo if their size is not too big.
+They must never be stored using git-lfs.
+Golden outputs can also be stored in azure as blobs.
+See comments on azure on playbook for more information.
+`torch_ops` generates an upload.sh file with the azure commands to upload blobs into the relevant locations.
+In order to actually upload anything you will need to have necessary permissions.

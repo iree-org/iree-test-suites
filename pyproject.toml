@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytest-iree"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "azure-storage-blob",
+    "numpy",
+    "ml_dtypes",
+    "pytest",
+    "tqdm",
+]
+
+[tool.setuptools.packages.find]
+include = ["pytest_iree*"]
