@@ -19,6 +19,8 @@ The performance regression tests verify that we do not exceed
 a golden time.
 
 """
+
+import dataclasses
 from dataclasses import dataclass
 import numpy as np
 import json
@@ -28,6 +30,7 @@ import pwd
 import shutil
 import tempfile
 from typing import Any
+import ml_dtypes
 
 
 import torch
@@ -35,7 +38,14 @@ import iree.turbine.aot as aot
 from iree.turbine.kernel.boo.op_exports.conv import ConvSignature, Mode
 from iree.turbine.kernel.boo.runtime import use_cache_dir
 
-from common import ArgSpec, CommonConfig, Formula, ensure_dir_exists, CustomJSONEncoder
+from common import (
+    ArgSpec,
+    BinMeta,
+    CommonConfig,
+    Formula,
+    ensure_dir_exists,
+    CustomJSONEncoder,
+)
 
 
 def export(module, test_folder, file_name, export_kwargs, args_torch, kwargs_torch):
@@ -51,7 +61,7 @@ def export(module, test_folder, file_name, export_kwargs, args_torch, kwargs_tor
             mlir_files = list(tmpfolder.glob("**/*.mlir"))
             assert len(mlir_files) == 1, f"{mlir_files}"
             file = mlir_files[0]
-            file.rename(test_folder / file_name)
+            shutil.move(file, test_folder / file_name)
             # Unlike the other case, we cannot set function name
             # ourselves so we return it.
             return function_name, file
@@ -79,11 +89,11 @@ def save_expected_output(
     results, _ = torch.utils._pytree.tree_flatten(results)
     expected_outputs = []
     for idx, result in enumerate(results):
-        fname = f"expected_result_{idx}.npy"
-        file = test_folder / fname
-        np.save(file, result)
+        arg_spec = _save_torch_tensor(test_folder / f"expected_result_{idx}", result)
 
         if prepare_azure_script:
+            fname = arg_spec.value
+            file = test_folder / fname
             account_name = f"--account-name {ACCOUNT}"
             container_name = f"--container-name {CONTAINER}"
             uid = os.getuid()
@@ -94,25 +104,56 @@ def save_expected_output(
                 f.write(cmd)
 
             url = f"https://{ACCOUNT}.blob.core.windows.net/{CONTAINER}/{name}"
-            expected_outputs.append(ArgSpec(url))
-        else:
-            expected_outputs.append(ArgSpec(value=fname))
+            arg_spec = dataclasses.replace(arg_spec, url=url, value=None)
+
+        expected_outputs.append(arg_spec)
 
     return expected_outputs
+
+
+def _save_torch_tensor(path: Path, tensor: torch.Tensor) -> ArgSpec:
+    """Convert a torch tensor to numpy and save."""
+    if tensor.dtype == torch.bfloat16:
+        # torch's .numpy() doesn't support bfloat16, so round-trip through uint16
+        # views. Use ml_dtypes for the numpy dtype since .npy format would lose it.
+        arr = tensor.view(torch.uint16).numpy().view(ml_dtypes.bfloat16)
+        # bfloat16 saved as raw .bin with metadata; .npy would lose the dtype.
+        path = path.with_suffix(".bin")
+        arr.tofile(path)
+        return ArgSpec(
+            value=Path(path.name),
+            meta=BinMeta(dtype=arr.dtype.name, shape=tuple(tensor.shape)),
+        )
+    else:
+        arr = tensor.detach().numpy()
+        path = path.with_suffix(".npy")
+        np.save(path, arr)
+        return ArgSpec(value=Path(path.name))
 
 
 def torch_dtype_to_numpy(dtype):
     match dtype:
         case torch.float16:
             return np.dtype("float16")
+        case torch.bfloat16:
+            return np.dtype(ml_dtypes.bfloat16)
     raise ValueError(f"do not have equivalent type for {dtype}")
 
 
 def formulas_to_torch(formulas):
-    return [
-        torch.from_numpy(formula.numpy()) if isinstance(formula, Formula) else formula
-        for formula in formulas
-    ]
+    result: list[torch.Tensor] = []
+    for formula in formulas:
+        if not isinstance(formula, Formula):
+            result.append(formula)
+            continue
+        arr = formula.numpy()
+        if arr.dtype == ml_dtypes.bfloat16:
+            # torch.from_numpy() doesn't support ml_dtypes.bfloat16, so view as uint16.
+            t = torch.from_numpy(arr.view(np.uint16)).view(torch.bfloat16)
+        else:
+            t = torch.from_numpy(arr)
+        result.append(t)
+    return result
 
 
 def signature_to_formulas(
