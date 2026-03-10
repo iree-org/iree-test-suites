@@ -80,7 +80,7 @@ def compiler_args(device_id: str) -> list[str]:
             raise RuntimeError("HIP_TARGET environment variable not set")
 
         hip_target = os.environ["HIP_TARGET"]
-        return ["--iree-hal-target-device=hip", f"--iree-hip-target={hip_target}"]
+        return ["--iree-hal-target-device=hip", f"--iree-rocm-target={hip_target}"]
 
     raise KeyError(f"Compiler args for {device_id} not found")
 

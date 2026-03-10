@@ -126,7 +126,7 @@ def hip_flags(sharding):
 
     target_gpu = os.environ["HIP_TARGET"]
     return [f"--iree-hal-target-device=hip[{i}]" for i in range(sharding)] + [
-        f"--iree-hip-target={target_gpu}",
+        f"--iree-rocm-target={target_gpu}",
     ]
 
 
