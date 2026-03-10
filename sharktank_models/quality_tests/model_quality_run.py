@@ -151,8 +151,8 @@ class ModelQualityRunItem(pytest.Item):
 
             if self.type_of_backend == "rocm":
                 self.file_suffix = f"{self.type_of_backend}_{chip}"
-                self.compiler_flags += [f"--iree-hip-target={chip}"]
-                self.pipeline_compiler_flags.append(f"--iree-hip-target={chip}")
+                self.compiler_flags += [f"--iree-rocm-target={chip}"]
+                self.pipeline_compiler_flags.append(f"--iree-rocm-target={chip}")
 
             elif self.type_of_backend == "cpu":
                 self.file_suffix = "cpu"

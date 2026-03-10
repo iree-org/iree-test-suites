@@ -136,7 +136,7 @@ class ModelBenchmarkRunItem(pytest.Item):
             if type_of_backend == "rocm":
                 self.file_suffix = f"{type_of_backend}_{chip}"
                 self.compile_flags += [
-                    f"--iree-hip-target={chip}",
+                    f"--iree-rocm-target={chip}",
                 ]
 
             elif type_of_backend == "cpu":
