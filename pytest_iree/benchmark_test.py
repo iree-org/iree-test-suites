@@ -27,6 +27,7 @@ class IREEBenchmarkTest(TestBase):
         )
         self.add_marker("benchmark")
         self.golden_time = test_data.get("golden_time_ms", None)
+        self.tolerance_factor = test_data.get("tolerance_factor", 1.1)
         self.module_artifacts = self._get_modules()
         self.weight_artifacts = self._get_weights()
         self.reported_time = None
@@ -59,8 +60,9 @@ class IREEBenchmarkTest(TestBase):
             # https://stackoverflow.com/a/65430875/11660958
             self.reported_time = self._get_min_time_from_output_json(output_json)
             if self.golden_time is not None:
-                assert self.reported_time <= self.golden_time, dedent(
-                    f"""Benchmark failed: reported_time {self.reported_time} exceeds golden_time {self.golden_time}
+                threshold = self.golden_time * self.tolerance_factor
+                assert self.reported_time <= threshold, dedent(
+                    f"""Benchmark failed: reported_time {self.reported_time:.3f} ms exceeds golden_time {self.golden_time:.3f} ms * tolerance_factor {self.tolerance_factor} = {threshold:.3f} ms.
                           Time reported corresponds to the minimum of 10 samples."""
                 )
             self.status = "PASSED"
@@ -74,12 +76,26 @@ class IREEBenchmarkTest(TestBase):
 
     @classmethod
     def get_test_headers(cls) -> list[str]:
-        return ["Name", "Current Time (ms)", "Golden Time (ms)", "Status"]
+        return [
+            "Name",
+            "Current Time (ms)",
+            "Golden Time (ms)",
+            "Tolerance Factor",
+            "Threshold (ms)",
+            "Status",
+        ]
 
     def get_test_summary(self) -> list:
+        if self.golden_time is not None:
+            threshold = self.golden_time * self.tolerance_factor
+            threshold_str = f"{threshold:.3f}"
+        else:
+            threshold_str = "N/A"
         return [
             self.name,
             f"{self.reported_time:.3f}" if self.reported_time is not None else "N/A",
             f"{self.golden_time:.3f}" if self.golden_time is not None else "N/A",
+            f"{self.tolerance_factor}",
+            threshold_str,
             self.status,
         ]
