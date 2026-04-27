@@ -42,6 +42,7 @@ skip_run_tests: List of tests which run should be skipped.
 expected_compile_failures: List of tests which one expects compilation to fail.
 expected_run_failures: List of tests which one expects run to fail.
 golden_times_ms: Dictionary of tests with golden times in ms.
+tolerance_factor: Multiplier applied to golden_time_ms to allow for CI noise. Test passes when golden_time_ms * tolerance_factor >= reported_time. Defaults to 1.1 (10% tolerance).
 ```
 
 With the generated configuration and the target configuration, one can run any test.

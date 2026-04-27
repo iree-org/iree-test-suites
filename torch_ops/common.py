@@ -370,7 +370,11 @@ class CommonConfig:
         self.compare_results(self.expected_output, output_files)
 
     def rocprofv3(
-        self, iree_run_flags, golden_time_ms=float("nan"), return_golden_time=False
+        self,
+        iree_run_flags,
+        golden_time_ms=float("nan"),
+        tolerance_factor=1.1,
+        return_golden_time=False,
     ):
         module = self.test_dir / self.vmfb_name
         function = self.function_name
@@ -406,10 +410,18 @@ class CommonConfig:
         real_time_ms = real_time_ns / 1e6
         if return_golden_time:
             return real_time_ms
-        assert real_time_ms <= golden_time_ms
+        threshold = golden_time_ms * tolerance_factor
+        assert real_time_ms <= threshold, (
+            f"Benchmark failed: reported_time {real_time_ms:.3f} ms exceeds "
+            f"golden_time {golden_time_ms:.3f} ms * tolerance_factor {tolerance_factor} = {threshold:.3f} ms."
+        )
 
     def iree_benchmark_module(
-        self, iree_run_flags, golden_time_ms=float("nan"), return_golden_time=False
+        self,
+        iree_run_flags,
+        golden_time_ms=float("nan"),
+        tolerance_factor=1.1,
+        return_golden_time=False,
     ):
         module = self.test_dir / self.vmfb_name
         function = self.function_name
@@ -434,7 +446,11 @@ class CommonConfig:
         real_time_ms = output["benchmarks"][0]["real_time"]
         if return_golden_time:
             return real_time_ms
-        assert real_time_ms <= golden_time_ms
+        threshold = golden_time_ms * tolerance_factor
+        assert real_time_ms <= threshold, (
+            f"Benchmark failed: reported_time {real_time_ms:.3f} ms exceeds "
+            f"golden_time {golden_time_ms:.3f} ms * tolerance_factor {tolerance_factor} = {threshold:.3f} ms."
+        )
 
     def report_golden_time(
         self, iree_compile_flags, iree_run_flags, use_rocprofv3=False
@@ -453,6 +469,7 @@ class CommonConfig:
         iree_compile_flags,
         iree_run_flags,
         golden_time_ms=float("nan"),
+        tolerance_factor=1.1,
         skip_run=False,
         use_rocprofv3=False,
     ):
@@ -469,7 +486,7 @@ class CommonConfig:
                 --input=${self.flat_arg[0]} ... \
                 --output=${output_file}
 
-        assert real_time <= golden_time
+        assert real_time <= golden_time * tolerance_factor
         """
 
         report_time = np.isnan(golden_time_ms) and not skip_run
@@ -486,9 +503,9 @@ class CommonConfig:
             return
 
         if use_rocprofv3:
-            self.rocprofv3(iree_run_flags, golden_time_ms)
+            self.rocprofv3(iree_run_flags, golden_time_ms, tolerance_factor)
             return
-        self.iree_benchmark_module(iree_run_flags, golden_time_ms)
+        self.iree_benchmark_module(iree_run_flags, golden_time_ms, tolerance_factor)
 
     def run_quality_test(self, iree_compile_flags, iree_run_flags, skip_run=False):
         """Run differential test.
