@@ -181,6 +181,7 @@ class MlirCompileRunTest(pytest.File):
             tgt_config["golden_time_ms"] = tgt_config.get("golden_times_ms", {}).get(
                 gen_config.qualified_name, float("nan")
             )
+            tgt_config["tolerance_factor"] = tgt_config.get("tolerance_factor", 1.1)
             tgt_config["use_rocprofv3"] = self.use_rocprofv3
 
             match gen_config.mode:
@@ -235,6 +236,10 @@ class IreeBaseTest(pytest.Item):
     @property
     def golden_time(self):
         return self.tgt_config["golden_time_ms"]
+
+    @property
+    def tolerance_factor(self):
+        return self.tgt_config["tolerance_factor"]
 
     def _get_golden_input(self):
         """Get golden_inputs from azure and pass the path to common config."""
@@ -310,6 +315,7 @@ class IreeBenchmarkTest(IreeBaseTest):
                 iree_compile_flags,
                 iree_run_flags,
                 golden_time_ms=self.golden_time,
+                tolerance_factor=self.tolerance_factor,
                 skip_run=skip_run,
                 use_rocprofv3=self.use_rocprofv3,
             )

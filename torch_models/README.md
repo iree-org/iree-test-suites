@@ -164,6 +164,7 @@ Please feel free to look at any JSON examples under the `examples` directory for
 | inputs                         | required | argspec | List of inputs to use for this test.                                                                                                             |
 | run_args                       | optional | array   | Additional runtime arguments to pass to the iree-run-module/iree-benchmark-module command.                                                       |
 | golden_time_ms                 | optional | float   | golden time in ms                                                                                                                                |
+| tolerance_factor               | optional | float   | Multiplier applied to golden_time_ms to allow for CI noise. Test passes when `golden_time_ms * tolerance_factor >= reported_time`. Defaults to 1.1 (10% tolerance). |
 ###  Compstat Test Definition
 
 | Field Name                     | Required | Type    | Description                                                                                                                                      |
