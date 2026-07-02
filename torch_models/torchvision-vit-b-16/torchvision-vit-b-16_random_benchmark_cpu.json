@@ -1,0 +1,28 @@
+{
+    "type": "benchmark",
+    "markers": [
+        "cpu",
+        "quick"
+    ],
+    "modules": [
+        "torchvision-vit-b-16/modules/torchvision-vit-b-16_cpu"
+    ],
+    "weights": [
+        {
+            "type": "random",
+            "scope": "model",
+            "module": "torchvision-vit-b-16/modules/torchvision-vit-b-16_cpu",
+            "seed": 42
+        }
+    ],
+    "inputs": [
+        {
+            "value": "1x3x224x224xf32"
+        }
+    ],
+    "run_args": [
+        "--device=local-task",
+        "--function=main",
+        "--device_allocator=caching"
+    ]
+}
