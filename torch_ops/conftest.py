@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import copy
+import dataclasses
 import glob
 import json
 import numpy as np
@@ -242,18 +243,18 @@ class IreeBaseTest(pytest.Item):
         return self.tgt_config["tolerance_factor"]
 
     def _get_golden_input(self):
-        """Get golden_inputs from azure and pass the path to common config."""
+        """Download golden outputs from azure, resolving paths into ArgSpec.value."""
         if not self.gen_config.expected_output:
             return
-        paths = []
-        for expected_output in self.gen_config.expected_output:
-            if expected_output.url:
-                paths.append(
-                    expected_output.normalize(
-                        self.gen_config.test_dir, self.artifact_dir
-                    )
-                )
-        self.gen_config.expected_output = paths
+        self.gen_config.expected_output = [
+            dataclasses.replace(
+                arg_spec,
+                value=arg_spec.normalize(self.gen_config.test_dir, self.artifact_dir),
+            )
+            if arg_spec.url
+            else arg_spec
+            for arg_spec in self.gen_config.expected_output
+        ]
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""

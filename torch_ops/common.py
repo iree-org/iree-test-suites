@@ -19,22 +19,48 @@ compiling and other flags used when running.
 from pytest_iree.azure import AzureArtifact
 from pathlib import Path
 from dataclasses import asdict, dataclass
+from collections.abc import Sequence
+from typing import Any
 import json
 import numbers
+import ml_dtypes
 import numpy as np
 import subprocess
-from typing import Any
 
 THIS_DIR = Path(__file__).parent
 
 
-@dataclass
+@dataclass(frozen=True)
+class BinMeta:
+    """Metadata for .bin files: dtype and shape information."""
+
+    dtype: str
+    shape: Sequence[int]
+
+
+@dataclass(frozen=True)
 class ArgSpec:
     url: str | None = None
     value: numbers.Number | Path | Any | None = None
+    meta: BinMeta | None = None
+
+    def __post_init__(self):
+        # .bin files require meta info, but not other files.
+        value_is_bin = (
+            isinstance(self.value, Path) and self.value.suffix == ".bin"
+        ) or (self.url is not None and self.url.endswith(".bin"))
+        assert value_is_bin == (
+            self.meta is not None
+        ), f".bin file '{self.value or self.url}' requires BinMeta"
 
     def toJSONEncoder(self):
-        return asdict(self)
+        d = asdict(self)
+        if isinstance(d["value"], Path):
+            d["value"] = str(d["value"])
+        # Omit meta field when not present to keep JSON compact for .npy files
+        if d["meta"] is None:
+            del d["meta"]
+        return d
 
     def path(self, test_dir) -> Path:
         if self.value:
@@ -198,13 +224,21 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 def customJSONDecoder(d):
     if kwargs := d.get("Formula"):
-        kwargs["dtype"] = np.dtype(kwargs["dtype"])
+        dtype_str = kwargs["dtype"]
+        # np.dtype() doesn't recognize "bfloat16"; use ml_dtypes for it.
+        if dtype_str == "bfloat16":
+            dtype = np.dtype(ml_dtypes.bfloat16)
+        else:
+            dtype = np.dtype(dtype_str)
+        kwargs["dtype"] = dtype
         return Formula(**kwargs)
     if "url" in d:
         try:
             d["value"] = Path(d["value"])
         except:
             ...
+        if "meta" in d and d["meta"] is not None:
+            d["meta"] = BinMeta(**d["meta"])
         return ArgSpec(**d)
     return d
 
@@ -212,6 +246,19 @@ def customJSONDecoder(d):
 def ensure_dir_exists(path):
     path.mkdir(exist_ok=True, parents=True)
     return path
+
+
+def _load_array(path: Path, meta: BinMeta | None) -> np.ndarray:
+    """Load a numpy array from .npy or .bin file.
+
+    For .bin files, `meta` is required (the raw binary has no embedded metadata).
+    For .npy files, `meta` must be None.
+    """
+    if path.suffix == ".bin":
+        assert meta is not None, f".bin file '{path}' requires BinMeta"
+        return np.fromfile(path, dtype=np.dtype(meta.dtype)).reshape(meta.shape)
+    assert meta is None
+    return np.load(path)
 
 
 def formulas_to_npy(formulas):
@@ -317,8 +364,14 @@ class CommonConfig:
     def get_output_flags(self):
         files = []
         flags = []
-        for idx, _ in enumerate(self.expected_output):
-            fname = f"expected_output_{idx}.npy"
+        for idx, arg_spec in enumerate(self.expected_output):
+            if isinstance(arg_spec.value, Path):
+                ext = arg_spec.value.suffix
+            elif arg_spec.url:
+                ext = Path(arg_spec.url).suffix
+            else:
+                ext = ".npy"
+            fname = f"expected_output_{idx}{ext}"
             files.append(fname)
             path = self.test_dir / fname
             option = f"--output=@{path}"
@@ -335,16 +388,17 @@ class CommonConfig:
         if proc.returncode != 0:
             raise IreeCompileException(proc, self.test_dir, mlir_file, self.compile_cmd)
 
-    def compare_results(self, expected, observed):
+    def compare_results(self, expected: list[ArgSpec], observed: list[str]) -> None:
         rtol = self.rtol
         atol = self.atol
         equal_nan = self.equal_nan
         for exp, obs in zip(expected, observed, strict=True):
-            obs_tensor = np.load(self.test_dir / obs)
-            exp_tensor = np.load(exp)
+            assert isinstance(exp.value, Path)
+            exp_tensor = _load_array(exp.value, meta=exp.meta)
+            obs_tensor = _load_array(self.test_dir / obs, meta=exp.meta)
             assert np.allclose(
                 obs_tensor, exp_tensor, rtol=rtol, atol=atol, equal_nan=equal_nan
-            )
+            ), f"Result mismatch for {obs} (rtol={rtol}, atol={atol})"
 
     def iree_run_module(self, iree_run_flags):
         module = self.test_dir / self.vmfb_name

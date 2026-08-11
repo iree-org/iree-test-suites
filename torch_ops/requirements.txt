@@ -3,6 +3,7 @@
 #   * See requirements-dev.txt for extra deps used to regenerate test cases.
 
 azure-storage-blob
+ml_dtypes
 numpy
 psutil
 pyjson5
