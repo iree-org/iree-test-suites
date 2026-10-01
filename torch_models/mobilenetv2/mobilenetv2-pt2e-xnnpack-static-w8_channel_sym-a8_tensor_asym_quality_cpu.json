@@ -1,0 +1,44 @@
+{
+    "type": "quality",
+    "markers": [
+        "cpu",
+        "quick"
+    ],
+    "modules": [
+        "mobilenetv2/modules/mobilenetv2-pt2e-xnnpack-static-w8_channel_sym-a8_tensor_asym_cpu"
+    ],
+    "weights": [
+        {
+            "type": "huggingface",
+            "scope": "model",
+            "repo_id": "roofline/iree-regression-models",
+            "filename": "mobilenetv2/mobilenetv2-pt2e-xnnpack-static-w8_channel_sym-a8_tensor_asym/real_weights.irpa",
+            "revision": "cc913fa89127e6a3b195f0457e14fb9cce6362d3"
+        }
+    ],
+    "inputs": [
+        {
+            "value": "1x3x224x224xf32",
+            "huggingface": {
+                "repo_id": "roofline/iree-regression-models",
+                "filename": "mobilenetv2/mobilenetv2-pt2e-xnnpack-static-w8_channel_sym-a8_tensor_asym/inference_input.0.bin",
+                "revision": "cc913fa89127e6a3b195f0457e14fb9cce6362d3"
+            }
+        }
+    ],
+    "expected_outputs": [
+        {
+            "value": "1x1000xf32",
+            "huggingface": {
+                "repo_id": "roofline/iree-regression-models",
+                "filename": "mobilenetv2/mobilenetv2-pt2e-xnnpack-static-w8_channel_sym-a8_tensor_asym/inference_output.0.bin",
+                "revision": "cc913fa89127e6a3b195f0457e14fb9cce6362d3"
+            }
+        }
+    ],
+    "run_args": [
+        "--device=local-task",
+        "--function=main",
+        "--expected_f32_threshold=0.489"
+    ]
+}
