@@ -39,7 +39,6 @@ jobs:
       - persistent-cache
       - Linux
       - X64
-      - threadripper
     env:
       VENV_DIR: ${{ github.workspace }}/.venv
       CACHE_DIR: /home/nod/iree_tests_cache
