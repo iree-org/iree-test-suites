@@ -1,0 +1,12 @@
+# The stable IREE release imports the PT2E quantized_decomposed ops as
+# torch.operator, which IREE cannot compile; the nightly imports them as typed ops.
+--find-links https://iree.dev/pip-release-links.html
+iree-base-compiler==3.13.0rc20261011
+iree-base-runtime==3.13.0rc20261011
+iree-turbine==3.9.0
+torch==2.14.0
+torchvision==0.29.0
+datasets==4.8.5
+pillow==12.2.0
+torchao==0.18.0
+executorch==1.4.1
