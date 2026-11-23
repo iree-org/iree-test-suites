@@ -1,0 +1,9 @@
+{
+    "mlir": "mobilenetv2/mobilenetv2-pt2e-xnnpack-static-w8_channel_sym-a8_tensor_asym.mlir",
+    "compiler_flags": [
+        "--iree-hal-local-target-device-backends=llvm-cpu",
+        "--iree-hal-target-device=local",
+        "--iree-llvmcpu-target-cpu-features=host",
+        "--iree-opt-level=O1"
+    ]
+}

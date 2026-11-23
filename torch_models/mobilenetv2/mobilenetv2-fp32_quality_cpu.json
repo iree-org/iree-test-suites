@@ -1,0 +1,44 @@
+{
+    "type": "quality",
+    "markers": [
+        "cpu",
+        "quick"
+    ],
+    "modules": [
+        "mobilenetv2/modules/mobilenetv2-fp32_cpu"
+    ],
+    "weights": [
+        {
+            "type": "huggingface",
+            "scope": "model",
+            "repo_id": "roofline/iree-regression-models",
+            "filename": "mobilenetv2/mobilenetv2-fp32/real_weights.irpa",
+            "revision": "cc913fa89127e6a3b195f0457e14fb9cce6362d3"
+        }
+    ],
+    "inputs": [
+        {
+            "value": "1x3x224x224xf32",
+            "huggingface": {
+                "repo_id": "roofline/iree-regression-models",
+                "filename": "mobilenetv2/mobilenetv2-fp32/inference_input.0.bin",
+                "revision": "cc913fa89127e6a3b195f0457e14fb9cce6362d3"
+            }
+        }
+    ],
+    "expected_outputs": [
+        {
+            "value": "1x1000xf32",
+            "huggingface": {
+                "repo_id": "roofline/iree-regression-models",
+                "filename": "mobilenetv2/mobilenetv2-fp32/inference_output.0.bin",
+                "revision": "cc913fa89127e6a3b195f0457e14fb9cce6362d3"
+            }
+        }
+    ],
+    "run_args": [
+        "--device=local-task",
+        "--function=main",
+        "--expected_f32_threshold=1e-3"
+    ]
+}
