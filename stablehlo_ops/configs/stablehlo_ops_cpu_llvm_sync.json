@@ -1,0 +1,30 @@
+{
+  "config_name": "cpu_llvm_sync",
+  "iree_compile_flags": [
+    "--iree-input-type=stablehlo",
+    "--iree-hal-target-backends=llvm-cpu",
+    "--iree-llvmcpu-target-cpu=host",
+    "--iree-input-demote-f64-to-f32=false"
+  ],
+  "iree_run_module_flags": [
+    "--device=local-sync"
+  ],
+  "skip_compile_tests": [],
+  "skip_run_tests": [],
+  "expected_compile_failures": [
+    "after_all/dynamic",
+    "dynamic_conv/dynamic",
+    "dynamic_conv/static",
+    "dynamic_gather/dynamic",
+    "dynamic_gather/static",
+    "dynamic_pad/dynamic",
+    "dynamic_pad/static",
+    "dynamic_reshape/dynamic",
+    "dynamic_update_slice/dynamic",
+    "optimization_barrier/dynamic",
+    "reduce_precision/dynamic",
+    "reduce_window/dynamic",
+    "rng_bit_generator/dynamic"
+  ],
+  "expected_run_failures": []
+}

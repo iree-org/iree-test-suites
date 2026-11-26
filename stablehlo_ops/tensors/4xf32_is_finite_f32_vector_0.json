@@ -1,0 +1,5 @@
+{
+  "dtype": "float32",
+  "shape": [4],
+  "values": [0.0, "inf", "-inf", "nan"]
+}

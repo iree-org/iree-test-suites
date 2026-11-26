@@ -1,0 +1,9 @@
+{
+  "file_name": "static.mlir",
+  "inputs": [
+    "../../tensors/3xi32_broadcast_rows_0.json",
+    "../../tensors/2x1xi32_dynamic_gather_reorder_1.json",
+    "../../tensors/2xi32_get_tuple_element_second_0.json"
+  ],
+  "dynamic_file_name": "dynamic.mlir"
+}

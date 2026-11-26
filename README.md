@@ -40,6 +40,14 @@ Test suites for IREE and related projects.
   built as part of the [shark-ai project](https://github.com/nod-ai/shark-ai).
 * Runnable via [pytest](https://docs.pytest.org/) for both CPU and GPU targets.
 
+### [stablehlo_ops/](stablehlo_ops/) : StableHLO operations
+
+[![Test StableHLO Ops](https://github.com/iree-org/iree-test-suites/actions/workflows/test_stablehlo_ops.yml/badge.svg?branch=main)](https://github.com/iree-org/iree-test-suites/actions/workflows/test_stablehlo_ops.yml?query=branch%3Amain)
+
+* Tests that compile and run static and dynamic StableHLO operations with IREE
+  and compare their outputs against the StableHLO interpreter.
+* Runnable via [pytest](https://docs.pytest.org/).
+
 ### [torch_models/](torch_models/) : PyTorch models as Torch Dialect
 
 [![Test Torch Models](https://github.com/iree-org/iree-test-suites/actions/workflows/test_torch_models.yml/badge.svg?branch=main)](https://github.com/iree-org/iree-test-suites/actions/workflows/test_torch_models.yml?query=branch%3Amain)

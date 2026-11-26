@@ -1,0 +1,8 @@
+{
+  "file_name": "static.mlir",
+  "inputs": [
+    "../../tensors/3xf32_abs_f32_vector_0.json",
+    "../../tensors/3xf32_b.json"
+  ],
+  "dynamic_file_name": "dynamic.mlir"
+}

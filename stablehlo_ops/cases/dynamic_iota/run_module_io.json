@@ -1,0 +1,7 @@
+{
+  "file_name": "static.mlir",
+  "inputs": [
+    "../../tensors/2xi64_dynamic_broadcast_in_dim_rows_1.json"
+  ],
+  "dynamic_file_name": "dynamic.mlir"
+}

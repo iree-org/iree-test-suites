@@ -1,0 +1,8 @@
+# The reference interpreter wheel requires CPython 3.11 on Linux x86_64.
+--find-links https://github.com/openxla/stablehlo/releases/expanded_assets/dev-wheels
+stablehlo==1.12.1.1751868715+6f7b4ab8
+numpy==2.4.6
+pytest==9.2.0
+pytest-html
+pytest-reportlog
+pytest-xdist

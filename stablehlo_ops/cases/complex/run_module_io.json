@@ -1,0 +1,8 @@
+{
+  "file_name": "static.mlir",
+  "inputs": [
+    "../../tensors/2xf32_fixtures_complex_io_preserves_real_and_imaginary_parts_0.json",
+    "../../tensors/2xf32_complex_components_1.json"
+  ],
+  "dynamic_file_name": "dynamic.mlir"
+}
