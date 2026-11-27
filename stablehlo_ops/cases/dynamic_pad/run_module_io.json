@@ -1,0 +1,11 @@
+{
+  "file_name": "static.mlir",
+  "inputs": [
+    "../../tensors/3xi32_broadcast_rows_0.json",
+    "../../tensors/i32_dynamic_pad_edges_and_interior_1.json",
+    "../../tensors/1xi64_dynamic_gather_reorder_2.json",
+    "../../tensors/1xi64_dynamic_pad_edges_and_interior_3.json",
+    "../../tensors/1xi64_dynamic_gather_reorder_2.json"
+  ],
+  "dynamic_file_name": "dynamic.mlir"
+}

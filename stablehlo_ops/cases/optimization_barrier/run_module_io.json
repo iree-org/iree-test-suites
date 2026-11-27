@@ -1,0 +1,8 @@
+{
+  "file_name": "static.mlir",
+  "inputs": [
+    "../../tensors/2xi32_get_tuple_element_second_0.json",
+    "../../tensors/f32_get_tuple_element_second_1.json"
+  ],
+  "dynamic_file_name": "dynamic.mlir"
+}

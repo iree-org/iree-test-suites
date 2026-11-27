@@ -1,0 +1,7 @@
+{
+  "file_name": "static.mlir",
+  "inputs": [
+    "../../tensors/2x3xi32_dynamic_reshape_flatten_0.json"
+  ],
+  "dynamic_file_name": "dynamic.mlir"
+}

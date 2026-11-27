@@ -1,0 +1,6 @@
+/.pytest_cache/
+*.vmfb
+core
+core.*
+
+__pycache__/

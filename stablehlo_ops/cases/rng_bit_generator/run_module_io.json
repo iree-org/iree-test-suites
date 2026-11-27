@@ -1,0 +1,8 @@
+{
+  "file_name": "static.mlir",
+  "inputs": [
+    "../../tensors/2xui64_rng_bit_generator_three_fry_0.json"
+  ],
+  "compile_only_reason": "StableHLO does not require random sequences to match between implementations.",
+  "dynamic_file_name": "dynamic.mlir"
+}

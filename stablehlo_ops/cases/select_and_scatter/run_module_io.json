@@ -1,0 +1,9 @@
+{
+  "file_name": "static.mlir",
+  "inputs": [
+    "../../tensors/4xf32_select_and_scatter_window_max_0.json",
+    "../../tensors/2xf32_complex_components_1.json",
+    "../../tensors/f32_all_zero.json"
+  ],
+  "dynamic_file_name": "dynamic.mlir"
+}

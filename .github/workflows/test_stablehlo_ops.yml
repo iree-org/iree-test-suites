@@ -1,0 +1,82 @@
+# Copyright 2026 The IREE Authors
+#
+# Licensed under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+name: Test StableHLO Ops
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/test_stablehlo_ops.yml"
+      - "stablehlo_ops/**"
+  pull_request:
+    paths:
+      - ".github/workflows/test_stablehlo_ops.yml"
+      - "stablehlo_ops/**"
+  workflow_dispatch:
+  schedule:
+    # Runs at 3:00 PM UTC, which is 8:00 AM PST
+    - cron: "0 15 * * *"
+
+concurrency:
+  # A PR number if a pull request and otherwise the commit hash. This cancels
+  # queued and in-progress runs for the same PR (presubmit) or commit
+  # (postsubmit). The workflow name is prepended to avoid conflicts between
+  # different workflows.
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  test-stablehlo-ops:
+    if: ${{ github.repository_owner == 'iree-org' || github.event_name != 'schedule' }}
+    runs-on:
+      - self-hosted # Must come first.
+      - persistent-cache
+      - Linux
+      - X64
+      - threadripper
+    env:
+      VENV_DIR: ${{ github.workspace }}/.venv
+      CONFIG_FILE_PATH: stablehlo_ops/configs/stablehlo_ops_cpu_llvm_sync.json
+      HTML_REPORT_PATH: stablehlo_ops/stablehlo_ops_test_report_cpu_llvm_sync.html
+      CACHE_DIR: /home/nod/iree_tests_cache
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          lfs: false
+
+      # Install Python packages.
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+      - name: Setup Python venv
+        run: python3 -m venv ${VENV_DIR}
+      - name: Install IREE nightly release Python packages
+        run: |
+          source ${VENV_DIR}/bin/activate
+          python3 -m pip install -e .
+          python3 -m pip install -r stablehlo_ops/requirements-iree.txt
+
+      # Run tests and output new config files as needed.
+      - name: Run StableHLO ops test suite
+        run: |
+          source ${VENV_DIR}/bin/activate
+          pytest stablehlo_ops/ \
+            -rA \
+            --timeout=300 \
+            --durations=10 \
+            --html=${HTML_REPORT_PATH} \
+            --self-contained-html \
+            --report-log=/tmp/stablehlo_ops_cpu_logs.json \
+            --config-files=${CONFIG_FILE_PATH} \
+            --artifact-directory=${CACHE_DIR}/stablehlo_ops_artifacs
+      - name: Upload HTML report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stablehlo_ops_test_report_cpu_llvm_sync.html
+          path: ${{ env.HTML_REPORT_PATH }}
